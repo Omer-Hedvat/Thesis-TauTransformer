@@ -23,7 +23,7 @@ def main():
         distances.append(class_dist)
 
     two_d_mat = [flatten(distances[idx]) for idx in range(len(distances))]
-
+    print("test chen")
 
 if __name__ == '__main__':
     main()
