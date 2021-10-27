@@ -9,6 +9,7 @@ from dictances import jensen_shannon
 from dictances import kullback_leibler
 from scipy.stats import wasserstein_distance
 
+
 def main():
     df = pd.read_csv('data/glass.csv')
 
@@ -46,8 +47,7 @@ def main():
             'wasserstein_dist': lambda: wasserstein_dist(df, feature, label1, label2),
             'bhattacharyya_dist': lambda: bhattacharyya_dist(df, feature, label1, label2),
             'jensen_shannon_dist': lambda: jensen_shannon_dist(df, feature, label1, label2),
-            'hellinger_dist': lambda: hellinger_dist(df, feature, label1, label2),
-            'jm_dist': lambda: jm_dist(df, feature, label1, label2)
+            'hellinger_dist': lambda: hellinger_dist(df, feature, label1, label2)
         }[function_name]()
 
     def calc_dist(dist_func_name, df, target_col):
