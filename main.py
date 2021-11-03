@@ -51,6 +51,14 @@ def main():
         }[function_name]()
 
     def calc_dist(dist_func_name, df, target_col):
+        """
+        Calculates distances of each feature w/ itself in different target classses
+        for each DataFrame & distance functions
+
+        return: df_dists, dist_dict
+        df_dists - a flatten df of all features (each feature is a row)
+        dist_dict - a dictionary of feature names & dataframes (e.g. {'feature_1': feature_1_df, ...}
+        """
         features = df.columns.drop(target_col)
         classes = df[target_col].unique()
         distances = []
@@ -63,7 +71,14 @@ def main():
 
         two_d_mat = [flatten(distances[idx]) for idx in range(len(distances))]
         df_dists = pd.DataFrame(two_d_mat)
-        return df_dists
+        dist_dict = {f'feature_{idx + 1}': pd.DataFrame(mat) for idx, mat in enumerate(distances)}
+        return df_dists, dist_dict
+
+    def calc_mean_std(df):
+        mean = df.mean().mean()
+        var = sum([((x - mean) ** 2) for x in flatten(df.values)]) / len(flatten(df.values))
+        std = var ** 0.5
+        return mean, std
 
 
 if __name__ == '__main__':
