@@ -1,6 +1,8 @@
 from math import exp, sqrt, log
+import matplotlib as plt
 import numpy as np
 import pandas as pd
+import seaborn as sns
 
 from dictances import cosine
 from dictances import bhattacharyya
@@ -79,6 +81,27 @@ def main():
         var = sum([((x - mean) ** 2) for x in flatten(df.values)]) / len(flatten(df.values))
         std = var ** 0.5
         return mean, std
+
+    def norm_by_dist_type(df, feature, dist_type):
+        assert dist_type in ('wasserstein_dist', 'bhattacharyya_dist', 'jensen_shannon_dist', 'hellinger_dist', 'jm_dist')
+        _, dist_dict = calc_dist(dist_type, df, 'label')
+        feature_mat = dist_dict[feature]
+        mean, std = calc_mean_std(feature_mat)
+        norm_feature_mat = (feature_mat - mean) / std
+        return norm_feature_mat
+
+    def export_plots(df, feature, dist_type1, dist_type2):
+        print(f'{feature=}')
+        norm_feature_mat1 = norm_by_dist_type(df, feature, dist_type1)
+        norm_feature_mat2 = norm_by_dist_type(df, feature, dist_type2)
+        fig, (ax1, ax2) = plt.subplots(1, 2)
+        fig.set_figheight(6)
+        fig.set_figwidth(12)
+
+        sns.heatmap(norm_feature_mat1, annot=True, linewidths=.5, ax=ax1).set(title=dist_type1)
+        sns.heatmap(norm_feature_mat2, annot=True, linewidths=.5, ax=ax2).set(title=dist_type2)
+
+        plt.show()
 
 
 if __name__ == '__main__':
