@@ -13,7 +13,7 @@ from scipy.stats import wasserstein_distance
 
 
 def main():
-    df = pd.read_csv('data/glass.csv')
+    glass_df = pd.read_csv('data/glass.csv')
 
     def hellinger(p, q):
         """Hellinger distance between two discrete distributions.
@@ -44,7 +44,19 @@ def main():
     def flatten(t):
         return [item for sublist in t for item in sublist]
 
-    def execute_function(df, function_name, feature, label1, label2):
+    def execute_distance_func(df, function_name, feature, label1, label2):
+        """
+        Executes various distance function by 'function_name' argument.
+        The function calculates the distance between 2 vectors (df column), the vectors are values from the same column but w. different label values.
+        by each function_name this function knows to call the right distance function
+        :param df: Pandas DataFrame
+        :param function_name: the name of the function
+        :param feature: the name of the feature/column we want to use the distance on
+        :param label1: value of label # 1
+        :param label2: value of label # 2
+        :return: distance value between the vectors
+        """
+        assert function_name in ['wasserstein_dist', 'bhattacharyya_dist', 'jensen_shannon_dist', 'hellinger_dist']
         return {
             'wasserstein_dist': lambda: wasserstein_dist(df, feature, label1, label2),
             'bhattacharyya_dist': lambda: bhattacharyya_dist(df, feature, label1, label2),
@@ -67,7 +79,7 @@ def main():
         for feature in features:
             class_dist = []
             for cls_feature1 in classes:
-                class_row = [execute_function(df, dist_func_name, feature, cls_feature1, cls_feature2) for cls_feature2 in classes]
+                class_row = [execute_distance_func(df, dist_func_name, feature, cls_feature1, cls_feature2) for cls_feature2 in classes]
                 class_dist.append(class_row)
             distances.append(class_dist)
 
@@ -77,6 +89,10 @@ def main():
         return df_dists, dist_dict
 
     def calc_mean_std(df):
+        """
+        Calculates matrix's mean & std (of entire matrix)
+        :return: mean, std
+        """
         mean = df.mean().mean()
         var = sum([((x - mean) ** 2) for x in flatten(df.values)]) / len(flatten(df.values))
         std = var ** 0.5
