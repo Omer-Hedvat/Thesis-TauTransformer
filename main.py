@@ -42,11 +42,16 @@ def main():
         return dist
 
     def flatten(t):
+        """
+
+        :param t:
+        :return:
+        """
         return [item for sublist in t for item in sublist]
 
     def execute_distance_func(df, function_name, feature, label1, label2):
         """
-        Executes various distance function by 'function_name' argument.
+        Executes various distance functions by 'function_name' argument.
         The function calculates the distance between 2 vectors (df column), the vectors are values from the same column but w. different label values.
         by each function_name this function knows to call the right distance function
         :param df: Pandas DataFrame
