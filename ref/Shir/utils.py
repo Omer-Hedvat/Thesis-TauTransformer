@@ -1,13 +1,97 @@
-
 import scipy
 from scipy.spatial import distance
 import numpy as np
-from numpy import linalg as LA
+from numpy import linalg
 import matplotlib.pyplot as plt
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 
+
+def eliminate_features(labels, train, option, dim=3, k=1, dist_method=0, score_points=True, rand=False):
+    jm, jm_mean = build_jm(labels, train[:, :np.shape(train)[1] - 1], train[:, np.shape(train)[1] - 1:], option, rand)
+    coor_jm, eigen_val = calc_coor_jm(jm, jm_mean, option, dim, score_points, rand)
+    scores = score_points(coor_jm, eigen_val)
+    ind_selected = find_features(coor_jm, jm_mean, k, dist_method, scores)
+
+    return ind_selected, jm, coor_jm, jm_mean
+
+
+def build_jm(labels, data, y, option=0, rand=False):
+    run = 1
+    while (run):
+        if option == 1:
+            run = 0
+        mu, sigma = calc_mu_sigma(labels, data, y)
+
+        new_jm = np.zeros((np.shape(data)[1], (np.shape(labels)[0]) ** 2))
+        jm = np.array(np.zeros((np.shape(data)[1], 1)), dtype=object)
+        jm_mean = np.zeros((1, np.shape(data)[1]))
+        for i in range(0, np.shape(data)[1]):
+            if not rand:
+                jm[i, 0] = calc_B_JM(labels, mu, sigma, i)
+                jm_mean[0][i] = np.mean(jm[i, 0])
+                if option == 0:
+                    new_jm[i][:] = np.reshape(jm[i, 0], ((1, (np.shape(labels)[0]) ** 2)))
+
+        if option == 0:
+            if np.any(np.isnan(new_jm)) == True:
+                run = 1
+            else:
+                run = 0
+    if option == 0:
+        return new_jm, jm_mean
+    else:
+        return jm, jm_mean
+
+
+def calc_mu_sigma(labels, data, y):
+    """
+    Calculates the means & STDs of every column w. every class
+    :param labels: list of labels
+    :param data: numpy ndarray of features only
+    :param y: numpy array of label vector
+    :return: 2 matrixs of means & stds. every row in the tables are features and every column is a target class
+    """
+    mu = np.zeros((np.shape(data)[1], np.shape(labels)[0]))
+    sigma = np.zeros((np.shape(data)[1], np.shape(labels)[0]))
+    i = 1
+    for feature in range(np.shape(data)[1]):
+        for label in labels:
+            mu[feature][i - 1] = np.mean(data[np.where(y == label)[0], feature])
+            sigma[feature][i - 1] = np.std(data[np.where(y == label)[0], feature])
+            if sigma[feature][i - 1] == 0:
+                sigma[feature][i - 1] = 0.0000001
+            i += 1
+        i = 1
+    return mu, sigma
+
+
+def calc_B_JM(labels, mu, sigma, b_index):
+    """
+    returns a JM distance matrix for every column w. itself
+    :param labels: a list of the labels
+    :param mu: the mean matrix we calculated at calc_mu_sigma()
+    :param sigma: the std matrix we calculated at calc_mu_sigma()
+    :param b_index: the number of the feature we want to build the distances matrix for
+    :return: a distance matrix of a feature w. itself w. different labels
+    """
+    B = np.zeros((np.shape(labels)[0], np.shape(labels)[0]))
+    jm = np.zeros((np.shape(labels)[0], np.shape(labels)[0]))
+    for i in range(np.shape(B)[0]):
+        for j in range(np.shape(B)[0]):
+            B[i][j] = (1 / 8) * ((mu[b_index][i] - mu[b_index][j]) ** 2) * (
+                    2 / (sigma[b_index][i] ** 2 + sigma[b_index][j] ** 2)) + 0.5 * np.log(
+                ((sigma[b_index][i] ** 2 + sigma[b_index][j] ** 2) / (2 * (sigma[b_index][i] * sigma[b_index][j]))))
+    jm = 2 * (1 - np.exp(-B))
+    return jm
+
+
+def calc_coor_jm(jm, jm_mean, option=0, dim=3, score_points=False, rand_=False):
+    p = calc_p(jm, option, rand_)
+    coor_jm = compute_eigenvectors(p, dim, score_points)
+
+    return coor_jm
 
 
 def calc_p(dataset, option=0, rand_=False):
@@ -93,71 +177,8 @@ def calc_p(dataset, option=0, rand_=False):
     return (p)
 
 
-def calc_mu_sigma(labels, data, y):
-    mu = np.zeros((np.shape(data)[1], np.shape(labels)[0]))
-    sigma = np.zeros((np.shape(data)[1], np.shape(labels)[0]))
-    i = 1
-    for feature in range(np.shape(data)[1]):
-        for label in labels:
-
-            mu[feature][i - 1] = np.mean(data[np.where(y == label)[0], feature])
-            sigma[feature][i - 1] = np.std(data[np.where(y == label)[0], feature])
-            if sigma[feature][i - 1] == 0:
-                sigma[feature][i - 1] = 0.0000001
-            i += 1
-        i = 1
-
-    return mu, sigma
-
-
-def calc_B_JM(labels, mu, sigma, b_index):
-    B = np.zeros((np.shape(labels)[0], np.shape(labels)[0]))
-    JM = np.zeros((np.shape(labels)[0], np.shape(labels)[0]))
-    for i in range(np.shape(B)[0]):
-        for j in range(np.shape(B)[0]):
-            B[i][j] = (1 / 8) * ((mu[b_index][i] - mu[b_index][j]) ** 2) * (
-                    2 / (sigma[b_index][i] ** 2 + sigma[b_index][j] ** 2)) + 0.5 * np.log(
-                ((sigma[b_index][i] ** 2 + sigma[b_index][j] ** 2) / (2 * (sigma[b_index][i] * sigma[b_index][j]))))
-    JM = 2 * (1 - np.exp(-B))
-
-    return JM
-
-
-
-def build_jm(labels, data, y, option=0, rand=False):
-    run = 1
-    while (run):
-        if option == 1:
-            run = 0
-        mu, sigma = calc_mu_sigma(labels, data, y)
-
-        new_jm = np.zeros((np.shape(data)[1], (np.shape(labels)[0]) ** 2))
-        jm = np.array(np.zeros((np.shape(data)[1], 1)), dtype=object)
-        jm_mean = np.zeros((1, np.shape(data)[1]))
-        for i in range(0, np.shape(data)[1]):
-            if not rand:
-                jm[i, 0] = calc_B_JM(labels, mu, sigma, i)
-
-                jm_mean[0][i] = np.mean(jm[i, 0])
-                if option == 0:
-
-                    new_jm[i][:] = np.reshape(jm[i, 0], ((1, (np.shape(labels)[0]) ** 2)))
-
-
-        if option == 0:
-            if np.any(np.isnan(new_jm)) == True:
-                run = 1
-            else:
-                run = 0
-    if option == 0:
-        return new_jm, jm_mean
-    else:
-        return jm, jm_mean
-
-
-
 def compute_eigenvectors(m, dim, score_points=False):
-    eigval, eigvec = LA.eigh(np.array(m))
+    eigval, eigvec = linalg.eigh(np.array(m))
     eigvec = np.flip(eigvec, axis=1)
     eigvec = np.asarray(eigvec)
     U, S, _ = scipy.sparse.linalg.svds(A=m, k=dim + 1)
@@ -175,7 +196,44 @@ def compute_eigenvectors(m, dim, score_points=False):
     return cor
 
 
-def Score_points(coor_jm, eigen_values):
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def score_points(coor_jm, eigen_values):
     scores = np.zeros((1, np.shape(coor_jm)[0]))
     for i in range(0, np.shape(coor_jm)[0]):
         x = 0
@@ -187,22 +245,6 @@ def Score_points(coor_jm, eigen_values):
 
         scores[0, i] = scores[0, i] / np.max(np.abs(coor_jm[i, :]))
     return scores
-
-
-def calc_coor_jm(jm, jm_mean, option=0, dim=3, score_points=False, rand_=False):
-    p = calc_p(jm, option, rand_)
-    coor_jm = compute_eigenvectors(p, dim, score_points)
-
-    return coor_jm
-
-
-def eliminate_features(labels, train, option, dim=3, k=1, dist_method=0,score_points=True,rand=False):
-    jm, jm_mean = build_jm(labels, train[:, :np.shape(train)[1] - 1], train[:, np.shape(train)[1] - 1:], option,rand)
-    coor_jm, eigen_val = calc_coor_jm(jm, jm_mean, option, dim, score_points,rand)
-    scores = Score_points(coor_jm, eigen_val)
-    ind_selected = find_features(coor_jm, jm_mean, k, dist_method, scores)
-
-    return ind_selected, jm, coor_jm, jm_mean
 
 
 def test_find_features(mat, jm_mean, dist_method, k=1):
@@ -233,9 +275,6 @@ def test_find_features(mat, jm_mean, dist_method, k=1):
 
                     dist[:, y] = np.inf
                     dist[y, :] = np.inf
-
-
-
     ind_selected = []
     for x in range(np.shape(dist)[0]):
         if np.all(dist[x, :] == np.inf) == False:
@@ -344,5 +383,8 @@ def pred_svm(train, test):
     y_pred = model.predict(X_test)
 
     return svm.score(X_test, y_test)
+
+
+
 
 

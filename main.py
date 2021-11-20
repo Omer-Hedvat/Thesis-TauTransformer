@@ -10,19 +10,11 @@ from dictances import bhattacharyya_coefficient
 from dictances import jensen_shannon
 from dictances import kullback_leibler
 from scipy.stats import wasserstein_distance
+import utils
 
 
 def main():
     glass_df = pd.read_csv('data/glass.csv')
-
-    def hellinger(p, q):
-        """Hellinger distance between two discrete distributions.
-           Same as original version but without list comprehension
-        """
-        # Calculate the square of the difference of ith distr elements
-        list_of_squares = [((sqrt(p_i) - sqrt(q_i)) ** 2) for p_i, q_i in zip(p, q)]
-        sosq = sum(list_of_squares)
-        return sosq / sqrt(2)
 
     def wasserstein_dist(df, feature, label1, label2):
         dist = wasserstein_distance(df.loc[df['label'] == label1, feature], df.loc[df['label'] == label2, feature])
@@ -38,16 +30,12 @@ def main():
         return dist
 
     def hellinger_dist(df, feature, label1, label2):
-        dist = hellinger(df.loc[df['label'] == label1, feature], df.loc[df['label'] == label2, feature])
+        dist = utils.hellinger(df.loc[df['label'] == label1, feature], df.loc[df['label'] == label2, feature])
         return dist
 
-    def flatten(t):
-        """
-
-        :param t:
-        :return:
-        """
-        return [item for sublist in t for item in sublist]
+    def jm_dist(df, feature, label1, label2):
+        dist = utils.JM_distance(df.loc[df['label'] == label1, feature], df.loc[df['label'] == label2, feature])
+        return dist
 
     def execute_distance_func(df, function_name, feature, label1, label2):
         """
@@ -66,7 +54,8 @@ def main():
             'wasserstein_dist': lambda: wasserstein_dist(df, feature, label1, label2),
             'bhattacharyya_dist': lambda: bhattacharyya_dist(df, feature, label1, label2),
             'jensen_shannon_dist': lambda: jensen_shannon_dist(df, feature, label1, label2),
-            'hellinger_dist': lambda: hellinger_dist(df, feature, label1, label2)
+            'hellinger_dist': lambda: hellinger_dist(df, feature, label1, label2),
+            'jm_dist': lambda: jm_dist(df, feature, label1, label2)
         }[function_name]()
 
     def calc_dist(dist_func_name, df, target_col):
@@ -88,7 +77,7 @@ def main():
                 class_dist.append(class_row)
             distances.append(class_dist)
 
-        two_d_mat = [flatten(distances[idx]) for idx in range(len(distances))]
+        two_d_mat = [utils.flatten(distances[idx]) for idx in range(len(distances))]
         df_dists = pd.DataFrame(two_d_mat)
         dist_dict = {f'feature_{idx + 1}': pd.DataFrame(mat) for idx, mat in enumerate(distances)}
         return df_dists, dist_dict
@@ -99,7 +88,7 @@ def main():
         :return: mean, std
         """
         mean = df.mean().mean()
-        var = sum([((x - mean) ** 2) for x in flatten(df.values)]) / len(flatten(df.values))
+        var = sum([((x - mean) ** 2) for x in utils.flatten(df.values)]) / len(utils.flatten(df.values))
         std = var ** 0.5
         return mean, std
 

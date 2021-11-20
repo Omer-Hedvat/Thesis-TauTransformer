@@ -5,28 +5,28 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import LabelEncoder
 import numpy.random as nr
 import numpy as np
+
 warnings.filterwarnings('ignore')
 
-
 "Obesity"
-# dataset = pd.read_csv('Obesity.csv')
-# X = dataset.iloc[:, 0:dataset.shape[1]-1]
-# y = dataset.iloc[:, -1]
-# labelencoder = LabelEncoder()
-# y=labelencoder.fit_transform(y)
-# y=np.reshape(y,(np.shape(y)[0],))
-# num_cols=dataset.select_dtypes(np.number)
-# n_cols=num_cols.columns
-# cat_cols=[x for x in X.columns if x not in n_cols]
-# for col in cat_cols:
-#     X[col]= labelencoder.fit_transform(X[col])
-#
-# ###########################################
-# scaler = StandardScaler()
-# X = scaler.fit_transform(X)
-# X = pd.DataFrame(X)
-# X=np.asarray(X)
-# all_data=np.concatenate((X,y.reshape((np.shape(y)[0],1))),axis=1)
+dataset = pd.read_csv('ref/Shir/Data/Obesity.csv')
+X = dataset.iloc[:, 0:dataset.shape[1]-1]
+y = dataset.iloc[:, -1]
+labelencoder = LabelEncoder()
+y = labelencoder.fit_transform(y)
+y = np.reshape(y, (np.shape(y)[0],))
+num_cols = dataset.select_dtypes(np.number)
+n_cols = num_cols.columns
+cat_cols = [x for x in X.columns if x not in n_cols]
+for col in cat_cols:
+    X[col] = labelencoder.fit_transform(X[col])
+
+###########################################
+scaler = StandardScaler()
+X = scaler.fit_transform(X)
+X = pd.DataFrame(X)
+X=np.asarray(X)
+all_data=np.concatenate((X, y.reshape((np.shape(y)[0], 1))), axis=1)
 
 
 "crop"
@@ -58,23 +58,20 @@ warnings.filterwarnings('ignore')
 
 "isolet"
 # # #
-dataset = pd.read_csv('isolet.csv')
-X = dataset.iloc[:, 0:dataset.shape[1]-1]
-y = dataset.iloc[:, -1]
-y=np.reshape(y,(np.shape(y)[0],))
-y=  np.asarray(y)
-scaler = StandardScaler()
-X= scaler.fit_transform(X)
-X = pd.DataFrame(X)
-X=np.asarray(X)
-all_data=np.concatenate((X,y.reshape((np.shape(y)[0],1))),axis=1)
-
-option_for_jm=0
+# dataset = pd.read_csv('ref/Shir/Data/isolet.csv')
+# X = dataset.iloc[:, 0:dataset.shape[1] - 1]
+# y = dataset.iloc[:, -1]
+# y = np.reshape(y, (np.shape(y)[0],))
+# y = np.asarray(y)
+# scaler = StandardScaler()
+# X = scaler.fit_transform(X)
+# X = pd.DataFrame(X)
+# X = np.asarray(X)
+# all_data = np.concatenate((X, y.reshape((np.shape(y)[0], 1))), axis=1)
 
 
 
-
-y=all_data[:,-1]
+y = all_data[:, -1]
 y = np.asarray(y)
 
 labels = np.unique(y)
@@ -85,34 +82,24 @@ train_idx = [x for x in idx if x not in set(valid_idx)]
 train = all_data[train_idx]
 test_idx = [x for x in range(0, np.shape(all_data)[0]) if x not in set(idx)]
 test = all_data[test_idx]
-train=np.asarray(train)
-best_comb=ob.hyper_parms_tuning(train,validation)
-train=np.concatenate((train,validation))
+train = np.asarray(train)
+best_comb = ob.hyper_parms_tuning(train, validation)
+train = np.concatenate((train, validation))
 
+option_for_jm = 0
+ind_selected, jm, coor_jm, jm_mean = ob.eliminate_features(labels, train, option_for_jm, *best_comb)
 
-ind_selected, jm, coor_jm,jm_mean= ob.eliminate_features(labels, train, option_for_jm,dim=best_comb[0],k=best_comb[1],dist_method=best_comb[2])
+print("eliminate features", ind_selected)
 
-print("eliminate features",ind_selected)
-
-y_train=train[:,np.shape(train)[1]-1:]
-train1=train[:,ind_selected]
-y_test=test[:,np.shape(test)[1]-1:]
-test1=test[:,ind_selected]
-n=np.shape(train1)[1]
+y_train = train[:, np.shape(train)[1] - 1:]
+train1 = train[:, ind_selected]
+y_test = test[:, np.shape(test)[1] - 1:]
+test1 = test[:, ind_selected]
+n = np.shape(train1)[1]
 train1 = np.concatenate((train1, y_train), axis=1)
 test1 = np.concatenate((test1, y_test), axis=1)
 acc_svm = float(ob.pred_svm(train1, test1))
 acc_knn = float(ob.knn_pred(train1, test1))
 acc_rand_forest = float(ob.pred_randomforest(train1, test1))
-print("eliminate features:","num_of_fetures",np.shape(train1)[1]-1, "\n", "svm", acc_svm, "\n", "knn", acc_knn, "\n", "random_forest",
+print("eliminate features:", "num_of_fetures", np.shape(train1)[1] - 1, "\n", "svm", acc_svm, "\n", "knn", acc_knn, "\n", "random_forest",
       acc_rand_forest)
-
-
-
-
-
-
-
-
-
-
