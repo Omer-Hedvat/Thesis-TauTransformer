@@ -198,41 +198,6 @@ def compute_eigenvectors(m, dim, score_points=False):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def score_points(coor_jm, eigen_values):
     scores = np.zeros((1, np.shape(coor_jm)[0]))
     for i in range(0, np.shape(coor_jm)[0]):
