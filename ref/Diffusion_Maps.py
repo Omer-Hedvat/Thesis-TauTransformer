@@ -27,7 +27,6 @@ from scipy.spatial.distance import pdist, squareform
 '''
 epsilon_factor - a parameter that controls the width of the Gaussian kernel  
 '''
-epsilon_factor = 4
 
 '''
 Compute  the width of the Gaussian kernel based on the given dataset.   
@@ -54,8 +53,8 @@ def calcEpsilon(dataList, eps_type, epsilon_factor=4):
     return dist, epsilon
 
 
-def ker_calc(dataList, eps_type):
-    dist, eps = calcEpsilon(dataList, eps_type)
+def ker_calc(dataList, eps_type, eps):
+    dist, eps = calcEpsilon(dataList, eps_type, eps)
     ker = np.exp(-(dist ** 2) / (2 * eps))
     return ker, eps
 
@@ -65,7 +64,7 @@ Construct the NXN Gaussian kernel, normalize it and compute eigenvalues and eige
 '''
 
 
-def diffusionMapping(dataList, alpha, eps_type, t, **kwargs):
+def diffusionMapping(dataList, alpha, eps_type, t, eps, **kwargs):
     try:
         kwargs['dim'] or kwargs['delta']
     except KeyError:
@@ -75,7 +74,7 @@ def diffusionMapping(dataList, alpha, eps_type, t, **kwargs):
     # dist is the L2 distances
     # eps_type='maxmin'#mean' #or maxmin
 
-    ker, epsilon = ker_calc(dataList, eps_type)
+    ker, epsilon = ker_calc(dataList, eps_type, eps)
     v = np.sum(ker, axis=0)
 
     v = v ** alpha
