@@ -71,19 +71,22 @@ def jm_dist(df, feature, label1, label2):
     return dist
 
 
-def execute_function(df, function_name, feature, label1, label2):
-    return {
-        'wasserstein_dist': lambda: wasserstein_dist(df, feature, label1, label2),
-        'bhattacharyya_dist': lambda: bhattacharyya_dist(df, feature, label1, label2),
-        'hellinger_dist': lambda: hellinger_dist(df, feature, label1, label2),
-        'jm_dist': lambda: jm_dist(df, feature, label1, label2)
-    }[function_name]()
 
 
-def calc_mean_std(feature_mat):
-    mean = feature_mat.mean().mean()
-    var = sum([((x - mean) ** 2) for x in flatten(feature_mat.values)]) / len(flatten(feature_mat.values))
-    std = var**0.5
+def norm_by_dist_type(feature_mat):
+    mean, std = calc_mean_std(feature_mat)
+    norm_feature_mat = (feature_mat - mean) / std
+    return norm_feature_mat
+
+
+def calc_mean_std(df):
+    """
+    Calculates matrix's mean & std (of entire matrix)
+    :return: mean, std
+    """
+    mean = df.mean().mean()
+    var = sum([((x - mean) ** 2) for x in flatten(df.values)]) / len(flatten(df.values))
+    std = var ** 0.5
     return mean, std
 
 

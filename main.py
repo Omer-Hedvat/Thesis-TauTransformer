@@ -1,41 +1,19 @@
 from math import exp, sqrt, log
-import matplotlib as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from sklearn import preprocessing
 
-from dictances import cosine
-from dictances import bhattacharyya
-from dictances import bhattacharyya_coefficient
-from dictances import jensen_shannon
-from dictances import kullback_leibler
-from scipy.stats import wasserstein_distance
+import matplotlib.pyplot as plt
+from pydiffmap import diffusion_map as dm
+from pydiffmap.visualization import embedding_plot, data_plot
+
+from ref.Diffusion_Maps import diffusionMapping
+from ref.Shir import utils as shir_utils
 import utils
-
 
 def main():
     glass_df = pd.read_csv('data/glass.csv')
-
-    def wasserstein_dist(df, feature, label1, label2):
-        dist = wasserstein_distance(df.loc[df['label'] == label1, feature], df.loc[df['label'] == label2, feature])
-        return dist
-
-    def bhattacharyya_dist(df, feature, label1, label2):
-        dist = bhattacharyya(df.loc[df['label'] == label1, feature], df.loc[df['label'] == label2, feature])
-        #     dist= bhattacharyya_distance(df.loc[df['label']==label1, feature], df.loc[df['label']==label2, feature])
-        return dist
-
-    def jensen_shannon_dist(df, feature, label1, label2):
-        dist = jensen_shannon(df.loc[df['label'] == label1, feature], df.loc[df['label'] == label2, feature])
-        return dist
-
-    def hellinger_dist(df, feature, label1, label2):
-        dist = utils.hellinger(df.loc[df['label'] == label1, feature], df.loc[df['label'] == label2, feature])
-        return dist
-
-    def jm_dist(df, feature, label1, label2):
-        dist = utils.JM_distance(df.loc[df['label'] == label1, feature], df.loc[df['label'] == label2, feature])
-        return dist
 
     def execute_distance_func(df, function_name, feature, label1, label2):
         """
@@ -51,12 +29,13 @@ def main():
         """
         assert function_name in ['wasserstein_dist', 'bhattacharyya_dist', 'jensen_shannon_dist', 'hellinger_dist']
         return {
-            'wasserstein_dist': lambda: wasserstein_dist(df, feature, label1, label2),
-            'bhattacharyya_dist': lambda: bhattacharyya_dist(df, feature, label1, label2),
-            'jensen_shannon_dist': lambda: jensen_shannon_dist(df, feature, label1, label2),
-            'hellinger_dist': lambda: hellinger_dist(df, feature, label1, label2),
-            'jm_dist': lambda: jm_dist(df, feature, label1, label2)
+            'wasserstein_dist': lambda: utils.wasserstein_dist(df, feature, label1, label2),
+            'bhattacharyya_dist': lambda: utils.bhattacharyya_dist(df, feature, label1, label2),
+            'jensen_shannon_dist': lambda: utils.jensen_shannon_dist(df, feature, label1, label2),
+            'hellinger_dist': lambda: utils.hellinger_dist(df, feature, label1, label2),
+            'jm_dist': lambda: utils.jm_dist(df, feature, label1, label2)
         }[function_name]()
+
 
     def calc_dist(dist_func_name, df, target_col):
         """
@@ -82,20 +61,8 @@ def main():
         dist_dict = {f'feature_{idx + 1}': pd.DataFrame(mat) for idx, mat in enumerate(distances)}
         return df_dists, dist_dict
 
-    def calc_mean_std(df):
-        """
-        Calculates matrix's mean & std (of entire matrix)
-        :return: mean, std
-        """
-        mean = df.mean().mean()
-        var = sum([((x - mean) ** 2) for x in utils.flatten(df.values)]) / len(utils.flatten(df.values))
-        std = var ** 0.5
-        return mean, std
 
-    def norm_by_dist_type(feature_mat):
-        mean, std = calc_mean_std(feature_mat)
-        norm_feature_mat = (feature_mat - mean) / std
-        return norm_feature_mat
+
 
     def export_heatmaps(df, features, dist_type1, dist_type2, to_norm):
         assert dist_type1 in (
@@ -113,8 +80,8 @@ def main():
             feature_mat1 = dist_dict1[feature]
             feature_mat2 = dist_dict2[feature]
             if to_norm:
-                feature_dist_mat1 = norm_by_dist_type(feature_mat1)
-                feature_dist_mat2 = norm_by_dist_type(feature_mat2)
+                feature_dist_mat1 = utils.norm_by_dist_type(feature_mat1)
+                feature_dist_mat2 = utils.norm_by_dist_type(feature_mat2)
             else:
                 feature_dist_mat1 = feature_mat1
                 feature_dist_mat2 = feature_mat2
