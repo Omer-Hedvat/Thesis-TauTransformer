@@ -51,7 +51,7 @@ def calc_dist(dist_func_name, df, target_col):
     return df_dists, dist_dict
 
 
-def export_heatmaps(df, features, dist_type1, dist_type2, to_norm):
+def export_heatmaps(df, features, dist_type1, dist_type2, to_norm=False):
     assert dist_type1 in (
         'wasserstein_dist', 'bhattacharyya_dist', 'jensen_shannon_dist', 'hellinger_dist', 'jm_dist')
     assert dist_type2 in (
