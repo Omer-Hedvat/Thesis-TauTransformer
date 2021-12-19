@@ -21,7 +21,6 @@ def execute_distance_func(df, function_name, feature, label1, label2):
     return {
         'wasserstein_dist': lambda: utils.wasserstein_dist(df, feature, label1, label2),
         'bhattacharyya_dist': lambda: utils.bhattacharyya_dist(df, feature, label1, label2),
-        'jensen_shannon_dist': lambda: utils.jensen_shannon_dist(df, feature, label1, label2),
         'hellinger_dist': lambda: utils.hellinger_dist(df, feature, label1, label2),
         'jm_dist': lambda: utils.jm_dist(df, feature, label1, label2)
     }[function_name]()
