@@ -4,6 +4,12 @@ from sklearn.preprocessing import MinMaxScaler
 
 
 def min_max_scaler(df, features):
+    """
+    activates min_max_scaler over a df and returns the normalized DataFrame
+    :param df: pandas DataFrame
+    :param features: a list of columns which are the features
+    :return: normalized dataframe (features only)
+    """
     scaler = MinMaxScaler()
     numpy_norm = scaler.fit_transform(df[features])
     df_norm = pd.DataFrame(numpy_norm, columns=features)
@@ -13,7 +19,7 @@ def min_max_scaler(df, features):
 
 def flatten(t):
     """
-
+    given a matrix, returns a flatten list
     :param t:
     :return:
     """
@@ -49,25 +55,25 @@ def hellinger(p, q):
 
 def wasserstein_dist(df, feature, label1, label2):
     from scipy.stats import wasserstein_distance
-    dist= wasserstein_distance(df.loc[df['label'] == label1, feature], df.loc[df['label']==label2, feature])
+    dist = wasserstein_distance(df.loc[df['label'] == label1, feature], df.loc[df['label']==label2, feature])
     return dist
 
 
 def bhattacharyya_dist(df, feature, label1, label2):
     from utils import bhattacharyya_distance
-    dist= bhattacharyya_distance(df.loc[df['label']==label1, feature], df.loc[df['label']==label2, feature])
+    dist = bhattacharyya_distance(df.loc[df['label']==label1, feature], df.loc[df['label']==label2, feature])
     return dist
 
 
 def hellinger_dist(df, feature, label1, label2):
     from utils import hellinger
-    dist= hellinger(df.loc[df['label']==label1, feature], df.loc[df['label']==label2, feature])
+    dist = hellinger(df.loc[df['label']==label1, feature], df.loc[df['label']==label2, feature])
     return dist
 
 
 def jm_dist(df, feature, label1, label2):
     from utils import JM_distance
-    dist= JM_distance(df.loc[df['label']==label1, feature], df.loc[df['label']==label2, feature])
+    dist = JM_distance(df.loc[df['label']==label1, feature], df.loc[df['label']==label2, feature])
     return dist
 
 
