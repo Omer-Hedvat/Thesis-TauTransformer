@@ -64,7 +64,7 @@ Construct the NXN Gaussian kernel, normalize it and compute eigenvalues and eige
 '''
 
 
-def diffusionMapping(dataList, alpha, eps_type, t, eps, **kwargs):
+def diffusionMapping(dataList, alpha, eps_type, eps, t,  **kwargs):
     try:
         kwargs['dim'] or kwargs['delta']
     except KeyError:

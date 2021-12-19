@@ -40,9 +40,60 @@ def hellinger(p, q):
     """Hellinger distance between two discrete distributions.
        Same as original version but without list comprehension
     """
+    from math import sqrt
     # Calculate the square of the difference of ith distr elements
     list_of_squares = [((sqrt(p_i) - sqrt(q_i)) ** 2) for p_i, q_i in zip(p, q)]
     sosq = sum(list_of_squares)
     return sosq / sqrt(2)
 
 
+def wasserstein_dist(df, feature, label1, label2):
+    from scipy.stats import wasserstein_distance
+    dist= wasserstein_distance(df.loc[df['label'] == label1, feature], df.loc[df['label']==label2, feature])
+    return dist
+
+
+def bhattacharyya_dist(df, feature, label1, label2):
+    from utils import bhattacharyya_distance
+    dist= bhattacharyya_distance(df.loc[df['label']==label1, feature], df.loc[df['label']==label2, feature])
+    return dist
+
+
+def hellinger_dist(df, feature, label1, label2):
+    from utils import hellinger
+    dist= hellinger(df.loc[df['label']==label1, feature], df.loc[df['label']==label2, feature])
+    return dist
+
+
+def jm_dist(df, feature, label1, label2):
+    from utils import JM_distance
+    dist= JM_distance(df.loc[df['label']==label1, feature], df.loc[df['label']==label2, feature])
+    return dist
+
+
+def execute_function(df, function_name, feature, label1, label2):
+    return {
+        'wasserstein_dist': lambda: wasserstein_dist(df, feature, label1, label2),
+        'bhattacharyya_dist': lambda: bhattacharyya_dist(df, feature, label1, label2),
+        'hellinger_dist': lambda: hellinger_dist(df, feature, label1, label2),
+        'jm_dist': lambda: jm_dist(df, feature, label1, label2)
+    }[function_name]()
+
+
+def calc_mean_std(feature_mat):
+    mean = feature_mat.mean().mean()
+    var = sum([((x - mean) ** 2) for x in flatten(feature_mat.values)]) / len(flatten(feature_mat.values))
+    std = var**0.5
+    return mean, std
+
+
+def norm_by_dist_type(feature_mat):
+    mean, std = calc_mean_std(feature_mat)
+    norm_feature_mat = (feature_mat-mean)/std
+    return norm_feature_mat
+
+
+def calculateDistance(p1, p2):
+    from math import sqrt
+    dist = sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
+    return dist
