@@ -1,6 +1,8 @@
 import pandas as pd
+import numpy as np
 import seaborn as sns
-
+from sklearn.cluster import KMeans
+from sklearn_extra.cluster import KMedoids
 import matplotlib.pyplot as plt
 import utils
 
@@ -82,6 +84,33 @@ def export_heatmaps(df, features, dist_type1, dist_type2, to_norm=False):
         axr.set_ylabel(row, rotation=90, size='large')
 
     plt.show()
+
+
+def return_best_features_by_kmeans(coordinates, k):
+    features_rank = np.argsort(coordinates[0])
+    kmeans = KMeans(n_clusters=k, random_state=0)
+    labels = kmeans.fit(coordinates.T).labels_
+    best_features = []
+    selected_cetroids = []
+    for idx in features_rank:
+        if labels[idx] not in selected_cetroids:
+            selected_cetroids.append(labels[idx])
+            best_features.append(idx)
+    return best_features, labels, features_rank
+
+
+def k_medoids_features(coordinates, k):
+    # calc KMediod to get to centers
+    coordinates = coordinates.T
+    kmedoids = KMedoids(n_clusters=k, random_state=0).fit(coordinates)
+    centers = kmedoids.cluster_centers_
+
+    # search for the features index
+    r_features = []
+    for i, v in enumerate(coordinates):
+        if v in centers:
+            r_features.append(i)
+    return r_features
 
 
 def main():
