@@ -5,7 +5,8 @@ from sklearn.cluster import KMeans
 from sklearn_extra.cluster import KMedoids
 import matplotlib.pyplot as plt
 import utils
-
+from utils import min_max_scaler, calc_mean_std, flatten, norm_by_dist_type, calculate_distance
+from sklearn.model_selection import train_test_split
 
 def execute_distance_func(df, function_name, feature, label1, label2):
     """
@@ -28,17 +29,20 @@ def execute_distance_func(df, function_name, feature, label1, label2):
     }[function_name]()
 
 
-def calc_dist(dist_func_name, df, target_col):
+def calc_dist(dist_func_name, X_train, classes):
     """
     Calculates distances of each feature w/ itself in different target classses
     for each DataFrame & distance functions
-
+    :param dist_func_name: Distance function name
+    :param X_train:
+    :param classes: y_train
     return: df_dists, dist_dict
     df_dists - a flatten df of all features (each feature is a row)
     dist_dict - a dictionary of feature names & dataframes (e.g. {'feature_1': feature_1_df, ...}
     """
-    features = df.columns.drop(target_col)
-    classes = df[target_col].unique()
+    features = X_train.columns
+    df = X_train
+    df['label'] = classes
     distances = []
     for feature in features:
         class_dist = []
@@ -114,7 +118,13 @@ def k_medoids_features(coordinates, k):
 
 
 def main():
-    glass_df = pd.read_csv('data/glass.csv')
+    df = pd.read_csv('data/glass.csv')
+    features = df.columns.drop('label')
+    label_column = 'label'
+
+    df_norm = min_max_scaler(df, features)
+    X_train, X_test, y_train, y_test = train_test_split(df_norm[features], df_norm[label_column], test_size=0.33, random_state=42)
+    df_dists_wasser, dist_dict_wasser = calc_dist('wasserstein_dist', X_train, y_train)
 
 
 if __name__ == '__main__':
