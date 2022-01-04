@@ -18,11 +18,9 @@ Last modified by Neta Rabin on 2019/02/27.
 '''
 
 import numpy as np
-import sys
 from numpy import linalg as LA
-import matplotlib.pyplot as plt
-import math
 from scipy.spatial.distance import pdist, squareform
+import pandas as pd
 
 '''
 epsilon_factor - a parameter that controls the width of the Gaussian kernel  
@@ -34,29 +32,29 @@ Compute  the width of the Gaussian kernel based on the given dataset.
 
 
 # compute epsilon of (dataList)
-def calcEpsilon(dataList, eps_type, epsilon_factor=4):
-    dist = squareform(pdist(dataList))  # read about squareform
+def calc_epsilon(data_list, eps_type, epsilon_factor=4):
+    distance_np = squareform(pdist(data_list))  # read about squareform
     if eps_type == 'maxmin':
         # option #1 - epsilon= max min(distance)
-        idist = dist + np.identity(len(dist))
+        idist = distance_np + np.identity(len(distance_np))
         eps_maxmin = np.max(np.min(idist, axis=0))
         epsilon = eps_maxmin * epsilon_factor
 
     elif eps_type == 'mean':
         # option #2 - epsilon= mean(distance)
-        eps_mean = np.mean(dist)
+        eps_mean = np.mean(distance_np)
         epsilon = eps_mean * epsilon_factor
 
     else:
         raise KeyError('eps_type should be either maxmin or mean')
 
-    return dist, epsilon
+    return distance_np, epsilon
 
 
-def ker_calc(dataList, eps_type, eps):
-    dist, eps = calcEpsilon(dataList, eps_type, eps)
-    ker = np.exp(-(dist ** 2) / (2 * eps))
-    return ker, eps
+def kernel_calc(datalist, eps_type, eps):
+    distance_np, eps = calc_epsilon(datalist, eps_type, eps)
+    kernel = np.exp(-(distance_np ** 2) / (2 * eps))
+    return kernel, eps
 
 
 '''
@@ -64,22 +62,22 @@ Construct the NXN Gaussian kernel, normalize it and compute eigenvalues and eige
 '''
 
 
-def diffusionMapping(dataList, alpha, eps_type, eps, t,  **kwargs):
+def diffusion_mapping(data_list, alpha, eps_type, eps, t, **kwargs):
     try:
         kwargs['dim'] or kwargs['delta']
     except KeyError:
         raise KeyError('specify either dim or delta as keyword argument!')
 
-    # compute epsilon of (dataList) eps_type can be 'mean' or 'maxmin'
+    # compute epsilon of (data_list) eps_type can be 'mean' or 'maxmin'
     # dist is the L2 distances
     # eps_type='maxmin'#mean' #or maxmin
 
-    ker, epsilon = ker_calc(dataList, eps_type, eps)
-    v = np.sum(ker, axis=0)
+    kernel, epsilon = kernel_calc(data_list, eps_type, eps)
+    v = np.sum(kernel, axis=0)
 
     v = v ** alpha
     V_x_y = v * v[:, None]
-    a = ker / V_x_y
+    a = kernel / V_x_y
 
     # calc the row sums of a, save as v1
     # in the next for-loop, divide the rows of a by v1
@@ -87,51 +85,54 @@ def diffusionMapping(dataList, alpha, eps_type, eps, t,  **kwargs):
     m = a / sa[:, None]
 
     # compute eigenvectors of (a_ij)
-    vecs, eigs, _ = LA.svd(m, full_matrices=False)
-    # vecs = vecs / vecs[:, 0][:, None]
+    singular_vectors, singular_values, _ = LA.svd(m, full_matrices=False)
+    # singular_vectors = singular_vectors / singular_vectors[:, 0][:, None]
 
     # Compute dimension
     # (for better performance you may want to combine this with an iterative way of computing eigenvalues/vectors)
     if kwargs['dim']:
-        embeddim = kwargs['dim']
+        embed_dim = kwargs['dim']
     elif kwargs['delta']:
         i = 1
-        while eigs[i] ** t > kwargs['delta'] * eigs[1] ** t:
+        while singular_values[i] ** t > kwargs['delta'] * singular_values[1] ** t:
             i += 1
-        embeddim = i
+        embed_dim = i
 
     # Compute embedding coordinates
-    diffusion_coordinates = vecs[:, 1:embeddim + 1].T * (eigs[1:embeddim + 1][:, None] ** t)
+    diffusion_coordinates = singular_vectors[:, 1:embed_dim + 1].T * (singular_values[1:embed_dim + 1][:, None] ** t)
+    ranking = singular_vectors[:, :1] * (singular_values[0] ** t)
 
-    return vecs, eigs, diffusion_coordinates, dataList, epsilon
-
-
-#
-# data = list(np.genfromtxt("data.csv",delimiter=',')) #path to csv
+    return singular_vectors, singular_values, diffusion_coordinates, data_list, epsilon, ranking
 
 
-'''
-Plot the 2nd and 4th diffusion maps coordinates, they give nice results for this small example.
-Usually you should try to plot the 2nd, 3rd,4th.. and so diffusion maps coordinates.   
-'''
+def main():
 
-#
-# eps_type='maxmin'#mean' #or maxmin
-# alpha=1
-# vecs,eigs,coordinates, dataList = diffusionMapping(data,alpha,eps_type, 1, dim=5) # dim - number of diffusion coordinates computed
-# psi = np.asarray(coordinates.T)
-# x = psi[:, 2] #dm cords
-# y = psi[:, 3] #dm cords
-# fig, ax = plt.subplots()
-# labels = ['image {0}'.format(i + 1) for i in range(len(x))]
-# plt.figure(); plt.scatter(vecs[:,2],vecs[:,4])
-# for label, xpt, ypt in zip(labels, x, y):
-#     plt.annotate(
-#             "",
-#             xy=(xpt, ypt), xytext=(-20, 20),
-#             textcoords='offset points', ha='right', va='bottom',
-#             bbox=dict(boxstyle='round,pad=0.5', fc='white', alpha=0.5),
-#             )
-# ax.plot(x, y, 'bo')
-# plt.show()
-#
+    # eps_type ='maxmin' # mean or maxmin
+    # alpha = 1
+    # vecs,eigs,coordinates, dataList = diffusion_mapping(data,alpha,eps_type, 1, dim=5) # dim - number of diffusion coordinates computed
+    # psi = np.asarray(coordinates.T)
+    # x = psi[:, 2] #dm cords
+    # y = psi[:, 3] #dm cords
+    # fig, ax = plt.subplots()
+    # labels = ['image {0}'.format(i + 1) for i in range(len(x))]
+    # plt.figure(); plt.scatter(vecs[:,2],vecs[:,4])
+    # for label, xpt, ypt in zip(labels, x, y):
+    #     plt.annotate(
+    #             "",
+    #             xy=(xpt, ypt), xytext=(-20, 20),
+    #             textcoords='offset points', ha='right', va='bottom',
+    #             bbox=dict(boxstyle='round,pad=0.5', fc='white', alpha=0.5),
+    #             )
+    # ax.plot(x, y, 'bo')
+    # plt.show()
+
+    df_glass = pd.read_csv('data/glass.csv')
+
+    eps_type = 'maxmin'  # mean' #or maxmin
+    alpha = 1
+    singular_vectors, singular_values, diffusion_coordinates, data_list, epsilon, ranking = diffusion_mapping(df_glass, alpha, eps_type, 8, 1, dim=2)
+    pass
+
+
+if __name__ == '__main__':
+    main()
