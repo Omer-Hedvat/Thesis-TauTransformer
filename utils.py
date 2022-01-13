@@ -1,8 +1,3 @@
-import numpy as np
-import pandas as pd
-from sklearn.preprocessing import MinMaxScaler
-
-
 def min_max_scaler(df1, features, df2=None, return_as_df=True):
     """
     activates min_max_scaler over a df and returns the normalized DataFrame
@@ -12,6 +7,9 @@ def min_max_scaler(df1, features, df2=None, return_as_df=True):
     :param return_as_df: a boolean flag which determines if we want Numpy array or Pandas DataFrame
     :return: normalized dataframe/s (features only)
     """
+    import pandas as pd
+    from sklearn.preprocessing import MinMaxScaler
+
     scaler = MinMaxScaler()
     df1_norm = scaler.fit_transform(df1[features])
     if return_as_df:
@@ -34,12 +32,16 @@ def flatten(t):
 
 
 def jm_distance(p, q):
+    import numpy as np
+
     b = bhattacharyya_distance(p, q)
     jm = 2 * (1 - np.exp(-b))
     return jm
 
 
 def bhattacharyya_distance(p, q):
+    import numpy as np
+
     mean_p, mean_q = p.mean(), q.mean()
     std_p = p.std() if p.std() != 0 else 0.00000000001
     std_q = q.std() if q.std() != 0 else 0.00000000001
