@@ -7,7 +7,7 @@ import logging
 from utils.distances import norm_by_dist_type, calculate_distance, wasserstein_dist, bhattacharyya_dist, hellinger_dist, jm_dist
 from utils.general import flatten, setup_logger, calc_mean_std
 from utils.machine_learning import min_max_scaler
-
+from datetime import datetime
 from math import exp, sqrt, log
 import numpy as np
 import pandas as pd
@@ -186,9 +186,9 @@ def calc_k(features, prc):
 
 def main():
     #Configs
-    dataset_name = 'WinnipegDataset'
+    dataset_name = 'glass'
     dataset_dir = f'data/{dataset_name}.csv'
-    setup_logger('results/logger_config.json', os.path.join(dataset_dir, 'log.txt'))
+    setup_logger('config_files/logger_config.json', os.path.join('results', f'{dataset_name}_log_{datetime.now().strftime("%d-%m-%Y")}.txt'))
     logger.info(f'{dataset_dir=}')
     data = pd.read_csv(dataset_dir)
     features = data.columns.drop('label')
