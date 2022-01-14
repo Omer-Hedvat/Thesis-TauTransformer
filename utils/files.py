@@ -2,6 +2,8 @@ import logging
 import traceback
 
 logger = logging.getLogger(__name__)
+
+
 def create_work_dir(path, append_timestamp=False, on_exists='ask'):
     """
     Creates work directory in 'path'. If it already exists , checks 'on_exist' argument:
@@ -31,7 +33,7 @@ def create_work_dir(path, append_timestamp=False, on_exists='ask'):
         ts = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         resolved_path = f"{resolved_path}_{ts}"
 
-    os.makedirs(resolved_path,exist_ok=True)
+    os.makedirs(resolved_path, exist_ok=True)
 
     if on_exists == 'ignore':
         print(f"work_dir {resolved_path} already exists. Ignoring.")
@@ -186,13 +188,13 @@ def jsonify(data, fix_non_string_dict_keys=False, max_float_decimals=4):
 def update_json_file(filename, keys, value):
     """
     Through this function we create/update the results.json file in the right place for each metric
-    :param filename: Name of the JSON file. If doesn't exist, it will be created.
+    :param filename: Name of the JSON file. If it doesn't exist, it will be created.
     :param keys: Array of keys in the dictionary - path to where to add the value.
     :param value: The value to add. Can be any type.
     :return: None.
     """
     import os
-    from algo_common.general import update_dict
+    from utils.general import update_dict
 
     tree = load_json(filename) if os.path.exists(filename) else {}
     update_dict(tree, keys, value)

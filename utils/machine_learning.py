@@ -20,4 +20,3 @@ def min_max_scaler(df1, features, df2=None, return_as_df=True):
             df2_norm = pd.DataFrame(df2_norm, columns=features)
         return df1_norm, df2_norm
     return df1_norm
-
