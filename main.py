@@ -185,7 +185,9 @@ def calc_k(features, prc):
 
 
 def main():
-    dataset_dir = 'data/glass.csv'
+    #Configs
+    dataset_dir = 'data/WinnipegDataset.csv'
+    print(f'{dataset_dir=}')
     data = pd.read_csv(dataset_dir)
     features = data.columns.drop('label')
     label_column = 'label'
