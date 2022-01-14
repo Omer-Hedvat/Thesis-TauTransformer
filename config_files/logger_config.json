@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "disable_existing_loggers": false,
+  "formatters": {
+    "f": {
+      "format": "%(asctime)s %(levelname)s: (%(module)s/%(lineno)d) %(message)s",
+      "datefmt": "%Y-%m-%d %H:%M:%S"
+    }
+  },
+  "handlers": {
+    "default_file_handler": {"class": "logging.FileHandler", "formatter": "f"},
+    "stream_handler": {"class": "logging.StreamHandler", "formatter": "f"}
+  },
+  "loggers": {},
+  "root": {"handlers": ["default_file_handler", "stream_handler"], "level": "INFO"}
+}
