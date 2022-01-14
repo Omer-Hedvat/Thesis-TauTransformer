@@ -27,6 +27,14 @@ from sklearn.decomposition import PCA
 logger = logging.getLogger(__name__)
 
 
+def return_farest_features_from_center(coordinates, k):
+    dist = []
+    for c in coordinates.T:
+        dist.append(sqrt((c[0] ** 2) + (c[1] ** 2)))
+    ranking_idx = np.argsort(dist)
+    return ranking_idx[-k:]
+
+
 def execute_distance_func(df, function_name, feature, label1, label2):
     """
     Executes various distance functions by 'function_name' argument.
@@ -255,6 +263,10 @@ def main():
         k_features = k_medoids_features(coordinates, k)
         logger.info(f'Best features by KMediods are: {k_features}')
         predict(X_train.iloc[:, k_features], X_test.iloc[:, k_features], y_train, y_test)
+
+        best_features = return_farest_features_from_center(coordinates, k)
+        print(f'best features by farest coordinate from (0,0) are: {ranking_idx}')
+        predict(X_train.iloc[:, best_features], X_test.iloc[:, best_features], y_train, y_test, f)
 
 
 if __name__ == '__main__':
