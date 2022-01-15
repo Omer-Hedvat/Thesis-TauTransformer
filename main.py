@@ -194,13 +194,13 @@ def calc_k(features, prc):
 
 def main():
     #Configs
-    dataset_name = 'glass'
+    dataset_name = 'WinnipegDataset'
     dataset_dir = f'data/{dataset_name}.csv'
     setup_logger('config_files/logger_config.json', os.path.join('results', f'{dataset_name}_log_{datetime.now().strftime("%d-%m-%Y")}.txt'))
     logger.info(f'{dataset_dir=}')
     data = pd.read_csv(dataset_dir)
-    features = data.columns.drop('label')
     label_column = 'label'
+    features = data.columns.drop(label_column)
     features_percentage = 0.5
     k = calc_k(features, features_percentage)
 
