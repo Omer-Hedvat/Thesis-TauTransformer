@@ -194,7 +194,7 @@ def calc_k(features, prc):
 
 def main():
     #Configs
-    dataset_name = 'WinnipegDataset'
+    dataset_name = 'glass'
     dataset_dir = f'data/{dataset_name}.csv'
     setup_logger('config_files/logger_config.json', os.path.join('results', f'{dataset_name}_log_{datetime.now().strftime("%d-%m-%Y")}.txt'))
     logger.info(f'{dataset_dir=}')
@@ -266,7 +266,7 @@ def main():
 
         best_features = return_farest_features_from_center(coordinates, k)
         print(f'best features by farest coordinate from (0,0) are: {ranking_idx}')
-        predict(X_train.iloc[:, best_features], X_test.iloc[:, best_features], y_train, y_test, f)
+        predict(X_train.iloc[:, best_features], X_test.iloc[:, best_features], y_train, y_test)
 
 
 if __name__ == '__main__':
