@@ -194,7 +194,7 @@ def calc_k(features, prc):
 
 def main():
     #Configs
-    dataset_name = 'WinnipegDataset'
+    dataset_name = 'spambase'
     dataset_dir = f'data/{dataset_name}.csv'
     setup_logger('config_files/logger_config.json', os.path.join('results', f'{dataset_name}_log_{datetime.now().strftime("%d-%m-%Y")}.txt'))
     logger.info(f'{dataset_dir=}')
