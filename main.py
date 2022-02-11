@@ -22,7 +22,6 @@ from ref.Shir import utils as shir_utils
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.model_selection import train_test_split, cross_val_score, GroupKFold, KFold, StratifiedKFold
-from sklearn.decomposition import PCA
 
 logger = logging.getLogger(__name__)
 
@@ -149,23 +148,24 @@ def k_medoids_features(coordinates, k):
     return r_features
 
 
-def predict(X_tra, X_tst, y_train, y_test):
+def predict(X_train, y_train, X_test=None, y_test=None):
     kf = StratifiedKFold(n_splits=5, shuffle=True)
     clf = RandomForestClassifier(random_state=1)
     multi_target_forest = OneVsRestClassifier(clf, n_jobs=-1)
     train_acc = []
 
-    for train_index, test_index in kf.split(X_tra, y_train):
-        model = multi_target_forest.fit(X_tra.iloc[train_index], y_train.iloc[train_index])
-        train_preds = model.predict(X_tra.iloc[test_index])
+    for train_index, test_index in kf.split(X_train, y_train):
+        model = multi_target_forest.fit(X_train.iloc[train_index], y_train.iloc[train_index])
+        train_preds = model.predict(X_train.iloc[test_index])
 
         train_acc.append(metrics.accuracy_score(y_train.iloc[test_index], train_preds))
-
-    model = multi_target_forest.fit(X_tra, y_train)
-    preds = model.predict(X_tst)
-    logger.info(metrics.classification_report(y_test, preds, digits=3))
+    if X_test is not None and y_test is not None:
+        model = multi_target_forest.fit(X_train, y_train)
+        preds = model.predict(X_test)
+        logger.info(metrics.classification_report(y_test, preds, digits=3))
 
     train_avg_score = sum(train_acc) / len(train_acc)
+    logger.info(f"Cross validation accuracies = {train_acc}")
     logger.info(f"Cross validation average accuracy = {train_avg_score}")
     return train_acc
 
@@ -193,22 +193,33 @@ def calc_k(features, prc):
 
 
 def main():
-    #Configs
-    dataset_name = 'spambase'
-    dataset_dir = f'data/{dataset_name}.csv'
-    setup_logger('config_files/logger_config.json', os.path.join('results', f'{dataset_name}_log_{datetime.now().strftime("%d-%m-%Y")}.txt'))
+    config = {
+        'dataset_name': 'glass',
+        'label_column': 'label',
+        'features_percentage': 0.5,
+        'dist_functions': ['wasserstein_dist', 'hellinger_dist', 'jm_dist'],
+        'nrows': 10000,
+        'alpha': 'maxmin',
+        'eps_type': 1
+    }
+
+    dataset_dir = f"data/{config['dataset_name']}.csv"
+    setup_logger("config_files/logger_config.json", os.path.join('results', f"{config['dataset_name']}_log_{datetime.now().strftime('%d-%m-%Y')}.txt"))
     logger.info(f'{dataset_dir=}')
-    data = pd.read_csv(dataset_dir)
-    label_column = 'label'
-    features = data.columns.drop(label_column)
-    features_percentage = 0.5
-    k = calc_k(features, features_percentage)
+    data = pd.read_csv(dataset_dir, nrows=config['nrows'])
+
+    features = data.columns.drop(config['label_column'])
+
+    k = calc_k(features, config['features_percentage'])
+
+    logger.info(f"The data shape is {data.shape}")
+    logger.info(f"Label distributes:\n{data.label.value_counts().sort_index()}")
 
     logger.info('*' * 100)
     logger.info(f"{'*' * 37} Using all features prediction {'*' * 37}")
     logger.info('*' * 100)
-    X_train, X_test, y_train, y_test = train_test_split(data[features], data[label_column], test_size=0.33, random_state=42)
-    predict(X_train, X_test, y_train, y_test)
+    X, y = data[features].copy(), data[config['label_column']].copy()
+    predict(X, y)
 
     logger.info(f"Running over {dataset_dir}, using {k} features out of {len(features)}")
 
@@ -217,56 +228,38 @@ def main():
     logger.info('*' * 100)
     sampled_data = data[features].sample(n=k, axis='columns')
     new_features = sampled_data.columns
-    sampled_data[label_column] = data[label_column]
-    X_train, X_test, y_train, y_test = train_test_split(sampled_data[new_features], sampled_data[label_column], test_size=0.33, random_state=42)
-    predict(X_train, X_test, y_train, y_test)
+    sampled_data[config['label_column']] = data[config['label_column']]
+    X, y = sampled_data[new_features].copy(), sampled_data[config['label_column']].copy()
+    predict(X, y)
 
-    logger.info('*' * 100)
-    logger.info(f"{'*' * 40} Using best {k} features by PCA prediction {'*' * 40}")
-    logger.info('*' * 100)
-    X_train, X_test, y_train, y_test = train_test_split(data[features], data[label_column], test_size=0.33, random_state=42)
-    # Norm
-    X_train_norm, X_test_norm = min_max_scaler(X_train, features, X_test, False)
-
-    # PCA
-    pca = PCA(n_components=k)
-    pca.fit(X_train_norm)
-    X_train_pca = pca.transform(X_train_norm)
-    X_test_pca = pca.transform(X_test_norm)
-    y_train_arr = y_train.to_numpy()
-    y_test_arr = y_test.to_numpy()
-    predict_np(X_train_pca, X_test_pca, y_train_arr, y_test_arr)
-
-    for dist in ['wasserstein_dist', 'hellinger_dist', 'jm_dist']:
+    for dist in config['dist_functions']:
         logger.info('*' * 100)
         logger.info(f"{'*' * 40} {dist} {'*' * 40}")
         logger.info('*' * 100)
 
-        X_train, X_test, y_train, y_test = train_test_split(data[features], data[label_column], test_size=0.33, random_state=42)
+        X, y = data[features].copy(), data[config['label_column']].copy()
         # Norm
-        X_train_norm, X_test_norm = min_max_scaler(X_train, features, X_test)
+        X_norm = min_max_scaler(X, features)
 
-        df_dists, dist_dict = calc_dist(dist, X_train_norm, y_train)
-        eps_type = 'maxmin'  # mean' #or maxmin
-        alpha = 1
-        vec, egs, coordinates, dataList, epsilon, ranking = (diffusion_mapping(df_dists, alpha, eps_type, 8, 1, dim=2))
+        df_dists, dist_dict = calc_dist(dist, X_norm, y)
+        vec, egs, coordinates, dataList, epsilon, ranking = (diffusion_mapping(df_dists, config['alpha'], config['eps_type'], 8, 1, dim=2))
 
         flat_ranking = [item for sublist in ranking for item in sublist]
         ranking_idx = np.argsort(flat_ranking)
         logger.info(f'best features by {dist} are: {ranking_idx}')
-        predict(X_train.iloc[:, ranking_idx[-k:]], X_test.iloc[:, ranking_idx[-k:]], y_train, y_test)
+        predict(X.iloc[:, ranking_idx[-k:]], y)
 
         best_features, labels, features_rank = return_best_features_by_kmeans(coordinates, k)
         logger.info(f'Best features by KMeans are: {best_features}')
-        predict(X_train.iloc[:, best_features], X_test.iloc[:, best_features], y_train, y_test)
+        predict(X.iloc[:, best_features], y)
 
         k_features = k_medoids_features(coordinates, k)
         logger.info(f'Best features by KMediods are: {k_features}')
-        predict(X_train.iloc[:, k_features], X_test.iloc[:, k_features], y_train, y_test)
+        predict(X.iloc[:, k_features], y)
 
         best_features = return_farest_features_from_center(coordinates, k)
         print(f'best features by farest coordinate from (0,0) are: {ranking_idx}')
-        predict(X_train.iloc[:, best_features], X_test.iloc[:, best_features], y_train, y_test)
+        predict(X.iloc[:, best_features], y)
 
 
 if __name__ == '__main__':
