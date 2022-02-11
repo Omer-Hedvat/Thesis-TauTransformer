@@ -166,7 +166,7 @@ def predict(X_train, y_train, X_test=None, y_test=None):
 
     train_avg_score = sum(train_acc) / len(train_acc)
     logger.info(f"Cross validation accuracies = {train_acc}")
-    logger.info(f"Cross validation average accuracy = {train_avg_score}")
+    logger.info(f"Cross validation average accuracy = {train_avg_score}\n")
     return train_acc
 
 
@@ -199,8 +199,8 @@ def main():
         'features_percentage': 0.5,
         'dist_functions': ['wasserstein_dist', 'hellinger_dist', 'jm_dist'],
         'nrows': 10000,
-        'alpha': 'maxmin',
-        'eps_type': 1
+        'alpha': 1,
+        'eps_type': 'maxmin'
     }
 
     dataset_dir = f"data/{config['dataset_name']}.csv"
@@ -212,8 +212,7 @@ def main():
 
     k = calc_k(features, config['features_percentage'])
 
-    logger.info(f"The data shape is {data.shape}")
-    logger.info(f"Label distributes:\n{data.label.value_counts().sort_index()}")
+    logger.info(f"DATA STATS:\ndata shape of {data.shape}\nLabel distributes:\n{data.label.value_counts().sort_index()}\n")
 
     logger.info('*' * 100)
     logger.info(f"{'*' * 37} Using all features prediction {'*' * 37}")
@@ -258,7 +257,7 @@ def main():
         predict(X.iloc[:, k_features], y)
 
         best_features = return_farest_features_from_center(coordinates, k)
-        print(f'best features by farest coordinate from (0,0) are: {ranking_idx}')
+        logger.info(f'best features by farest coordinate from (0,0) are: {ranking_idx}')
         predict(X.iloc[:, best_features], y)
 
 
