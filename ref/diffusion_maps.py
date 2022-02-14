@@ -38,21 +38,21 @@ def calc_epsilon(data_list, eps_type, epsilon_factor=4):
         # option #1 - epsilon= max min(distance)
         idist = distance_np + np.identity(len(distance_np))
         eps_maxmin = np.max(np.min(idist, axis=0))
-        epsilon = eps_maxmin * epsilon_factor
+        eps = eps_maxmin * epsilon_factor
 
     elif eps_type == 'mean':
         # option #2 - epsilon= mean(distance)
         eps_mean = np.mean(distance_np)
-        epsilon = eps_mean * epsilon_factor
+        eps = eps_mean * epsilon_factor
 
     else:
         raise KeyError('eps_type should be either maxmin or mean')
 
-    return distance_np, epsilon
+    return distance_np, eps
 
 
-def kernel_calc(datalist, eps_type, eps):
-    distance_np, eps = calc_epsilon(datalist, eps_type, eps)
+def kernel_calc(datalist, eps_type, epsilon_factor):
+    distance_np, eps = calc_epsilon(datalist, eps_type, epsilon_factor)
     kernel = np.exp(-(distance_np ** 2) / (2 * eps))
     return kernel, eps
 
@@ -62,47 +62,45 @@ Construct the NXN Gaussian kernel, normalize it and compute eigenvalues and eige
 '''
 
 
-def diffusion_mapping(data_list, alpha, eps_type, eps, t, **kwargs):
-    try:
-        kwargs['dim'] or kwargs['delta']
-    except KeyError:
-        raise KeyError('specify either dim or delta as keyword argument!')
+def diffusion_mapping(data_list, alpha, eps_type, epsilon_factor, **kwargs):
+    """
+
+    :param data_list:
+    :param alpha:
+    :param eps_type:
+    :param epsilon_factor:
+    :param t:
+    :param kwargs:
+    :return:
+    """
+    assert 'dim' in kwargs.keys()
 
     # compute epsilon of (data_list) eps_type can be 'mean' or 'maxmin'
     # dist is the L2 distances
     # eps_type='maxmin'#mean' #or maxmin
 
-    kernel, epsilon = kernel_calc(data_list, eps_type, eps)
+    kernel, epsilon = kernel_calc(data_list, eps_type, epsilon_factor)
     v = np.sum(kernel, axis=0)
 
+    # 1st normalization - treats uneven density
     v = v ** alpha
     V_x_y = v * v[:, None]
     a = kernel / V_x_y
 
     # calc the row sums of a, save as v1
     # in the next for-loop, divide the rows of a by v1
+    # 2nd normalizaton - sum of every row equals to 1
     sa = np.sum(a, axis=0)
     m = a / sa[:, None]
 
     # compute eigenvectors of (a_ij)
     singular_vectors, singular_values, _ = LA.svd(m, full_matrices=False)
-    # singular_vectors = singular_vectors / singular_vectors[:, 0][:, None]
-
-    # Compute dimension
-    # (for better performance you may want to combine this with an iterative way of computing eigenvalues/vectors)
-    if kwargs['dim']:
-        embed_dim = kwargs['dim']
-    elif kwargs['delta']:
-        i = 1
-        while singular_values[i] ** t > kwargs['delta'] * singular_values[1] ** t:
-            i += 1
-        embed_dim = i
 
     # Compute embedding coordinates
-    diffusion_coordinates = singular_vectors[:, 1:embed_dim + 1].T * (singular_values[1:embed_dim + 1][:, None] ** t)
-    ranking = singular_vectors[:, :1] * (singular_values[0] ** t)
+    diffusion_coordinates = singular_vectors[:, 1:kwargs['dim'] + 1].T * (singular_values[1:kwargs['dim'] + 1][:, None])
+    ranking = singular_vectors[:, :1]
 
-    return singular_vectors, singular_values, diffusion_coordinates, data_list, epsilon, ranking
+    return diffusion_coordinates, ranking
 
 
 def main():

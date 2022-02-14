@@ -200,7 +200,8 @@ def main():
         'dist_functions': ['wasserstein_dist', 'hellinger_dist', 'jm_dist'],
         'nrows': 10000,
         'alpha': 1,
-        'eps_type': 'maxmin'
+        'eps_type': 'maxmin',
+        'eps_factor': 25
     }
 
     dataset_dir = f"data/{config['dataset_name']}.csv"
@@ -241,7 +242,7 @@ def main():
         X_norm = min_max_scaler(X, features)
 
         df_dists, dist_dict = calc_dist(dist, X_norm, y)
-        vec, egs, coordinates, dataList, epsilon, ranking = (diffusion_mapping(df_dists, config['alpha'], config['eps_type'], 8, 1, dim=2))
+        coordinates, ranking = (diffusion_mapping(df_dists, config['alpha'], config['eps_type'], config['eps_factor'], dim=2))
 
         flat_ranking = [item for sublist in ranking for item in sublist]
         ranking_idx = np.argsort(flat_ranking)
