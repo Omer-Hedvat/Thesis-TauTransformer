@@ -12,6 +12,8 @@ from math import exp, sqrt, log
 import numpy as np
 import pandas as pd
 from sklearn import preprocessing, metrics
+from skfeature.function.similarity_based import fisher_score
+from ReliefF import ReliefF
 
 from dictances import jensen_shannon
 from pydiffmap import diffusion_map as dm
@@ -206,7 +208,7 @@ def main():
 
     dataset_dir = f"data/{config['dataset_name']}.csv"
     setup_logger("config_files/logger_config.json", os.path.join('results', f"{config['dataset_name']}_log_{datetime.now().strftime('%d-%m-%Y')}.txt"))
-    logger.info(f'{dataset_dir=}')
+    logger.info(f'{dataset_dir}')
     data = pd.read_csv(dataset_dir, nrows=config['nrows'])
 
     features = data.columns.drop(config['label_column'])
@@ -222,6 +224,25 @@ def main():
     predict(X, y)
 
     logger.info(f"Running over {dataset_dir}, using {k} features out of {len(features)}")
+
+    logger.info('*' * 100)
+    logger.info(f"{'*' * 40} Using Fisher selection {k} features prediction {'*' * 40}")
+    logger.info('*' * 100)
+    X, y = data[features].copy(), data[config['label_column']].copy()
+    fisher_ranks = fisher_score.fisher_score(X.to_numpy(), y.to_numpy())
+    predict(X.iloc[:, fisher_ranks[:k]], y)
+
+    logger.info('*' * 100)
+    logger.info(f"{'*' * 40} Using ReliefF selection {k} features prediction {'*' * 40}")
+    logger.info('*' * 100)
+    X, y = data[features].copy(), data[config['label_column']].copy()
+    fs = ReliefF(n_neighbors=1, n_features_to_keep=k)
+    X_ReliefF = fs.fit_transform(X.to_numpy(), y.to_numpy())
+    row, col = X_ReliefF.shape
+    new_x = pd.DataFrame(data=X_ReliefF,
+          index=np.array(range(1, row+1)),
+          columns=np.array(range(1, col+1)))
+    predict(new_x, y)
 
     logger.info('*' * 100)
     logger.info(f"{'*' * 40} Using Random {k} features prediction {'*' * 40}")
