@@ -40,12 +40,12 @@ def execute_distance_func(df, function_name, feature, label1, label2):
     :param label2: value of label # 2
     :return: distance value between the vectors
     """
-    assert function_name in ['wasserstein_dist', 'bhattacharyya_dist', 'jm_dist', 'hellinger_dist']
+    assert function_name in ['wasserstein', 'bhattacharyya', 'jm', 'hellinger']
     return {
-        'wasserstein_dist': lambda: wasserstein_dist(df, feature, label1, label2),
-        'bhattacharyya_dist': lambda: bhattacharyya_dist(df, feature, label1, label2),
-        'hellinger_dist': lambda: hellinger_dist(df, feature, label1, label2),
-        'jm_dist': lambda: jm_dist(df, feature, label1, label2)
+        'wasserstein': lambda: wasserstein_dist(df, feature, label1, label2),
+        'bhattacharyya': lambda: bhattacharyya_dist(df, feature, label1, label2),
+        'hellinger': lambda: hellinger_dist(df, feature, label1, label2),
+        'jm': lambda: jm_dist(df, feature, label1, label2)
     }[function_name]()
 
 
@@ -109,6 +109,18 @@ def k_medoids_features(coordinates, k):
     return r_features
 
 
+def store_results(dataset, features_prc, metric, acc, workdir):
+    results_df = pd.read_csv('results/all_datasets_results.csv')
+    if ((results_df.dataset == dataset) & (results_df.features_prc == features_prc)).any():
+        results_df.loc[(results_df.dataset == dataset) & (results_df.features_prc == features_prc), metric] = sum(acc) / len(acc)
+    else:
+        today_date = datetime.now().strftime('%d-%m-%Y')
+        new_df = pd.DataFrame(columns=results_df.columns)
+        new_df.loc[len(new_df), ['date', 'dataset', 'features_prc', metric]] = [today_date, dataset, features_prc, (sum(acc) / len(acc))]
+        results_df = pd.concat([results_df, new_df]).sort_values(by=['dataset', 'features_prc'])
+    results_df.to_csv('results/all_datasets_results.csv', index=False)
+
+
 def predict(X_train, y_train, X_test=None, y_test=None):
     kf = StratifiedKFold(n_splits=5, shuffle=True)
     clf = RandomForestClassifier(random_state=1)
@@ -158,15 +170,18 @@ def main():
         'dataset_name': 'glass',
         'label_column': 'label',
         'features_percentage': 0.5,
-        'dist_functions': ['wasserstein_dist', 'hellinger_dist', 'jm_dist'],
+        'dist_functions': ['wasserstein', 'hellinger', 'jm'],
         'nrows': 10000,
         'alpha': 1,
         'eps_type': 'maxmin',
         'eps_factor': 25
     }
 
+    workdir = os.path.join(f'results', config['dataset_name'])
+    create_work_dir(workdir, on_exists='ignore')
+    setup_logger("config_files/logger_config.json", os.path.join(workdir, f"{config['dataset_name']}_log_{datetime.now().strftime('%d-%m-%Y')}.txt"))
     dataset_dir = f"data/{config['dataset_name']}.csv"
-    setup_logger("config_files/logger_config.json", os.path.join('results', f"{config['dataset_name']}_log_{datetime.now().strftime('%d-%m-%Y')}.txt"))
+
     logger.info(f'{dataset_dir=}')
     data = pd.read_csv(dataset_dir, nrows=config['nrows'])
 
@@ -180,7 +195,8 @@ def main():
     logger.info(f"{'*' * 37} Using all features prediction {'*' * 37}")
     logger.info('*' * 100)
     X, y = data[features].copy(), data[config['label_column']].copy()
-    predict(X, y)
+    all_features_acc = predict(X, y)
+    store_results(config['dataset_name'], config['features_percentage'], 'all_features', all_features_acc, workdir)
 
     logger.info(f"Running over {dataset_dir}, using {k} features out of {len(features)}")
 
@@ -191,7 +207,8 @@ def main():
     new_features = sampled_data.columns
     sampled_data[config['label_column']] = data[config['label_column']]
     X, y = sampled_data[new_features].copy(), sampled_data[config['label_column']].copy()
-    predict(X, y)
+    random_features_acc = predict(X, y)
+    store_results(config['dataset_name'], config['features_percentage'], 'random_features', random_features_acc, workdir)
 
     for dist in config['dist_functions']:
         logger.info('*' * 100)
@@ -208,19 +225,23 @@ def main():
         flat_ranking = [item for sublist in ranking for item in sublist]
         ranking_idx = np.argsort(flat_ranking)
         logger.info(f'best features by {dist} are: {ranking_idx}')
-        predict(X.iloc[:, ranking_idx[-k:]], y)
+        rank_acc = predict(X.iloc[:, ranking_idx[-k:]], y)
+        store_results(config['dataset_name'], config['features_percentage'], f'{dist}_rank', rank_acc, workdir)
 
         best_features, labels, features_rank = return_best_features_by_kmeans(coordinates, k)
         logger.info(f'Best features by KMeans are: {best_features}')
-        predict(X.iloc[:, best_features], y)
+        kmeans_acc = predict(X.iloc[:, best_features], y)
+        store_results(config['dataset_name'], config['features_percentage'], f'{dist}_kmeans', kmeans_acc, workdir)
 
         k_features = k_medoids_features(coordinates, k)
         logger.info(f'Best features by KMediods are: {k_features}')
-        predict(X.iloc[:, k_features], y)
+        kmediods_acc = predict(X.iloc[:, k_features], y)
+        store_results(config['dataset_name'], config['features_percentage'], f'{dist}_kmediods', kmediods_acc, workdir)
 
         best_features = return_farest_features_from_center(coordinates, k)
         logger.info(f'best features by farest coordinate from (0,0) are: {ranking_idx}')
-        predict(X.iloc[:, best_features], y)
+        distance_from_0_acc = predict(X.iloc[:, best_features], y)
+        store_results(config['dataset_name'], config['features_percentage'], f'{dist}_distance_from_0', distance_from_0_acc, workdir)
 
 
 if __name__ == '__main__':
