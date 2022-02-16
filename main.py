@@ -4,24 +4,19 @@ from sklearn.cluster import KMeans
 from sklearn_extra.cluster import KMedoids
 import matplotlib.pyplot as plt
 import logging
-from utils.distances import norm_by_dist_type, calculate_distance, wasserstein_dist, bhattacharyya_dist, hellinger_dist, jm_dist
-from utils.general import flatten, setup_logger, calc_mean_std
+from utils.distances import norm_by_dist_type, wasserstein_dist, bhattacharyya_dist, hellinger_dist, jm_dist
+from utils.general import flatten, setup_logger
 from utils.machine_learning import min_max_scaler
 from datetime import datetime
-from math import exp, sqrt, log
+from math import sqrt
 import numpy as np
 import pandas as pd
-from sklearn import preprocessing, metrics
+from sklearn import metrics
 
-from dictances import jensen_shannon
-from pydiffmap import diffusion_map as dm
-from pydiffmap.visualization import embedding_plot, data_plot
-
-from ref.diffusion_maps import diffusion_mapping
-from ref.Shir import utils as shir_utils
+from utils.diffusion_maps import diffusion_mapping
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.multiclass import OneVsRestClassifier
-from sklearn.model_selection import train_test_split, cross_val_score, GroupKFold, KFold, StratifiedKFold
+from sklearn.model_selection import StratifiedKFold
 
 logger = logging.getLogger(__name__)
 
