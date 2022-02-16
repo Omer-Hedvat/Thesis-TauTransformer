@@ -1,10 +1,9 @@
 import os
-import seaborn as sns
 from sklearn.cluster import KMeans
 from sklearn_extra.cluster import KMedoids
-import matplotlib.pyplot as plt
 import logging
-from utils.distances import norm_by_dist_type, wasserstein_dist, bhattacharyya_dist, hellinger_dist, jm_dist
+from utils.distances import wasserstein_dist, bhattacharyya_dist, hellinger_dist, jm_dist
+from utils.files import create_work_dir
 from utils.general import flatten, setup_logger
 from utils.machine_learning import min_max_scaler
 from datetime import datetime
@@ -81,39 +80,6 @@ def calc_dist(dist_func_name, X_tr, classes):
     df_dists = pd.DataFrame(two_d_mat)
     dist_dict = {f'feature_{idx + 1}': pd.DataFrame(mat) for idx, mat in enumerate(distances)}
     return df_dists, dist_dict
-
-
-def export_heatmaps(df, features, dist_type1, dist_type2, to_norm=False):
-    assert dist_type1 in (
-        'wasserstein_dist', 'bhattacharyya_dist', 'jensen_shannon_dist', 'hellinger_dist', 'jm_dist')
-    assert dist_type2 in (
-        'wasserstein_dist', 'bhattacharyya_dist', 'jensen_shannon_dist', 'hellinger_dist', 'jm_dist')
-    _, dist_dict1 = calc_dist(dist_type1, df, 'label')
-    _, dist_dict2 = calc_dist(dist_type2, df, 'label')
-
-    cols = [dist_type1, dist_type2]
-    rows = ['feature {}'.format(row) for row in features]
-    fig, axes = plt.subplots(nrows=len(features), ncols=2, figsize=(8, 25))
-
-    for i, feature in zip(range(len(rows)), features):
-        feature_mat1 = dist_dict1[feature]
-        feature_mat2 = dist_dict2[feature]
-        if to_norm:
-            feature_dist_mat1 = norm_by_dist_type(feature_mat1)
-            feature_dist_mat2 = norm_by_dist_type(feature_mat2)
-        else:
-            feature_dist_mat1 = feature_mat1
-            feature_dist_mat2 = feature_mat2
-        sns.heatmap(feature_dist_mat1, annot=True, linewidths=.5, ax=axes[i, 0])
-        sns.heatmap(feature_dist_mat2, annot=True, linewidths=.5, ax=axes[i, 1])
-
-    for axc, col in zip(axes[0], cols):
-        axc.set_title(col)
-
-    for axr, row in zip(axes[:, 0], rows):
-        axr.set_ylabel(row, rotation=90, size='large')
-
-    plt.show()
 
 
 def return_best_features_by_kmeans(coordinates, k):
