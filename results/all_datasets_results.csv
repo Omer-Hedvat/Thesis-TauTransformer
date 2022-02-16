@@ -1,4 +1,1 @@
-,,,,,,,hellinger,,,,JM,,,,Wesserstain,,,
-dataset,k,all features,random features,fisher,relief,correlation,rank,Kmeans,Kmediods,distnace from 0,rank,Kmeans,Kmediods,distnace from 0,rank,Kmeans,Kmediods,distnace from 0
-glass,,,,,,,,,,,,,,,,,,
-WinniePeg,,,,,,,,,,,,,,,,,,
+date,dataset,k,all_features,random_features,fisher,relief,correlation,hellinger_rank,hellinger_kmeans,hellinger_kmediods,hellinger_distnace_from_0,jm_rank,jm_kmeans,jm_kmediods,jm_distnace_from_0,wesserstain_rank,wesserstain_kmeans,wesserstain_kmediods,wesserstain_distnace_from_0
