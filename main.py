@@ -1,3 +1,4 @@
+import csv
 import os
 from sklearn.cluster import KMeans
 from sklearn_extra.cluster import KMedoids
@@ -7,6 +8,7 @@ from utils.files import create_work_dir
 from utils.general import flatten, setup_logger
 from utils.machine_learning import min_max_scaler
 from datetime import datetime
+from utils.timer import Timer
 from math import sqrt
 import numpy as np
 import pandas as pd
@@ -165,9 +167,24 @@ def calc_k(features, prc):
     return int(len(features) * prc)
 
 
+def fetch_data(filepath, nrows):
+    with open(filepath, "r", encoding="utf-8") as f, Timer() as timer:
+        reader = csv.reader(f, delimiter=",")
+        data = list(reader)
+        nlinesfile = len(data)
+    print(timer.to_string())
+
+    if nrows < nlinesfile:
+        lines2skip = np.random.choice(np.arange(1, nlinesfile + 1), (nlinesfile - nrows), replace=False)
+        data = pd.read_csv(filepath, skiprows=lines2skip)
+    else:
+        data = pd.read_csv(filepath)
+    return data
+
+
 def main():
     config = {
-        'dataset_name': 'glass',
+        'dataset_name': 'WinnipegDataset',
         'label_column': 'label',
         'features_percentage': 0.5,
         'dist_functions': ['wasserstein', 'hellinger', 'jm'],
@@ -183,7 +200,7 @@ def main():
     dataset_dir = f"data/{config['dataset_name']}.csv"
 
     logger.info(f'{dataset_dir=}')
-    data = pd.read_csv(dataset_dir, nrows=config['nrows'])
+    data = fetch_data(dataset_dir, config['nrows'])
 
     features = data.columns.drop(config['label_column'])
 
