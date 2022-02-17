@@ -1,23 +1,24 @@
 import csv
-import os
-from sklearn.cluster import KMeans
-from sklearn_extra.cluster import KMedoids
+from datetime import datetime
 import logging
+from math import sqrt
+import numpy as np
+import os
+import pandas as pd
+
+from sklearn import metrics
+from sklearn.cluster import KMeans
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.multiclass import OneVsRestClassifier
+from sklearn.model_selection import StratifiedKFold
+from sklearn_extra.cluster import KMedoids
+
+from utils.diffusion_maps import diffusion_mapping
 from utils.distances import wasserstein_dist, bhattacharyya_dist, hellinger_dist, jm_dist
 from utils.files import create_work_dir
 from utils.general import flatten, setup_logger
 from utils.machine_learning import min_max_scaler
-from datetime import datetime
 from utils.timer import Timer
-from math import sqrt
-import numpy as np
-import pandas as pd
-from sklearn import metrics
-
-from utils.diffusion_maps import diffusion_mapping
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.multiclass import OneVsRestClassifier
-from sklearn.model_selection import StratifiedKFold
 
 logger = logging.getLogger(__name__)
 
@@ -175,7 +176,7 @@ def fetch_data(filepath, nrows):
     print(timer.to_string())
 
     if nrows < nlinesfile:
-        lines2skip = np.random.choice(np.arange(1, nlinesfile + 1), (nlinesfile - nrows), replace=False)
+        lines2skip = np.random.seed(0), np.random.choice(np.arange(1, nlinesfile + 1), (nlinesfile - nrows), replace=False)
         data = pd.read_csv(filepath, skiprows=lines2skip)
     else:
         data = pd.read_csv(filepath)
