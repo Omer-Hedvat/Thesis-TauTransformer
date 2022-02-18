@@ -163,6 +163,7 @@ def predict(X_train, y_train, X_test=None, y_test=None):
 def calc_f1_score(f1_lists):
     return list(np.array(f1_lists).mean(axis=0))
 
+
 def calc_k(features, prc):
     return int(len(features) * prc)
 
@@ -171,7 +172,7 @@ def main():
     config = {
         'dataset_name': 'glass',
         'label_column': 'label',
-        'features_percentage': 0.5,
+        'features_percentage': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
         'dist_functions': ['wasserstein', 'hellinger', 'jm'],
         'nrows': 10000,
         'alpha': 1,
@@ -188,58 +189,62 @@ def main():
     data = read_from_csv(dataset_dir, config['nrows'])
     features = data.columns.drop(config['label_column'])
     classes = list(data[config['label_column']].unique())
-    k = calc_k(features, config['features_percentage'])
-    logger.info(f"DATA STATS:\ndata shape of {data.shape}\nLabel distributes:\n{data.label.value_counts().sort_index()}\n")
 
-    print_separation_dots('Using all features prediction')
-    X, y = data[features].copy(), data[config['label_column']].copy()
-    all_features_acc, all_features_f1 = predict(X, y)
-    all_features_f1_agg = calc_f1_score(all_features_f1)
-    store_results(config['dataset_name'], config['features_percentage'], 'all_features', all_features_acc, all_features_f1_agg, classes, workdir)
+    for feature_percentage in config['features_percentage']:
+        k = calc_k(features, feature_percentage)
+        if k < 1 or k == len(features):
+            continue
+        logger.info(f"DATA STATS:\ndata shape of {data.shape}\nLabel distributes:\n{data.label.value_counts().sort_index()}\n")
 
-    logger.info(f"Running over {dataset_dir}, using {k} features out of {len(features)}")
-    print_separation_dots(f'Using Random {k} features prediction')
-    sampled_data = data[features].sample(n=k, axis='columns')
-    new_features = sampled_data.columns
-    sampled_data[config['label_column']] = data[config['label_column']]
-    X, y = sampled_data[new_features].copy(), sampled_data[config['label_column']].copy()
-    random_features_acc, random_features_f1 = predict(X, y)
-    random_features_f1_agg = calc_f1_score(random_features_f1)
-    store_results(config['dataset_name'], config['features_percentage'], 'random_features', random_features_acc, random_features_f1_agg, classes, workdir)
-
-    for dist in config['dist_functions']:
-        print_separation_dots(f'Using Random {dist} features prediction')
-
+        print_separation_dots('Using all features prediction')
         X, y = data[features].copy(), data[config['label_column']].copy()
-        X_norm = min_max_scaler(X, features)
+        all_features_acc, all_features_f1 = predict(X, y)
+        all_features_f1_agg = calc_f1_score(all_features_f1)
+        store_results(config['dataset_name'], feature_percentage, 'all_features', all_features_acc, all_features_f1_agg, classes, workdir)
 
-        df_dists, dist_dict = calc_dist(dist, X_norm, y)
-        coordinates, ranking = (diffusion_mapping(df_dists, config['alpha'], config['eps_type'], config['eps_factor'], dim=2))
+        logger.info(f"Running over {dataset_dir}, using {k} features out of {len(features)}")
+        print_separation_dots(f'Using Random {k} features prediction')
+        sampled_data = data[features].sample(n=k, axis='columns')
+        new_features = sampled_data.columns
+        sampled_data[config['label_column']] = data[config['label_column']]
+        X, y = sampled_data[new_features].copy(), sampled_data[config['label_column']].copy()
+        random_features_acc, random_features_f1 = predict(X, y)
+        random_features_f1_agg = calc_f1_score(random_features_f1)
+        store_results(config['dataset_name'], feature_percentage, 'random_features', random_features_acc, random_features_f1_agg, classes, workdir)
 
-        flat_ranking = [item for sublist in ranking for item in sublist]
-        ranking_idx = np.argsort(flat_ranking)
-        logger.info(f'best features by {dist} are: {ranking_idx}')
-        rank_acc, rank_f1 = predict(X.iloc[:, ranking_idx[-k:]], y)
-        rank_f1_agg = calc_f1_score(rank_f1)
-        store_results(config['dataset_name'], config['features_percentage'], f'{dist}_rank', rank_acc, rank_f1_agg, classes, workdir)
+        for dist in config['dist_functions']:
+            print_separation_dots(f'Using Random {dist} features prediction')
 
-        best_features, labels, features_rank = return_best_features_by_kmeans(coordinates, k)
-        logger.info(f'Best features by KMeans are: {best_features}')
-        kmeans_acc, kmeans_f1 = predict(X.iloc[:, best_features], y)
-        kmeans_f1_agg = calc_f1_score(kmeans_f1)
-        store_results(config['dataset_name'], config['features_percentage'], f'{dist}_kmeans', kmeans_acc, kmeans_f1_agg, classes, workdir)
+            X, y = data[features].copy(), data[config['label_column']].copy()
+            X_norm = min_max_scaler(X, features)
 
-        k_features = k_medoids_features(coordinates, k)
-        logger.info(f'Best features by KMediods are: {k_features}')
-        kmediods_acc, kmediods_f1 = predict(X.iloc[:, k_features], y)
-        kmediods_f1_agg = calc_f1_score(kmediods_f1)
-        store_results(config['dataset_name'], config['features_percentage'], f'{dist}_kmediods', kmediods_acc, kmediods_f1_agg, classes, workdir)
+            df_dists, dist_dict = calc_dist(dist, X_norm, y)
+            coordinates, ranking = (diffusion_mapping(df_dists, config['alpha'], config['eps_type'], config['eps_factor'], dim=2))
 
-        best_features = return_farest_features_from_center(coordinates, k)
-        logger.info(f'best features by farest coordinate from (0,0) are: {ranking_idx}')
-        distance_from_0_acc, distance_from_0_f1 = predict(X.iloc[:, best_features], y)
-        distance_from_0_f1_agg = calc_f1_score(distance_from_0_f1)
-        store_results(config['dataset_name'], config['features_percentage'], f'{dist}_distance_from_0', distance_from_0_acc, distance_from_0_f1_agg, classes, workdir)
+            flat_ranking = [item for sublist in ranking for item in sublist]
+            ranking_idx = np.argsort(flat_ranking)
+            logger.info(f'best features by {dist} are: {ranking_idx}')
+            rank_acc, rank_f1 = predict(X.iloc[:, ranking_idx[-k:]], y)
+            rank_f1_agg = calc_f1_score(rank_f1)
+            store_results(config['dataset_name'], feature_percentage, f'{dist}_rank', rank_acc, rank_f1_agg, classes, workdir)
+
+            best_features, labels, features_rank = return_best_features_by_kmeans(coordinates, k)
+            logger.info(f'Best features by KMeans are: {best_features}')
+            kmeans_acc, kmeans_f1 = predict(X.iloc[:, best_features], y)
+            kmeans_f1_agg = calc_f1_score(kmeans_f1)
+            store_results(config['dataset_name'], feature_percentage, f'{dist}_kmeans', kmeans_acc, kmeans_f1_agg, classes, workdir)
+
+            k_features = k_medoids_features(coordinates, k)
+            logger.info(f'Best features by KMediods are: {k_features}')
+            kmediods_acc, kmediods_f1 = predict(X.iloc[:, k_features], y)
+            kmediods_f1_agg = calc_f1_score(kmediods_f1)
+            store_results(config['dataset_name'], feature_percentage, f'{dist}_kmediods', kmediods_acc, kmediods_f1_agg, classes, workdir)
+
+            best_features = return_farest_features_from_center(coordinates, k)
+            logger.info(f'best features by farest coordinate from (0,0) are: {ranking_idx}')
+            distance_from_0_acc, distance_from_0_f1 = predict(X.iloc[:, best_features], y)
+            distance_from_0_f1_agg = calc_f1_score(distance_from_0_f1)
+            store_results(config['dataset_name'], feature_percentage, f'{dist}_distance_from_0', distance_from_0_acc, distance_from_0_f1_agg, classes, workdir)
 
 
 if __name__ == '__main__':
