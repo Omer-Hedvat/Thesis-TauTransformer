@@ -2,6 +2,7 @@ import csv
 import logging
 import traceback
 
+import numpy as np
 import pandas as pd
 
 from utils.timer import Timer
