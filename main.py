@@ -110,7 +110,7 @@ def k_medoids_features(coordinates, k):
     return r_features
 
 
-def store_results(dataset, features_prc, metric, acc, workdir):
+def store_results(dataset, features_prc, metric, acc, f1, workdir):
     results_df = pd.read_csv('results/all_datasets_results.csv')
     if ((results_df.dataset == dataset) & (results_df.features_prc == features_prc)).any():
         results_df.loc[(results_df.dataset == dataset) & (results_df.features_prc == features_prc), metric] = sum(acc) / len(acc)
@@ -119,7 +119,7 @@ def store_results(dataset, features_prc, metric, acc, workdir):
         new_df = pd.DataFrame(columns=results_df.columns)
         new_df.loc[len(new_df), ['date', 'dataset', 'features_prc', metric]] = [today_date, dataset, features_prc, (sum(acc) / len(acc))]
         results_df = pd.concat([results_df, new_df]).sort_values(by=['dataset', 'features_prc'])
-    results_df.to_csv('results/all_datasets_results.csv', index=False)
+    # results_df.to_csv('results/all_datasets_results.csv', index=False)
 
 
 def predict(X_train, y_train, X_test=None, y_test=None):
@@ -127,12 +127,14 @@ def predict(X_train, y_train, X_test=None, y_test=None):
     clf = RandomForestClassifier(random_state=1)
     multi_target_forest = OneVsRestClassifier(clf, n_jobs=-1)
     train_acc = []
+    f1_scores_list = []
 
     for train_index, test_index in kf.split(X_train, y_train):
         model = multi_target_forest.fit(X_train.iloc[train_index], y_train.iloc[train_index])
         train_preds = model.predict(X_train.iloc[test_index])
 
         train_acc.append(metrics.accuracy_score(y_train.iloc[test_index], train_preds))
+        f1_scores_list.append(list(metrics.f1_score(y_train.iloc[test_index], train_preds, average=None)))
     if X_test is not None and y_test is not None:
         model = multi_target_forest.fit(X_train, y_train)
         preds = model.predict(X_test)
@@ -141,7 +143,7 @@ def predict(X_train, y_train, X_test=None, y_test=None):
     train_avg_score = sum(train_acc) / len(train_acc)
     logger.info(f"Cross validation accuracies = {train_acc}")
     logger.info(f"Cross validation average accuracy = {train_avg_score}\n")
-    return train_acc
+    return train_acc, f1_scores_list
 
 
 def calc_k(features, prc):
@@ -176,8 +178,8 @@ def main():
 
     print_separation_dots('Using all features prediction')
     X, y = data[features].copy(), data[config['label_column']].copy()
-    all_features_acc = predict(X, y)
-    store_results(config['dataset_name'], config['features_percentage'], 'all_features', all_features_acc, workdir)
+    all_features_acc, all_features_f1 = predict(X, y)
+    store_results(config['dataset_name'], config['features_percentage'], 'all_features', all_features_acc, all_features_f1, workdir)
 
     logger.info(f"Running over {dataset_dir}, using {k} features out of {len(features)}")
 
@@ -186,8 +188,8 @@ def main():
     new_features = sampled_data.columns
     sampled_data[config['label_column']] = data[config['label_column']]
     X, y = sampled_data[new_features].copy(), sampled_data[config['label_column']].copy()
-    random_features_acc = predict(X, y)
-    store_results(config['dataset_name'], config['features_percentage'], 'random_features', random_features_acc, workdir)
+    random_features_acc, random_features_f1 = predict(X, y)
+    store_results(config['dataset_name'], config['features_percentage'], 'random_features', random_features_acc, random_features_f1, workdir)
 
     for dist in config['dist_functions']:
         print_separation_dots(f'Using Random {dist} features prediction')
@@ -201,23 +203,23 @@ def main():
         flat_ranking = [item for sublist in ranking for item in sublist]
         ranking_idx = np.argsort(flat_ranking)
         logger.info(f'best features by {dist} are: {ranking_idx}')
-        rank_acc = predict(X.iloc[:, ranking_idx[-k:]], y)
-        store_results(config['dataset_name'], config['features_percentage'], f'{dist}_rank', rank_acc, workdir)
+        rank_acc, rank_f1 = predict(X.iloc[:, ranking_idx[-k:]], y)
+        store_results(config['dataset_name'], config['features_percentage'], f'{dist}_rank', rank_acc, rank_f1, workdir)
 
         best_features, labels, features_rank = return_best_features_by_kmeans(coordinates, k)
         logger.info(f'Best features by KMeans are: {best_features}')
-        kmeans_acc = predict(X.iloc[:, best_features], y)
-        store_results(config['dataset_name'], config['features_percentage'], f'{dist}_kmeans', kmeans_acc, workdir)
+        kmeans_acc, kmeans_f1 = predict(X.iloc[:, best_features], y)
+        store_results(config['dataset_name'], config['features_percentage'], f'{dist}_kmeans', kmeans_acc, kmeans_f1, workdir)
 
         k_features = k_medoids_features(coordinates, k)
         logger.info(f'Best features by KMediods are: {k_features}')
-        kmediods_acc = predict(X.iloc[:, k_features], y)
-        store_results(config['dataset_name'], config['features_percentage'], f'{dist}_kmediods', kmediods_acc, workdir)
+        kmediods_acc, kmediods_f1 = predict(X.iloc[:, k_features], y)
+        store_results(config['dataset_name'], config['features_percentage'], f'{dist}_kmediods', kmediods_acc, kmediods_f1, workdir)
 
         best_features = return_farest_features_from_center(coordinates, k)
         logger.info(f'best features by farest coordinate from (0,0) are: {ranking_idx}')
-        distance_from_0_acc = predict(X.iloc[:, best_features], y)
-        store_results(config['dataset_name'], config['features_percentage'], f'{dist}_distance_from_0', distance_from_0_acc, workdir)
+        distance_from_0_acc, distance_from_0_f1 = predict(X.iloc[:, best_features], y)
+        store_results(config['dataset_name'], config['features_percentage'], f'{dist}_distance_from_0', distance_from_0_acc, distance_from_0_f1, workdir)
 
 
 if __name__ == '__main__':
