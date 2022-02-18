@@ -1,4 +1,3 @@
-import csv
 from datetime import datetime
 import logging
 from math import sqrt
@@ -15,10 +14,9 @@ from sklearn_extra.cluster import KMedoids
 
 from utils.diffusion_maps import diffusion_mapping
 from utils.distances import wasserstein_dist, bhattacharyya_dist, hellinger_dist, jm_dist
-from utils.files import create_work_dir
+from utils.files import create_work_dir, read_from_csv
 from utils.general import flatten, setup_logger
 from utils.machine_learning import min_max_scaler
-from utils.timer import Timer
 
 logger = logging.getLogger(__name__)
 
@@ -168,21 +166,6 @@ def calc_k(features, prc):
     return int(len(features) * prc)
 
 
-def fetch_data(filepath, nrows):
-    with open(filepath, "r", encoding="utf-8") as f, Timer() as timer:
-        reader = csv.reader(f, delimiter=",")
-        data = list(reader)
-        nlinesfile = len(data)
-    print(timer.to_string())
-
-    if nrows < nlinesfile:
-        lines2skip = np.random.seed(0), np.random.choice(np.arange(1, nlinesfile + 1), (nlinesfile - nrows), replace=False)
-        data = pd.read_csv(filepath, skiprows=lines2skip)
-    else:
-        data = pd.read_csv(filepath)
-    return data
-
-
 def main():
     config = {
         'dataset_name': 'WinnipegDataset',
@@ -201,7 +184,7 @@ def main():
     dataset_dir = f"data/{config['dataset_name']}.csv"
 
     logger.info(f'{dataset_dir=}')
-    data = fetch_data(dataset_dir, config['nrows'])
+    data = read_from_csv(dataset_dir, config['nrows'])
 
     features = data.columns.drop(config['label_column'])
 
