@@ -1,5 +1,11 @@
+import csv
 import logging
 import traceback
+
+import numpy as np
+import pandas as pd
+
+from utils.timer import Timer
 
 logger = logging.getLogger(__name__)
 
@@ -199,3 +205,25 @@ def update_json_file(filename, keys, value):
     tree = load_json(filename) if os.path.exists(filename) else {}
     update_dict(tree, keys, value)
     save_json(tree, filename)
+
+
+def read_from_csv(filepath, nrows):
+    with open(filepath, "r", encoding="utf-8") as f, Timer() as timer:
+        reader = csv.reader(f, delimiter=",")
+        data = list(reader)
+        nlinesfile = len(data)
+    print(timer.to_string())
+
+    if nrows < nlinesfile:
+        lines2skip = np.random.seed(0), np.random.choice(np.arange(1, nlinesfile + 1), (nlinesfile - nrows), replace=False)
+        data = pd.read_csv(filepath, skiprows=lines2skip)
+    else:
+        data = pd.read_csv(filepath)
+    return data
+
+
+def print_separation_dots(message):
+    star_number = round((100 - len(message) - 2)/2)
+    logger.info('*' * 100)
+    logger.info(f"{'*' * star_number} {message} {'*' * star_number}")
+    logger.info('*' * 100)
