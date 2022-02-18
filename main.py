@@ -125,16 +125,18 @@ def store_results(dataset, features_prc, metric, acc, f1, classes, workdir):
     # Dataset's F1 Results File
     columns = ['features_prc', *[f'{metric}_{class_name}' for class_name in classes]]
     values = [features_prc, *f1]
+    data_dict = dict(zip(columns, values))
     f1_file = os.path.join(workdir, f'f1_scores.csv')
+    new_data_df = pd.DataFrame([data_dict])
     if not os.path.exists(f1_file):
-        data_dict = dict(zip(columns, values))
-        new_data_df = pd.DataFrame([data_dict])
         new_data_df.to_csv(f1_file, index=False)
     else:
         f1_results_df = pd.read_csv(f1_file)
-        f1_results_df.loc[f1_results_df.features_prc == features_prc, columns] = values
+        if (f1_results_df.features_prc == features_prc).any():
+            f1_results_df.loc[f1_results_df.features_prc == features_prc, columns] = values
+        else:
+            f1_results_df = pd.concat([f1_results_df, new_data_df]).sort_values(by=['features_prc'])
         f1_results_df.to_csv(f1_file, index=False)
-
 
 def predict(X_train, y_train, X_test=None, y_test=None):
     kf = StratifiedKFold(n_splits=5, shuffle=True)
