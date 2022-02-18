@@ -144,24 +144,6 @@ def predict(X_train, y_train, X_test=None, y_test=None):
     return train_acc
 
 
-def predict_np(X_tr, X_tst, y_train, y_test):
-    kf = StratifiedKFold(n_splits=5, shuffle=True)
-    clf = RandomForestClassifier(random_state=1)
-    multi_target_forest = OneVsRestClassifier(clf, n_jobs=-1)
-    train_acc = []
-
-    for train_index, test_index in kf.split(X_tr, y_train):
-        model = multi_target_forest.fit(X_tr[train_index], y_train[train_index])
-        train_preds = model.predict(X_tr[test_index])
-
-        train_acc.append(metrics.accuracy_score(y_train[test_index], train_preds))
-
-    model = multi_target_forest.fit(X_tr, y_train)
-    preds = model.predict(X_tst)
-    logger.info(metrics.classification_report(y_test, preds, digits=3))
-    return train_acc
-
-
 def calc_k(features, prc):
     return int(len(features) * prc)
 
