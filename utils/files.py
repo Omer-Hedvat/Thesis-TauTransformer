@@ -221,3 +221,9 @@ def read_from_csv(filepath, nrows):
         data = pd.read_csv(filepath)
     return data
 
+
+def print_separation_dots(message):
+    star_number = round((100 - len(message) - 2)/2)
+    logger.info('*' * 100)
+    logger.info(f"{'*' * star_number} {message} {'*' * star_number}")
+    logger.info('*' * 100)

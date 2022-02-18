@@ -14,7 +14,7 @@ from sklearn_extra.cluster import KMedoids
 
 from utils.diffusion_maps import diffusion_mapping
 from utils.distances import wasserstein_dist, bhattacharyya_dist, hellinger_dist, jm_dist
-from utils.files import create_work_dir, read_from_csv
+from utils.files import create_work_dir, read_from_csv, print_separation_dots
 from utils.general import flatten, setup_logger
 from utils.machine_learning import min_max_scaler
 
@@ -150,7 +150,7 @@ def calc_k(features, prc):
 
 def main():
     config = {
-        'dataset_name': 'WinnipegDataset',
+        'dataset_name': 'glass',
         'label_column': 'label',
         'features_percentage': 0.5,
         'dist_functions': ['wasserstein', 'hellinger', 'jm'],
@@ -174,18 +174,14 @@ def main():
 
     logger.info(f"DATA STATS:\ndata shape of {data.shape}\nLabel distributes:\n{data.label.value_counts().sort_index()}\n")
 
-    logger.info('*' * 100)
-    logger.info(f"{'*' * 37} Using all features prediction {'*' * 37}")
-    logger.info('*' * 100)
+    print_separation_dots('Using all features prediction')
     X, y = data[features].copy(), data[config['label_column']].copy()
     all_features_acc = predict(X, y)
     store_results(config['dataset_name'], config['features_percentage'], 'all_features', all_features_acc, workdir)
 
     logger.info(f"Running over {dataset_dir}, using {k} features out of {len(features)}")
 
-    logger.info('*' * 100)
-    logger.info(f"{'*' * 40} Using Random {k} features prediction {'*' * 40}")
-    logger.info('*' * 100)
+    print_separation_dots(f'Using Random {k} features prediction')
     sampled_data = data[features].sample(n=k, axis='columns')
     new_features = sampled_data.columns
     sampled_data[config['label_column']] = data[config['label_column']]
@@ -194,12 +190,9 @@ def main():
     store_results(config['dataset_name'], config['features_percentage'], 'random_features', random_features_acc, workdir)
 
     for dist in config['dist_functions']:
-        logger.info('*' * 100)
-        logger.info(f"{'*' * 40} {dist} {'*' * 40}")
-        logger.info('*' * 100)
+        print_separation_dots(f'Using Random {dist} features prediction')
 
         X, y = data[features].copy(), data[config['label_column']].copy()
-        # Norm
         X_norm = min_max_scaler(X, features)
 
         df_dists, dist_dict = calc_dist(dist, X_norm, y)
