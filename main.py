@@ -1,22 +1,29 @@
-from datetime import datetime
-import logging
-from math import sqrt
-import numpy as np
 import os
-import pandas as pd
-
-from sklearn import metrics
+import seaborn as sns
 from sklearn.cluster import KMeans
+from sklearn_extra.cluster import KMedoids
+import matplotlib.pyplot as plt
+import logging
+from utils.distances import norm_by_dist_type, calculate_distance, wasserstein_dist, bhattacharyya_dist, hellinger_dist, jm_dist
+from utils.general import flatten, setup_logger, calc_mean_std
+from utils.machine_learning import min_max_scaler
+from datetime import datetime
+from math import exp, sqrt, log
+import numpy as np
+import pandas as pd
+from sklearn import preprocessing, metrics
+from skfeature.function.similarity_based import fisher_score
+from ReliefF import ReliefF
+
+from dictances import jensen_shannon
+from pydiffmap import diffusion_map as dm
+from pydiffmap.visualization import embedding_plot, data_plot
+
+from ref.diffusion_maps import diffusion_mapping
+from ref.Shir import utils as shir_utils
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.multiclass import OneVsRestClassifier
-from sklearn.model_selection import StratifiedKFold
-from sklearn_extra.cluster import KMedoids
-
-from utils.diffusion_maps import diffusion_mapping
-from utils.distances import wasserstein_dist, bhattacharyya_dist, hellinger_dist, jm_dist
-from utils.files import create_work_dir, read_from_csv, print_separation_dots
-from utils.general import flatten, setup_logger
-from utils.machine_learning import min_max_scaler
+from sklearn.model_selection import train_test_split, cross_val_score, GroupKFold, KFold, StratifiedKFold
 
 logger = logging.getLogger(__name__)
 
@@ -41,12 +48,12 @@ def execute_distance_func(df, function_name, feature, label1, label2):
     :param label2: value of label # 2
     :return: distance value between the vectors
     """
-    assert function_name in ['wasserstein', 'bhattacharyya', 'jm', 'hellinger']
+    assert function_name in ['wasserstein_dist', 'bhattacharyya_dist', 'jm_dist', 'hellinger_dist']
     return {
-        'wasserstein': lambda: wasserstein_dist(df, feature, label1, label2),
-        'bhattacharyya': lambda: bhattacharyya_dist(df, feature, label1, label2),
-        'hellinger': lambda: hellinger_dist(df, feature, label1, label2),
-        'jm': lambda: jm_dist(df, feature, label1, label2)
+        'wasserstein_dist': lambda: wasserstein_dist(df, feature, label1, label2),
+        'bhattacharyya_dist': lambda: bhattacharyya_dist(df, feature, label1, label2),
+        'hellinger_dist': lambda: hellinger_dist(df, feature, label1, label2),
+        'jm_dist': lambda: jm_dist(df, feature, label1, label2)
     }[function_name]()
 
 
@@ -83,6 +90,39 @@ def calc_dist(dist_func_name, X_tr, classes):
     return df_dists, dist_dict
 
 
+def export_heatmaps(df, features, dist_type1, dist_type2, to_norm=False):
+    assert dist_type1 in (
+        'wasserstein_dist', 'bhattacharyya_dist', 'jensen_shannon_dist', 'hellinger_dist', 'jm_dist')
+    assert dist_type2 in (
+        'wasserstein_dist', 'bhattacharyya_dist', 'jensen_shannon_dist', 'hellinger_dist', 'jm_dist')
+    _, dist_dict1 = calc_dist(dist_type1, df, 'label')
+    _, dist_dict2 = calc_dist(dist_type2, df, 'label')
+
+    cols = [dist_type1, dist_type2]
+    rows = ['feature {}'.format(row) for row in features]
+    fig, axes = plt.subplots(nrows=len(features), ncols=2, figsize=(8, 25))
+
+    for i, feature in zip(range(len(rows)), features):
+        feature_mat1 = dist_dict1[feature]
+        feature_mat2 = dist_dict2[feature]
+        if to_norm:
+            feature_dist_mat1 = norm_by_dist_type(feature_mat1)
+            feature_dist_mat2 = norm_by_dist_type(feature_mat2)
+        else:
+            feature_dist_mat1 = feature_mat1
+            feature_dist_mat2 = feature_mat2
+        sns.heatmap(feature_dist_mat1, annot=True, linewidths=.5, ax=axes[i, 0])
+        sns.heatmap(feature_dist_mat2, annot=True, linewidths=.5, ax=axes[i, 1])
+
+    for axc, col in zip(axes[0], cols):
+        axc.set_title(col)
+
+    for axr, row in zip(axes[:, 0], rows):
+        axr.set_ylabel(row, rotation=90, size='large')
+
+    plt.show()
+
+
 def return_best_features_by_kmeans(coordinates, k):
     features_rank = np.argsort(coordinates[0])
     kmeans = KMeans(n_clusters=k, random_state=0)
@@ -110,48 +150,17 @@ def k_medoids_features(coordinates, k):
     return r_features
 
 
-def store_results(dataset, features_prc, metric, acc, f1, classes, workdir):
-    # General Results File
-    acc_results_df = pd.read_csv('results/all_datasets_results.csv')
-    if ((acc_results_df.dataset == dataset) & (acc_results_df.features_prc == features_prc)).any():
-        acc_results_df.loc[(acc_results_df.dataset == dataset) & (acc_results_df.features_prc == features_prc), metric] = sum(acc) / len(acc)
-    else:
-        today_date = datetime.now().strftime('%d-%m-%Y')
-        new_df = pd.DataFrame(columns=acc_results_df.columns)
-        new_df.loc[len(new_df), ['date', 'dataset', 'features_prc', metric]] = [today_date, dataset, features_prc, (sum(acc) / len(acc))]
-        acc_results_df = pd.concat([acc_results_df, new_df]).sort_values(by=['dataset', 'features_prc'])
-    acc_results_df.to_csv('results/all_datasets_results.csv', index=False)
-
-    # Dataset's F1 Results File
-    columns = ['features_prc', *[f'{metric}_{class_name}' for class_name in classes]]
-    values = [features_prc, *f1]
-    data_dict = dict(zip(columns, values))
-    f1_file = os.path.join(workdir, f'f1_scores.csv')
-    new_data_df = pd.DataFrame([data_dict])
-    if not os.path.exists(f1_file):
-        new_data_df.to_csv(f1_file, index=False)
-    else:
-        f1_results_df = pd.read_csv(f1_file)
-        if (f1_results_df.features_prc == features_prc).any():
-            f1_results_df.loc[f1_results_df.features_prc == features_prc, columns] = values
-        else:
-            f1_results_df = pd.concat([f1_results_df, new_data_df]).sort_values(by=['features_prc'])
-        f1_results_df.to_csv(f1_file, index=False)
-
-
 def predict(X_train, y_train, X_test=None, y_test=None):
-    kf = StratifiedKFold(n_splits=5, shuffle=True, random_state=0)
+    kf = StratifiedKFold(n_splits=5, shuffle=True)
     clf = RandomForestClassifier(random_state=1)
     multi_target_forest = OneVsRestClassifier(clf, n_jobs=-1)
     train_acc = []
-    f1_scores_list = []
 
     for train_index, test_index in kf.split(X_train, y_train):
         model = multi_target_forest.fit(X_train.iloc[train_index], y_train.iloc[train_index])
         train_preds = model.predict(X_train.iloc[test_index])
 
         train_acc.append(metrics.accuracy_score(y_train.iloc[test_index], train_preds))
-        f1_scores_list.append(list(metrics.f1_score(y_train.iloc[test_index], train_preds, average=None)))
     if X_test is not None and y_test is not None:
         model = multi_target_forest.fit(X_train, y_train)
         preds = model.predict(X_test)
@@ -160,11 +169,25 @@ def predict(X_train, y_train, X_test=None, y_test=None):
     train_avg_score = sum(train_acc) / len(train_acc)
     logger.info(f"Cross validation accuracies = {train_acc}")
     logger.info(f"Cross validation average accuracy = {train_avg_score}\n")
-    return train_acc, f1_scores_list
+    return train_acc
 
 
-def calc_f1_score(f1_lists):
-    return list(np.array(f1_lists).mean(axis=0))
+def predict_np(X_tr, X_tst, y_train, y_test):
+    kf = StratifiedKFold(n_splits=5, shuffle=True)
+    clf = RandomForestClassifier(random_state=1)
+    multi_target_forest = OneVsRestClassifier(clf, n_jobs=-1)
+    train_acc = []
+
+    for train_index, test_index in kf.split(X_tr, y_train):
+        model = multi_target_forest.fit(X_tr[train_index], y_train[train_index])
+        train_preds = model.predict(X_tr[test_index])
+
+        train_acc.append(metrics.accuracy_score(y_train[test_index], train_preds))
+
+    model = multi_target_forest.fit(X_tr, y_train)
+    preds = model.predict(X_tst)
+    logger.info(metrics.classification_report(y_test, preds, digits=3))
+    return train_acc
 
 
 def calc_k(features, prc):
@@ -175,79 +198,89 @@ def main():
     config = {
         'dataset_name': 'glass',
         'label_column': 'label',
-        'features_percentage': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
-        'dist_functions': ['wasserstein', 'hellinger', 'jm'],
+        'features_percentage': 0.5,
+        'dist_functions': ['wasserstein_dist', 'hellinger_dist', 'jm_dist'],
         'nrows': 10000,
         'alpha': 1,
         'eps_type': 'maxmin',
         'eps_factor': 25
     }
 
-    workdir = os.path.join(f'results', config['dataset_name'])
-    create_work_dir(workdir, on_exists='ignore')
-    setup_logger("config_files/logger_config.json", os.path.join(workdir, f"{config['dataset_name']}_log_{datetime.now().strftime('%d-%m-%Y')}.txt"))
     dataset_dir = f"data/{config['dataset_name']}.csv"
+    setup_logger("config_files/logger_config.json", os.path.join('results', f"{config['dataset_name']}_log_{datetime.now().strftime('%d-%m-%Y')}.txt"))
+    logger.info(f'{dataset_dir}')
+    data = pd.read_csv(dataset_dir, nrows=config['nrows'])
 
-    logger.info(f'{dataset_dir=}')
-    data = read_from_csv(dataset_dir, config['nrows'])
     features = data.columns.drop(config['label_column'])
-    classes = list(data[config['label_column']].unique())
 
-    for feature_percentage in config['features_percentage']:
-        k = calc_k(features, feature_percentage)
-        if k < 1 or k == len(features):
-            continue
-        logger.info(f"DATA STATS:\ndata shape of {data.shape}\nLabel distributes:\n{data.label.value_counts().sort_index()}\n")
+    k = calc_k(features, config['features_percentage'])
 
-        print_separation_dots('Using all features prediction')
+    logger.info(f"DATA STATS:\ndata shape of {data.shape}\nLabel distributes:\n{data.label.value_counts().sort_index()}\n")
+
+    logger.info('*' * 100)
+    logger.info(f"{'*' * 37} Using all features prediction {'*' * 37}")
+    logger.info('*' * 100)
+    X, y = data[features].copy(), data[config['label_column']].copy()
+    predict(X, y)
+
+    logger.info(f"Running over {dataset_dir}, using {k} features out of {len(features)}")
+
+    logger.info('*' * 100)
+    logger.info(f"{'*' * 40} Using Fisher selection {k} features prediction {'*' * 40}")
+    logger.info('*' * 100)
+    X, y = data[features].copy(), data[config['label_column']].copy()
+    fisher_ranks = fisher_score.fisher_score(X.to_numpy(), y.to_numpy())
+    predict(X.iloc[:, fisher_ranks[:k]], y)
+
+    logger.info('*' * 100)
+    logger.info(f"{'*' * 40} Using ReliefF selection {k} features prediction {'*' * 40}")
+    logger.info('*' * 100)
+    X, y = data[features].copy(), data[config['label_column']].copy()
+    fs = ReliefF(n_neighbors=1, n_features_to_keep=k)
+    X_ReliefF = fs.fit_transform(X.to_numpy(), y.to_numpy())
+    row, col = X_ReliefF.shape
+    new_x = pd.DataFrame(data=X_ReliefF,
+          index=np.array(range(1, row+1)),
+          columns=np.array(range(1, col+1)))
+    predict(new_x, y)
+
+    logger.info('*' * 100)
+    logger.info(f"{'*' * 40} Using Random {k} features prediction {'*' * 40}")
+    logger.info('*' * 100)
+    sampled_data = data[features].sample(n=k, axis='columns')
+    new_features = sampled_data.columns
+    sampled_data[config['label_column']] = data[config['label_column']]
+    X, y = sampled_data[new_features].copy(), sampled_data[config['label_column']].copy()
+    predict(X, y)
+
+    for dist in config['dist_functions']:
+        logger.info('*' * 100)
+        logger.info(f"{'*' * 40} {dist} {'*' * 40}")
+        logger.info('*' * 100)
+
         X, y = data[features].copy(), data[config['label_column']].copy()
-        all_features_acc, all_features_f1 = predict(X, y)
-        all_features_f1_agg = calc_f1_score(all_features_f1)
-        store_results(config['dataset_name'], feature_percentage, 'all_features', all_features_acc, all_features_f1_agg, classes, workdir)
+        # Norm
+        X_norm = min_max_scaler(X, features)
 
-        logger.info(f"Running over {dataset_dir}, using {k} features out of {len(features)}")
-        print_separation_dots(f'Using Random {k} features prediction')
-        sampled_data = data[features].sample(n=k, axis='columns')
-        new_features = sampled_data.columns
-        sampled_data[config['label_column']] = data[config['label_column']]
-        X, y = sampled_data[new_features].copy(), sampled_data[config['label_column']].copy()
-        random_features_acc, random_features_f1 = predict(X, y)
-        random_features_f1_agg = calc_f1_score(random_features_f1)
-        store_results(config['dataset_name'], feature_percentage, 'random_features', random_features_acc, random_features_f1_agg, classes, workdir)
+        df_dists, dist_dict = calc_dist(dist, X_norm, y)
+        coordinates, ranking = (diffusion_mapping(df_dists, config['alpha'], config['eps_type'], config['eps_factor'], dim=2))
 
-        for dist in config['dist_functions']:
-            print_separation_dots(f'Using Random {dist} features prediction')
+        flat_ranking = [item for sublist in ranking for item in sublist]
+        ranking_idx = np.argsort(flat_ranking)
+        logger.info(f'best features by {dist} are: {ranking_idx}')
+        predict(X.iloc[:, ranking_idx[-k:]], y)
 
-            X, y = data[features].copy(), data[config['label_column']].copy()
-            X_norm = min_max_scaler(X, features)
+        best_features, labels, features_rank = return_best_features_by_kmeans(coordinates, k)
+        logger.info(f'Best features by KMeans are: {best_features}')
+        predict(X.iloc[:, best_features], y)
 
-            df_dists, dist_dict = calc_dist(dist, X_norm, y)
-            coordinates, ranking = (diffusion_mapping(df_dists, config['alpha'], config['eps_type'], config['eps_factor'], dim=2))
+        k_features = k_medoids_features(coordinates, k)
+        logger.info(f'Best features by KMediods are: {k_features}')
+        predict(X.iloc[:, k_features], y)
 
-            flat_ranking = [item for sublist in ranking for item in sublist]
-            ranking_idx = np.argsort(flat_ranking)
-            logger.info(f'best features by {dist} are: {ranking_idx}')
-            rank_acc, rank_f1 = predict(X.iloc[:, ranking_idx[-k:]], y)
-            rank_f1_agg = calc_f1_score(rank_f1)
-            store_results(config['dataset_name'], feature_percentage, f'{dist}_rank', rank_acc, rank_f1_agg, classes, workdir)
-
-            best_features, labels, features_rank = return_best_features_by_kmeans(coordinates, k)
-            logger.info(f'Best features by KMeans are: {best_features}')
-            kmeans_acc, kmeans_f1 = predict(X.iloc[:, best_features], y)
-            kmeans_f1_agg = calc_f1_score(kmeans_f1)
-            store_results(config['dataset_name'], feature_percentage, f'{dist}_kmeans', kmeans_acc, kmeans_f1_agg, classes, workdir)
-
-            k_features = k_medoids_features(coordinates, k)
-            logger.info(f'Best features by KMediods are: {k_features}')
-            kmediods_acc, kmediods_f1 = predict(X.iloc[:, k_features], y)
-            kmediods_f1_agg = calc_f1_score(kmediods_f1)
-            store_results(config['dataset_name'], feature_percentage, f'{dist}_kmediods', kmediods_acc, kmediods_f1_agg, classes, workdir)
-
-            best_features = return_farest_features_from_center(coordinates, k)
-            logger.info(f'best features by farest coordinate from (0,0) are: {ranking_idx}')
-            distance_from_0_acc, distance_from_0_f1 = predict(X.iloc[:, best_features], y)
-            distance_from_0_f1_agg = calc_f1_score(distance_from_0_f1)
-            store_results(config['dataset_name'], feature_percentage, f'{dist}_distance_from_0', distance_from_0_acc, distance_from_0_f1_agg, classes, workdir)
+        best_features = return_farest_features_from_center(coordinates, k)
+        logger.info(f'best features by farest coordinate from (0,0) are: {ranking_idx}')
+        predict(X.iloc[:, best_features], y)
 
 
 if __name__ == '__main__':
