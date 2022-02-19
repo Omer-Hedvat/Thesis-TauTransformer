@@ -138,8 +138,9 @@ def store_results(dataset, features_prc, metric, acc, f1, classes, workdir):
             f1_results_df = pd.concat([f1_results_df, new_data_df]).sort_values(by=['features_prc'])
         f1_results_df.to_csv(f1_file, index=False)
 
+
 def predict(X_train, y_train, X_test=None, y_test=None):
-    kf = StratifiedKFold(n_splits=5, shuffle=True)
+    kf = StratifiedKFold(n_splits=5, shuffle=True, random_state=0)
     clf = RandomForestClassifier(random_state=1)
     multi_target_forest = OneVsRestClassifier(clf, n_jobs=-1)
     train_acc = []
@@ -174,7 +175,7 @@ def main():
     config = {
         'dataset_name': 'glass',
         'label_column': 'label',
-        'features_percentage': [0.5],
+        'features_percentage': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
         'dist_functions': ['wasserstein', 'hellinger', 'jm'],
         'nrows': 10000,
         'alpha': 1,
