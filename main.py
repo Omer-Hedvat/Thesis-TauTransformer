@@ -174,7 +174,7 @@ def main():
     config = {
         'dataset_name': 'glass',
         'label_column': 'label',
-        'features_percentage': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
+        'features_percentage': [0.5],
         'dist_functions': ['wasserstein', 'hellinger', 'jm'],
         'nrows': 10000,
         'alpha': 1,
