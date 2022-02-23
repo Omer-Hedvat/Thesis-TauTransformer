@@ -197,7 +197,7 @@ def main():
         k = calc_k(features, feature_percentage)
         if k < 1 or k == len(features):
             continue
-        logger.info(f"DATA STATS:\ndata shape of {data.shape}\nLabel distributes:\n{data.label.value_counts().sort_index()}\n")
+        logger.info(f"DATA STATS:\ndata shape of {data.shape}\nLabel distributes:\n{data[config['label']].value_counts().sort_index()}\n")
 
         print_separation_dots('Using all features prediction')
         X, y = data[features].copy(), data[config['label_column']].copy()
