@@ -50,7 +50,7 @@ def execute_distance_func(df, function_name, feature, label1, label2):
     }[function_name]()
 
 
-def calc_dist(dist_func_name, X_tr, classes):
+def calc_dist(dist_func_name, X_tr, classes, label_column):
     """
     Calculates distances of each feature w/ itself in different target classses
     for each DataFrame & distance functions
@@ -64,7 +64,7 @@ def calc_dist(dist_func_name, X_tr, classes):
     features = X_tr.columns
     df = X_tr
     classes.reset_index(drop=True, inplace=True)
-    df['label'] = classes
+    df[label_column] = classes
     distances = []
     for feature in features:
         class_dist = []
@@ -197,7 +197,7 @@ def main():
         k = calc_k(features, feature_percentage)
         if k < 1 or k == len(features):
             continue
-        logger.info(f"DATA STATS:\ndata shape of {data.shape}\nLabel distributes:\n{data[config['label']].value_counts().sort_index()}\n")
+        logger.info(f"DATA STATS:\ndata shape of {data.shape}\nLabel distributes:\n{data[config['label_column']].value_counts().sort_index()}\n")
 
         print_separation_dots('Using all features prediction')
         X, y = data[features].copy(), data[config['label_column']].copy()
@@ -221,7 +221,7 @@ def main():
             X, y = data[features].copy(), data[config['label_column']].copy()
             X_norm = min_max_scaler(X, features)
 
-            df_dists, dist_dict = calc_dist(dist, X_norm, y)
+            df_dists, dist_dict = calc_dist(dist, X_norm, y, config['label_column'])
             coordinates, ranking = (diffusion_mapping(df_dists, config['alpha'], config['eps_type'], config['eps_factor'], dim=2))
 
             flat_ranking = [item for sublist in ranking for item in sublist]
