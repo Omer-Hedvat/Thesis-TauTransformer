@@ -1,4 +1,4 @@
-4.	להוסיף את הבדיקה מול פישר, קורולציה, ריליף - Chen
+4.	להוסיף את הבדיקה מול HGR - Chen
 10. Add coordinates graph out from the diffusion maps - Chen
 12. fix strore_results()F1 for new dataset
 
