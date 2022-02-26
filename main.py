@@ -199,7 +199,6 @@ def main():
     features = data.columns.drop(config['label_column'])
     classes = list(data[config['label_column']].unique())
 
-
     for feature_percentage in config['features_percentage']:
         k = calc_k(features, feature_percentage)
         if k < 1 or k == len(features):
@@ -222,6 +221,7 @@ def main():
         random_features_f1_agg = calc_f1_score(random_features_f1)
         store_results(config['dataset_name'], feature_percentage, 'random_features', random_features_acc, random_features_f1_agg, classes, workdir)
 
+        print_separation_dots(f'Using Fisher selection {k} features prediction')
         logger.info(f'Using Fisher selection {k} features prediction')
         X, y = data[features].copy(), data[config['label_column']].copy()
         fisher_ranks = fisher_score.fisher_score(X.to_numpy(), y.to_numpy())
@@ -229,6 +229,7 @@ def main():
         fisher_features_f1_agg = calc_f1_score(fisher_features_f1)
         store_results(config['dataset_name'], feature_percentage, 'fisher', fisher_features_acc, fisher_features_f1_agg, classes, workdir)
 
+        print_separation_dots(f'Using ReliefF selection {k} features prediction')
         logger.info(f'Using ReliefF selection {k} features prediction')
         X, y = data[features].copy(), data[config['label_column']].copy()
         fs = ReliefF(n_neighbors=1, n_features_to_keep=k)
@@ -241,6 +242,7 @@ def main():
         relief_features_f1_agg = calc_f1_score(relief_features_f1)
         store_results(config['dataset_name'], feature_percentage, 'relief', relief_features_acc, relief_features_f1_agg, classes, workdir)
 
+        print_separation_dots(f'Using Chi-square Test selection {k} features prediction')
         logger.info(f'Using Chi-square Test selection {k} features prediction')
         X, y = data[features].copy(), data[config['label_column']].copy()
         chi_features = SelectKBest(chi2, k=k)
