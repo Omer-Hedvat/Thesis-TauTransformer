@@ -178,7 +178,6 @@ def calc_k(features, prc):
 def main():
     config = {
         'dataset_name': 'glass',
-        'first_label_name': 'label',
         'label_column': 'label',
         'features_percentage': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
         'dist_functions': ['wasserstein', 'hellinger', 'jm'],
@@ -193,9 +192,8 @@ def main():
     setup_logger("config_files/logger_config.json", os.path.join(workdir, f"{config['dataset_name']}_log_{datetime.now().strftime('%d-%m-%Y')}.txt"))
     dataset_dir = f"data/{config['dataset_name']}.csv"
 
-    logger.info(f'{dataset_dir}')
+    logger.info(f'{dataset_dir=}')
     data = read_from_csv(dataset_dir, config['nrows'])
-    data = data.rename(columns={config['first_label_name']: 'label'})
     features = data.columns.drop(config['label_column'])
     classes = list(data[config['label_column']].unique())
 
