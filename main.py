@@ -212,7 +212,7 @@ def main():
     setup_logger("config_files/logger_config.json", os.path.join(workdir, f"{config['dataset_name']}_log_{datetime.now().strftime('%d-%m-%Y')}.txt"))
     dataset_dir = f"data/{config['dataset_name']}.csv"
 
-    logger.info(f'{dataset_dir}')
+    logger.info(f'{dataset_dir=}')
     data = read_from_csv(dataset_dir, config['nrows'])
     features = data.columns.drop(config['label_column'])
     classes = list(data[config['label_column']].unique())
