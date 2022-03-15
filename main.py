@@ -222,9 +222,7 @@ def run_experiments(config):
         fs = ReliefF(n_neighbors=1, n_features_to_keep=k)
         X_relief = fs.fit_transform(X.to_numpy(), y.to_numpy())
         row, col = X_relief.shape
-        df_relief_x = pd.DataFrame(data=X_relief,
-                                   index=np.array(range(1, row + 1)),
-                                   columns=np.array(range(1, col + 1)))
+        df_relief_x = pd.DataFrame(data=X_relief, index=np.array(range(1, row + 1)), columns=np.array(range(1, col + 1)))
         relief_features_acc, relief_features_f1 = predict(df_relief_x, y)
         relief_features_f1_agg = calc_f1_score(relief_features_f1)
         store_results(config['dataset_name'], feature_percentage, 'relief', relief_features_acc, relief_features_f1_agg, classes, workdir)
