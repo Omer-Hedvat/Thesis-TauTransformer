@@ -175,18 +175,7 @@ def calc_k(features, prc):
     return int(len(features) * prc)
 
 
-def main():
-    config = {
-        'dataset_name': 'glass',
-        'label_column': 'label',
-        'features_percentage': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
-        'dist_functions': ['wasserstein', 'hellinger', 'jm'],
-        'nrows': 10000,
-        'alpha': 1,
-        'eps_type': 'maxmin',
-        'eps_factor': 25
-    }
-
+def run_experiments(config):
     workdir = os.path.join(f'results', config['dataset_name'])
     create_work_dir(workdir, on_exists='ignore')
     setup_logger("config_files/logger_config.json", os.path.join(workdir, f"{config['dataset_name']}_log_{datetime.now().strftime('%d-%m-%Y')}.txt"))
@@ -233,9 +222,7 @@ def main():
         fs = ReliefF(n_neighbors=1, n_features_to_keep=k)
         X_relief = fs.fit_transform(X.to_numpy(), y.to_numpy())
         row, col = X_relief.shape
-        df_relief_x = pd.DataFrame(data=X_relief,
-                             index=np.array(range(1, row + 1)),
-                             columns=np.array(range(1, col + 1)))
+        df_relief_x = pd.DataFrame(data=X_relief, index=np.array(range(1, row + 1)), columns=np.array(range(1, col + 1)))
         relief_features_acc, relief_features_f1 = predict(df_relief_x, y)
         relief_features_f1_agg = calc_f1_score(relief_features_f1)
         store_results(config['dataset_name'], feature_percentage, 'relief', relief_features_acc, relief_features_f1_agg, classes, workdir)
@@ -282,7 +269,27 @@ def main():
             logger.info(f'best features by farest coordinate from (0,0) are: {ranking_idx}')
             distance_from_0_acc, distance_from_0_f1 = predict(X.iloc[:, best_features], y)
             distance_from_0_f1_agg = calc_f1_score(distance_from_0_f1)
-            store_results(config['dataset_name'], feature_percentage, f'{dist}_distance_from_0', distance_from_0_acc, distance_from_0_f1_agg, classes, workdir)
+            store_results(config['dataset_name'], feature_percentage, f'{dist}_distance_from_0', distance_from_0_acc, distance_from_0_f1_agg, classes,
+                          workdir)
+
+
+def main():
+    config = {
+        'features_percentage': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
+        'dist_functions': ['wasserstein', 'hellinger', 'jm'],
+        'nrows': 5000,
+        'alpha': 1,
+        'eps_type': 'maxmin',
+        'eps_factor': 25
+    }
+    # the target column index should correspond to the dataset name index
+    datasets = ['crop', 'glass', 'isolet', 'Obesity', 'soybean', 'spambase', 'WinnipegDataset']
+    target_columns = ['label', 'label', 'label', 'label', 'label', 'label', 'label']
+
+    for dataset, label in zip(datasets, target_columns):
+        config['dataset_name'] = dataset
+        config['label_column'] = label
+        run_experiments(config)
 
 
 if __name__ == '__main__':
