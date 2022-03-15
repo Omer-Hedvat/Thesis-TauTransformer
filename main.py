@@ -277,7 +277,7 @@ def main():
     config = {
         'features_percentage': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
         'dist_functions': ['wasserstein', 'hellinger', 'jm'],
-        'nrows': 5000,
+        'nrows': 10000,
         'alpha': 1,
         'eps_type': 'maxmin',
         'eps_factor': 25
