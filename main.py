@@ -15,6 +15,7 @@ from skfeature.function.similarity_based import fisher_score
 from ReliefF import ReliefF
 from sklearn.feature_selection import SelectKBest
 from sklearn.feature_selection import chi2
+from scipy import stats
 
 from utils.diffusion_maps import diffusion_mapping
 from utils.distances import wasserstein_dist, bhattacharyya_dist, hellinger_dist, jm_dist
@@ -174,6 +175,25 @@ def calc_f1_score(f1_lists):
 def calc_k(features, prc):
     return int(len(features) * prc)
 
+def t_test(dataset_name):
+    """
+    :param dataset_name: the name of the dataset we are using
+    :return: add all t_test p-valus for the dataset.
+    The T test calculation is done for each of our methods versus the rest of our conventional
+    methods we compare: 'random_features', 'fisher', 'relief', 'Chi_square'
+    """
+    data = pd.read_csv('results/all_datasets_results.csv')
+    data = data[data['dataset'] == dataset_name]
+    A_type = ['random_features', 'fisher', 'relief', 'Chi_square']
+    B_type = data.iloc[:, 8:].columns
+    df = pd.DataFrame(data={'dataset': [dataset_name]})
+    for a in A_type:
+        for b in B_type:
+            #t test is A>B
+            df[a + ' ' + b] = stats.ttest_ind(data[a], data[b], alternative='less')[1]
+    old_df = pd.read_csv('results/t_test_results.csv')
+    df = df.append(old_df, ignore_index=True)
+    df.to_csv('results/t_test_results.csv')
 
 def run_experiments(config):
     workdir = os.path.join(f'results', config['dataset_name'])
@@ -291,6 +311,7 @@ def main():
         config['label_column'] = label
         run_experiments(config)
 
+    t_test(config['dataset_name'])
 
 if __name__ == '__main__':
     main()
