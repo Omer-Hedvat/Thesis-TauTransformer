@@ -26,7 +26,7 @@ from utils.machine_learning import min_max_scaler
 logger = logging.getLogger(__name__)
 
 
-def return_farest_features_from_center(coordinates, k):
+def return_farthest_features_from_center(coordinates, k):
     dist = []
     for c in coordinates.T:
         dist.append(sqrt((c[0] ** 2) + (c[1] ** 2)))
@@ -285,12 +285,12 @@ def run_experiments(config):
             kmediods_f1_agg = calc_f1_score(kmediods_f1)
             store_results(config['dataset_name'], feature_percentage, f'{dist}_kmediods', kmediods_acc, kmediods_f1_agg, classes, workdir)
 
-            best_features = return_farest_features_from_center(coordinates, k)
+            best_features = return_farthest_features_from_center(coordinates, k)
             logger.info(f'best features by farest coordinate from (0,0) are: {ranking_idx}')
             distance_from_0_acc, distance_from_0_f1 = predict(X.iloc[:, best_features], y)
             distance_from_0_f1_agg = calc_f1_score(distance_from_0_f1)
-            store_results(config['dataset_name'], feature_percentage, f'{dist}_distance_from_0', distance_from_0_acc, distance_from_0_f1_agg, classes,
-                          workdir)
+            store_results(config['dataset_name'], feature_percentage, f'{dist}_distance_from_0', distance_from_0_acc, distance_from_0_f1_agg, classes, workdir)
+    t_test(config['dataset_name'])
 
 
 def main():
@@ -311,7 +311,6 @@ def main():
         config['label_column'] = label
         run_experiments(config)
 
-    t_test(config['dataset_name'])
 
 if __name__ == '__main__':
     main()
