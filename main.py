@@ -299,8 +299,7 @@ def run_experiments(config):
 
 def main():
     config = {
-        # 'features_percentage': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
-        'features_percentage': [0.1, 0.2],
+        'features_percentage': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
         'dist_functions': ['wasserstein', 'hellinger', 'jm'],
         'nrows': 10000,
         'alpha': 1,
@@ -310,9 +309,6 @@ def main():
     # the target column index should correspond to the dataset name index
     datasets = ['crop', 'glass', 'isolet', 'Obesity', 'soybean', 'spambase', 'WinnipegDataset']
     target_columns = ['label', 'label', 'label', 'label', 'label', 'label', 'label']
-
-    datasets = ['crop', 'glass']
-    target_columns = ['label', 'label']
 
     for dataset, label in zip(datasets, target_columns):
         config['dataset_name'] = dataset
