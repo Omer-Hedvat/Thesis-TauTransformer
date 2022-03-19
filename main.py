@@ -255,7 +255,7 @@ def run_experiments(config):
         logger.info(f'Using Chi-square Test selection {k} features prediction')
         X, y = data[features].copy(), data[config['label_column']].copy()
         chi_features = SelectKBest(chi2, k=k)
-        X_chi2 = chi_features.fit_transform(X, y)
+        X_chi2 = chi_features.fit_transform(abs(X), y)
         df_chi2_x = pd.DataFrame(X_chi2)
         chi2_features_acc, chi2_features_f1 = predict(df_chi2_x, y)
         chi2_features_f1_agg = calc_f1_score(chi2_features_f1)
@@ -299,7 +299,8 @@ def run_experiments(config):
 
 def main():
     config = {
-        'features_percentage': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
+        # 'features_percentage': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
+        'features_percentage': [0.1, 0.2],
         'dist_functions': ['wasserstein', 'hellinger', 'jm'],
         'nrows': 10000,
         'alpha': 1,
@@ -309,6 +310,9 @@ def main():
     # the target column index should correspond to the dataset name index
     datasets = ['crop', 'glass', 'isolet', 'Obesity', 'soybean', 'spambase', 'WinnipegDataset']
     target_columns = ['label', 'label', 'label', 'label', 'label', 'label', 'label']
+
+    datasets = ['crop', 'glass']
+    target_columns = ['label', 'label']
 
     for dataset, label in zip(datasets, target_columns):
         config['dataset_name'] = dataset
