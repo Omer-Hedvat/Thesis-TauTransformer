@@ -215,7 +215,8 @@ def read_from_csv(filepath, nrows):
     print(timer.to_string())
 
     if nrows < nlinesfile:
-        lines2skip = np.random.seed(0), np.random.choice(np.arange(1, nlinesfile + 1), (nlinesfile - nrows), replace=False)
+        np.random.seed(0)
+        lines2skip = np.random.choice(np.arange(1, nlinesfile + 1), (nlinesfile - nrows), replace=False)
         data = pd.read_csv(filepath, skiprows=lines2skip)
     else:
         data = pd.read_csv(filepath)
