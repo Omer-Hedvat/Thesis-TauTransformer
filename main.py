@@ -276,33 +276,33 @@ def run_experiments(config):
             df_dists, dist_dict = calc_dist(dist, X_norm, y, config['label_column'])
             if config['feature_reduction']['do']:
                 df_dists = dist_features_reduction(df_dists, config['feature_reduction']['features_to_reduce_prc'])
+            valid_features = df_dists.index
             coordinates, ranking = (diffusion_mapping(df_dists, config['alpha'], config['eps_type'], config['eps_factor'], dim=2))
-            # coordinates = pd.DataFrame(coordinates).set_axis([str(idx) for idx in df_dists.index], axis=1)
 
             flat_ranking = [item for sublist in ranking for item in sublist]
             ranking_idx = np.argsort(flat_ranking)
-            ranking_idx = df_dists.iloc[ranking_idx].index
+            ranking_idx = valid_features[ranking_idx]
             logger.info(f'best features by {dist} are: {ranking_idx}')
             rank_acc, rank_f1 = predict(X.iloc[:, ranking_idx[-k:]], y)
             rank_f1_agg = calc_f1_score(rank_f1)
             store_results(config['dataset_name'], feature_percentage, f'{dist}_rank', rank_acc, rank_f1_agg, classes, workdir)
 
             best_features, labels, features_rank = return_best_features_by_kmeans(coordinates, k)
-            best_features = df_dists.iloc[best_features].index.to_list()
+            best_features = valid_features[best_features]
             logger.info(f'Best features by KMeans are: {best_features}')
             kmeans_acc, kmeans_f1 = predict(X.iloc[:, best_features], y)
             kmeans_f1_agg = calc_f1_score(kmeans_f1)
             store_results(config['dataset_name'], feature_percentage, f'{dist}_kmeans', kmeans_acc, kmeans_f1_agg, classes, workdir)
 
             k_features = k_medoids_features(coordinates, k)
-            k_features = df_dists.iloc[k_features].index.to_list()
+            k_features = valid_features[k_features]
             logger.info(f'Best features by KMediods are: {k_features}')
             kmediods_acc, kmediods_f1 = predict(X.iloc[:, k_features], y)
             kmediods_f1_agg = calc_f1_score(kmediods_f1)
             store_results(config['dataset_name'], feature_percentage, f'{dist}_kmediods', kmediods_acc, kmediods_f1_agg, classes, workdir)
 
             best_features = return_farthest_features_from_center(coordinates, k)
-            best_features = df_dists.iloc[best_features].index.to_list()
+            best_features = valid_features[best_features]
             logger.info(f'best features by farest coordinate from (0,0) are: {ranking_idx}')
             distance_from_0_acc, distance_from_0_f1 = predict(X.iloc[:, best_features], y)
             distance_from_0_f1_agg = calc_f1_score(distance_from_0_f1)
