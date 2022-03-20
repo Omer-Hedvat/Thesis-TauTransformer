@@ -175,6 +175,7 @@ def calc_f1_score(f1_lists):
 def calc_k(features, prc):
     return int(len(features) * prc)
 
+
 def t_test(dataset_name):
     """
     :param dataset_name: the name of the dataset we are using
@@ -194,6 +195,15 @@ def t_test(dataset_name):
     old_df = pd.read_csv('results/t_test_results.csv')
     df = df.append(old_df, ignore_index=True)
     df.to_csv('results/t_test_results.csv')
+
+
+def dist_features_reduction(df_dists, features_to_reduce_prc):
+    df_feature_avg = df_dists.mean(axis=1)
+    features_to_reduce = int(len(df_dists) * features_to_reduce_prc)
+    features_to_keep = df_feature_avg.iloc[np.argsort(df_feature_avg)][features_to_reduce:]
+    new_df_dists = df_dists.iloc[features_to_keep.index.sort_values()]
+    return new_df_dists
+
 
 def run_experiments(config):
     workdir = os.path.join(f'results', config['dataset_name'])
@@ -264,28 +274,35 @@ def run_experiments(config):
             X_norm = min_max_scaler(X, features)
 
             df_dists, dist_dict = calc_dist(dist, X_norm, y, config['label_column'])
+            if config['feature_reduction']['do']:
+                df_dists = dist_features_reduction(df_dists, config['feature_reduction']['features_to_reduce_prc'])
             coordinates, ranking = (diffusion_mapping(df_dists, config['alpha'], config['eps_type'], config['eps_factor'], dim=2))
+            # coordinates = pd.DataFrame(coordinates).set_axis([str(idx) for idx in df_dists.index], axis=1)
 
             flat_ranking = [item for sublist in ranking for item in sublist]
             ranking_idx = np.argsort(flat_ranking)
+            ranking_idx = df_dists.iloc[ranking_idx].index
             logger.info(f'best features by {dist} are: {ranking_idx}')
             rank_acc, rank_f1 = predict(X.iloc[:, ranking_idx[-k:]], y)
             rank_f1_agg = calc_f1_score(rank_f1)
             store_results(config['dataset_name'], feature_percentage, f'{dist}_rank', rank_acc, rank_f1_agg, classes, workdir)
 
             best_features, labels, features_rank = return_best_features_by_kmeans(coordinates, k)
+            best_features = df_dists.iloc[best_features].index.to_list()
             logger.info(f'Best features by KMeans are: {best_features}')
             kmeans_acc, kmeans_f1 = predict(X.iloc[:, best_features], y)
             kmeans_f1_agg = calc_f1_score(kmeans_f1)
             store_results(config['dataset_name'], feature_percentage, f'{dist}_kmeans', kmeans_acc, kmeans_f1_agg, classes, workdir)
 
             k_features = k_medoids_features(coordinates, k)
+            k_features = df_dists.iloc[k_features].index.to_list()
             logger.info(f'Best features by KMediods are: {k_features}')
             kmediods_acc, kmediods_f1 = predict(X.iloc[:, k_features], y)
             kmediods_f1_agg = calc_f1_score(kmediods_f1)
             store_results(config['dataset_name'], feature_percentage, f'{dist}_kmediods', kmediods_acc, kmediods_f1_agg, classes, workdir)
 
             best_features = return_farthest_features_from_center(coordinates, k)
+            best_features = df_dists.iloc[best_features].index.to_list()
             logger.info(f'best features by farest coordinate from (0,0) are: {ranking_idx}')
             distance_from_0_acc, distance_from_0_f1 = predict(X.iloc[:, best_features], y)
             distance_from_0_f1_agg = calc_f1_score(distance_from_0_f1)
@@ -298,12 +315,13 @@ def main():
         'features_percentage': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
         'dist_functions': ['wasserstein', 'hellinger', 'jm'],
         'nrows': 10000,
+        'feature_reduction': {'do': True, 'features_to_reduce_prc': 0.2},
         'alpha': 1,
         'eps_type': 'maxmin',
         'eps_factor': 25
     }
     # the target column index should correspond to the dataset name index
-    datasets = ['crop', 'glass', 'isolet', 'Obesity', 'soybean', 'spambase', 'WinnipegDataset']
+    datasets = ['glass', 'crop', 'isolet', 'Obesity', 'soybean', 'spambase', 'WinnipegDataset']
     target_columns = ['label', 'label', 'label', 'label', 'label', 'label', 'label']
 
     for dataset, label in zip(datasets, target_columns):
