@@ -261,7 +261,7 @@ def run_experiments(config):
         logger.info(f'Using Chi-square Test selection {k} features prediction')
         X, y = data[features].copy(), data[config['label_column']].copy()
         chi_features = SelectKBest(chi2, k=k)
-        X_chi2 = chi_features.fit_transform(X, y)
+        X_chi2 = chi_features.fit_transform(abs(X), y)
         df_chi2_x = pd.DataFrame(X_chi2)
         chi2_features_acc, chi2_features_f1 = predict(df_chi2_x, y)
         chi2_features_f1_agg = calc_f1_score(chi2_features_f1)
