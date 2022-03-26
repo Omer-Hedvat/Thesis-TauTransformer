@@ -193,7 +193,7 @@ def t_test(dataset_name):
             #t test is A>B
             df[a + ' ' + b] = stats.ttest_ind(data[a], data[b], alternative='less')[1]
     old_df = pd.read_csv('results/t_test_results.csv')
-    df = df.append(old_df, ignore_index=True)
+    df = pd.concat([df, old_df], ignore_index=True)
     df.to_csv('results/t_test_results.csv')
 
 
@@ -215,12 +215,13 @@ def run_experiments(config):
     data = read_from_csv(dataset_dir, config['nrows'])
     features = data.columns.drop(config['label_column'])
     classes = list(data[config['label_column']].unique())
+    logger.info(f"DATA STATS:\ndata shape of {data.shape}\nLabel distributes:\n{data[config['label_column']].value_counts().sort_index()}\n")
 
     for feature_percentage in config['features_percentage']:
         k = calc_k(features, feature_percentage)
         if k < 1 or k == len(features):
             continue
-        logger.info(f"DATA STATS:\ndata shape of {data.shape}\nLabel distributes:\n{data[config['label_column']].value_counts().sort_index()}\n")
+        logger.info(f"Running over features percentage of {feature_percentage}, which is {k} features out of {data.shape[1]-1}")
 
         print_separation_dots('Using all features prediction')
         X, y = data[features].copy(), data[config['label_column']].copy()
@@ -319,7 +320,7 @@ def main():
         'eps_factor': 25
     }
     # the target column index should correspond to the dataset name index
-    datasets = ['glass', 'crop', 'isolet', 'Obesity', 'soybean', 'spambase', 'WinnipegDataset']
+    datasets = ['glass', 'isolet', 'Obesity', 'soybean', 'spambase', 'WinnipegDataset', 'crop']
     target_columns = ['label', 'label', 'label', 'label', 'label', 'label', 'label']
 
     for dataset, label in zip(datasets, target_columns):
