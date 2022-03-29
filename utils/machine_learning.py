@@ -70,7 +70,6 @@ def export_heatmaps(df, features, dist_type1, dist_type2, to_norm=False):
     plt.show()
 
 
-
 def predict_np(X_tr, X_tst, y_train, y_test):
     kf = StratifiedKFold(n_splits=5, shuffle=True)
     clf = RandomForestClassifier(random_state=1)

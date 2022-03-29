@@ -213,27 +213,27 @@ def run_experiments(config):
 
     logger.info(f'{dataset_dir=}')
     data = read_from_csv(dataset_dir, config['nrows'])
-    features = data.columns.drop(config['label_column'])
+    all_features = data.columns.drop(config['label_column'])
     classes = list(data[config['label_column']].unique())
     logger.info(f"DATA STATS:\ndata shape of {data.shape}\nLabel distributes:\n{data[config['label_column']].value_counts().sort_index()}\n")
 
     for feature_percentage in config['features_percentage']:
         if config['feature_reduction']['do'] and (feature_percentage + config['feature_reduction']['features_to_reduce_prc'] > 1):
             continue
-        k = calc_k(features, feature_percentage)
-        if k < 1 or k == len(features):
+        k = calc_k(all_features, feature_percentage)
+        if k < 1 or k == len(all_features):
             continue
         logger.info(f"Running over features percentage of {feature_percentage}, which is {k} features out of {data.shape[1]-1}")
 
         print_separation_dots('Using all features prediction')
-        X, y = data[features].copy(), data[config['label_column']].copy()
+        X, y = data[all_features].copy(), data[config['label_column']].copy()
         all_features_acc, all_features_f1 = predict(X, y)
         all_features_f1_agg = calc_f1_score(all_features_f1)
         store_results(config['dataset_name'], feature_percentage, 'all_features', all_features_acc, all_features_f1_agg, classes, workdir)
 
-        logger.info(f"Running over {dataset_dir}, using {k} features out of {len(features)}")
+        logger.info(f"Running over {dataset_dir}, using {k} features out of {len(all_features)}")
         print_separation_dots(f'Using Random {k} features prediction')
-        sampled_data = data[features].sample(n=k, axis='columns')
+        sampled_data = data[all_features].sample(n=k, axis='columns')
         new_features = sampled_data.columns
         sampled_data[config['label_column']] = data[config['label_column']]
         X, y = sampled_data[new_features].copy(), sampled_data[config['label_column']].copy()
@@ -243,7 +243,7 @@ def run_experiments(config):
 
         print_separation_dots(f'Using Fisher selection {k} features prediction')
         logger.info(f'Using Fisher selection {k} features prediction')
-        X, y = data[features].copy(), data[config['label_column']].copy()
+        X, y = data[all_features].copy(), data[config['label_column']].copy()
         fisher_ranks = fisher_score.fisher_score(X.to_numpy(), y.to_numpy())
         fisher_features_acc, fisher_features_f1 = predict(X.iloc[:, fisher_ranks[:k]], y)
         fisher_features_f1_agg = calc_f1_score(fisher_features_f1)
@@ -251,7 +251,7 @@ def run_experiments(config):
 
         print_separation_dots(f'Using ReliefF selection {k} features prediction')
         logger.info(f'Using ReliefF selection {k} features prediction')
-        X, y = data[features].copy(), data[config['label_column']].copy()
+        X, y = data[all_features].copy(), data[config['label_column']].copy()
         fs = ReliefF(n_neighbors=1, n_features_to_keep=k)
         X_relief = fs.fit_transform(X.to_numpy(), y.to_numpy())
         row, col = X_relief.shape
@@ -262,7 +262,7 @@ def run_experiments(config):
 
         print_separation_dots(f'Using Chi-square Test selection {k} features prediction')
         logger.info(f'Using Chi-square Test selection {k} features prediction')
-        X, y = data[features].copy(), data[config['label_column']].copy()
+        X, y = data[all_features].copy(), data[config['label_column']].copy()
         chi_features = SelectKBest(chi2, k=k)
         X_chi2 = chi_features.fit_transform(abs(X), y)
         df_chi2_x = pd.DataFrame(X_chi2)
@@ -273,15 +273,14 @@ def run_experiments(config):
         for dist in config['dist_functions']:
             print_separation_dots(f'Using Random {dist} features prediction')
 
-            X, y = data[features].copy(), data[config['label_column']].copy()
-            X_norm = min_max_scaler(X, features)
+            X, y = data[all_features].copy(), data[config['label_column']].copy()
+            X_norm = min_max_scaler(X, all_features)
 
             df_dists, dist_dict = calc_dist(dist, X_norm, y, config['label_column'])
             if config['feature_reduction']['do']:
                 df_dists, valid_features = dist_features_reduction(df_dists, config['feature_reduction']['features_to_reduce_prc'])
                 X = X.iloc[:, valid_features].copy()
-                X_norm = X_norm.iloc[:, valid_features].copy()
-                features = features[valid_features]
+                features = all_features[valid_features]
             coordinates, ranking = (diffusion_mapping(df_dists, config['alpha'], config['eps_type'], config['eps_factor'], dim=2))
 
             flat_ranking = [item for sublist in ranking for item in sublist]
