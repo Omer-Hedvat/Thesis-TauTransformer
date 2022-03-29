@@ -218,6 +218,8 @@ def run_experiments(config):
     logger.info(f"DATA STATS:\ndata shape of {data.shape}\nLabel distributes:\n{data[config['label_column']].value_counts().sort_index()}\n")
 
     for feature_percentage in config['features_percentage']:
+        if config['feature_reduction']['do'] and (feature_percentage + config['feature_reduction']['features_to_reduce_prc'] > 1):
+            continue
         k = calc_k(features, feature_percentage)
         if k < 1 or k == len(features):
             continue
@@ -313,15 +315,15 @@ def main():
     config = {
         'features_percentage': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
         'dist_functions': ['wasserstein', 'hellinger', 'jm'],
-        'nrows': 10000,
+        'nrows': 100000,
         'feature_reduction': {'do': True, 'features_to_reduce_prc': 0.2},
         'alpha': 1,
         'eps_type': 'maxmin',
         'eps_factor': 25
     }
     # the target column index should correspond to the dataset name index
-    datasets = ['glass', 'isolet', 'Obesity', 'soybean', 'spambase', 'WinnipegDataset', 'crop']
-    target_columns = ['label', 'label', 'label', 'label', 'label', 'label', 'label']
+    datasets = ['isolet', 'Obesity', 'soybean', 'WinnipegDataset', 'glass']
+    target_columns = ['label', 'label', 'label', 'label', 'label']
 
     for dataset, label in zip(datasets, target_columns):
         config['dataset_name'] = dataset
