@@ -8,7 +8,6 @@
 30.3.22 - work over Neta's number DS or isolet DS
 1. work over Matan's dataset. from regression to unbalanced multiclass - Omer
 2. לסדר כל שורה של accuracy לפי חום קור תוצאות - להפוך לאוטומטי - Chen
-8. grid search over features_percentage + feature_reduction + diffusion maps coordinates number (2-4) - Omer
 9. Add coordinates graph out from the diffusion maps (if points are too close to one another, we can change 'eps_factor' to a bigger value >>50)
 
 done:
@@ -17,3 +16,4 @@ done:
 5. להביא דאטהסט של נטע מהוואטסאפ
 6. delete obesity & soybean  datasets- done
 7. make sure there is a differnece between crop.csv and Winniepeg.csv - there isn't, we left crop.csv
+8. grid search over features_percentage + feature_reduction + diffusion maps coordinates number (2-4) - Omer

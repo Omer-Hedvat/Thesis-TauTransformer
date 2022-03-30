@@ -344,10 +344,6 @@ def main():
         ('ml_multiclass_classification_data', 'target'), ('digits', 'label'), ('faults', 'target')
     ]
 
-    datasets = [
-        ('glass', 'label')
-    ]
-
     for dataset, label in datasets:
         config['dataset_name'] = dataset
         config['label_column'] = label
