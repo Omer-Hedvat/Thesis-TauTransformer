@@ -320,11 +320,13 @@ def main():
         'eps_type': 'maxmin',
         'eps_factor': 25
     }
-    # the target column index should correspond to the dataset name index
-    datasets = ['isolet', 'Obesity', 'soybean', 'WinnipegDataset', 'glass']
-    target_columns = ['label', 'label', 'label', 'label', 'label']
+    # tuples of datasets names and target column name
+    datasets = [
+        ('isolet', 'label'), ('glass', 'label'), ('crop', 'label'), ('adware', 'Class'), ('otto', 'target'),
+        ('ml_multiclass_classification_data', 'target'), ('digits', 'label'), ('faults', 'target')
+    ]
 
-    for dataset, label in zip(datasets, target_columns):
+    for dataset, label in datasets:
         config['dataset_name'] = dataset
         config['label_column'] = label
         run_experiments(config)

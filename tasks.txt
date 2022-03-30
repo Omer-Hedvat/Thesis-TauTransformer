@@ -1,23 +1,19 @@
-4.	להוסיף את הבדיקה מול HGR - Chen
-12. fix strore_results()-F1 for new dataset - Omer
-13. לבצע t-test חד צדדי לא מסווג בין כל עמודת accuracy של עמודה חדשה שלנו לבין אחד המדדים הישנים (פישר, רנדום...)
-14. לסדר כל שורה של accuracy לפי חום קור תוצאות
+4.	להוסיף את הבדיקה מול HGR - Chen - לדבר עם גונן
 
-6.	שיטה להורדת פיצ'רים לפני חלוקה לKMeans וKMEDIODS.- לבדוק קורולטיביות עבור כל קלאס, לקחת את הערך מקסימום ולסדר את כל הפיצ'רים. את ה-X% הנמוכים ביותר אפשר לזרוק לפני החלוקה לתתי קבוצות - Omer
-
-9.	להוסיף לריצה את הדאטאסטים שקיבלנו ממתן.
-10. Add coordinates graph out from the diffusion maps - Chen
-8.	לשנות בKMeans וKMEDIODS את הבחירה לפי הדירוג של ממוצע של המרחקים מהמטריצה המשוטחת. - Chen
 7.	לבחור את אחד הטכניקות בדאטאסט מסויים ולייצר גרף של הACCUACRY כתלות בגודל הK.
-11. לסדר את כל הדאטהסטים בענן
 
 
 
 
-6:
-X << len(features)
-Y << len(classes)
-for every feature in features:
-    test correleation (Spearman/Pearson) for every class
-    save max/avg(top Y) correlation
-drop X weakest features
+30.3.22 - work over Neta's number DS or isolet DS
+1. work over Matan's dataset. from regression to unbalanced multiclass - Omer
+2. לסדר כל שורה של accuracy לפי חום קור תוצאות - להפוך לאוטומטי - Chen
+8. grid search over features_percentage + feature_reduction + diffusion maps coordinates number (2-4) - Omer
+9. Add coordinates graph out from the diffusion maps (if points are too close to one another, we can change 'eps_factor' to a bigger value >>50)
+
+done:
+3. לסדר את כל הדאטהסטים בענן
+4. להביא עוד דאטהסטים מהאינטרנט
+5. להביא דאטהסט של נטע מהוואטסאפ
+6. delete obesity & soybean  datasets- done
+7. make sure there is a differnece between crop.csv and Winniepeg.csv - there isn't, we left crop.csv

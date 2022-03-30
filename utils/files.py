@@ -4,6 +4,7 @@ import traceback
 
 import numpy as np
 import pandas as pd
+from sklearn import preprocessing
 
 from utils.timer import Timer
 
@@ -207,19 +208,25 @@ def update_json_file(filename, keys, value):
     save_json(tree, filename)
 
 
-def read_from_csv(filepath, nrows):
+def read_from_csv(filepath, config, nrows=-1):
     with open(filepath, "r", encoding="utf-8") as f, Timer() as timer:
         reader = csv.reader(f, delimiter=",")
         data = list(reader)
         nlinesfile = len(data)
     print(timer.to_string())
 
-    if nrows < nlinesfile:
+    if nlinesfile > nrows > 0:
         np.random.seed(0)
         lines2skip = np.random.choice(np.arange(1, nlinesfile + 1), (nlinesfile - nrows), replace=False)
         data = pd.read_csv(filepath, skiprows=lines2skip)
     else:
         data = pd.read_csv(filepath)
+
+    # Encode label column if needed
+    if data[config['label_column']].dtype == 'object':
+        le = preprocessing.LabelEncoder()
+        data[config['label_column']] = le.fit_transform(data[config['label_column']])
+
     return data
 
 
