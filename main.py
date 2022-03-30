@@ -1,4 +1,5 @@
 from datetime import datetime
+import itertools
 import logging
 from math import sqrt
 import numpy as np
@@ -190,7 +191,7 @@ def t_test(dataset_name):
     df = pd.DataFrame(data={'dataset': [dataset_name]})
     for a in A_type:
         for b in B_type:
-            #t test is A>B
+            # t test is A>B
             df[a + ' ' + b] = stats.ttest_ind(data[a], data[b], alternative='less')[1]
     old_df = pd.read_csv('results/t_test_results.csv')
     df = pd.concat([df, old_df], ignore_index=True)
@@ -217,13 +218,17 @@ def run_experiments(config):
     classes = list(data[config['label_column']].unique())
     logger.info(f"DATA STATS:\ndata shape of {data.shape}\nLabel distributes:\n{data[config['label_column']].value_counts().sort_index()}\n")
 
-    for feature_percentage in config['features_percentage']:
-        if config['feature_reduction']['do'] and (feature_percentage + config['feature_reduction']['features_to_reduce_prc'] > 1):
+    for feature_percentage, features_to_reduce_prc, dm_dim in \
+            list(itertools.product(config['features_percentage'], config['features_to_reduce_prc'], config['dm_dim'])):
+        if feature_percentage + features_to_reduce_prc > 1:
             continue
         k = calc_k(all_features, feature_percentage)
         if k < 1 or k == len(all_features):
             continue
-        logger.info(f"Running over features percentage of {feature_percentage}, which is {k} features out of {data.shape[1]-1}")
+        logger.info(f"""
+        Running over features percentage of {feature_percentage}, which is {k} features out of {data.shape[1] - 1}, 
+        with features to reduce heuristic of {features_to_reduce_prc}% and diffusion mapping dim of {dm_dim}"""
+                    )
 
         print_separation_dots('Using all features prediction')
         X, y = data[all_features].copy(), data[config['label_column']].copy()
@@ -277,11 +282,13 @@ def run_experiments(config):
             X_norm = min_max_scaler(X, all_features)
 
             df_dists, dist_dict = calc_dist(dist, X_norm, y, config['label_column'])
-            if config['feature_reduction']['do']:
-                df_dists, valid_features = dist_features_reduction(df_dists, config['feature_reduction']['features_to_reduce_prc'])
+            if features_to_reduce_prc > 0:
+                df_dists, valid_features = dist_features_reduction(df_dists, features_to_reduce_prc)
                 X = X.iloc[:, valid_features].copy()
                 features = all_features[valid_features]
-            coordinates, ranking = (diffusion_mapping(df_dists, config['alpha'], config['eps_type'], config['eps_factor'], dim=2))
+            else:
+                features = all_features
+            coordinates, ranking = (diffusion_mapping(df_dists, config['alpha'], config['eps_type'], config['eps_factor'], dim=dm_dim))
 
             flat_ranking = [item for sublist in ranking for item in sublist]
             ranking_idx = np.argsort(flat_ranking)
@@ -306,7 +313,8 @@ def run_experiments(config):
             logger.info(f'best features by farest coordinate from (0,0) are: {features[best_features]}')
             distance_from_0_acc, distance_from_0_f1 = predict(X.iloc[:, best_features], y)
             distance_from_0_f1_agg = calc_f1_score(distance_from_0_f1)
-            store_results(config['dataset_name'], feature_percentage, f'{dist}_distance_from_0', distance_from_0_acc, distance_from_0_f1_agg, classes, workdir)
+            store_results(config['dataset_name'], feature_percentage, f'{dist}_distance_from_0', distance_from_0_acc, distance_from_0_f1_agg, classes,
+                          workdir)
     t_test(config['dataset_name'])
 
 
@@ -315,7 +323,8 @@ def main():
         'features_percentage': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
         'dist_functions': ['wasserstein', 'hellinger', 'jm'],
         'nrows': 100000,
-        'feature_reduction': {'do': True, 'features_to_reduce_prc': 0.2},
+        'features_to_reduce_prc': [0, 0.2, 0.35, 0.5],
+        'dm_dim': [2, 3, 4],
         'alpha': 1,
         'eps_type': 'maxmin',
         'eps_factor': 25
@@ -324,6 +333,10 @@ def main():
     datasets = [
         ('isolet', 'label'), ('glass', 'label'), ('crop', 'label'), ('adware', 'Class'), ('otto', 'target'),
         ('ml_multiclass_classification_data', 'target'), ('digits', 'label'), ('faults', 'target')
+    ]
+
+    datasets = [
+        ('glass', 'label')
     ]
 
     for dataset, label in datasets:
