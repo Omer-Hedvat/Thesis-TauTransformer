@@ -208,14 +208,14 @@ def update_json_file(filename, keys, value):
     save_json(tree, filename)
 
 
-def read_from_csv(filepath, config, nrows=-1):
+def read_from_csv(filepath, config):
     with open(filepath, "r", encoding="utf-8") as f, Timer() as timer:
         reader = csv.reader(f, delimiter=",")
         data = list(reader)
         nlinesfile = len(data)
     print(timer.to_string())
 
-    if nlinesfile > nrows > 0:
+    if nlinesfile > config.get('nrows', -1) > 0:
         np.random.seed(0)
         lines2skip = np.random.choice(np.arange(1, nlinesfile + 1), (nlinesfile - nrows), replace=False)
         data = pd.read_csv(filepath, skiprows=lines2skip)

@@ -212,7 +212,7 @@ def run_experiments(config):
     dataset_dir = f"data/{config['dataset_name']}.csv"
 
     logger.info(f'{dataset_dir=}')
-    data = read_from_csv(dataset_dir, config['nrows'])
+    data = read_from_csv(dataset_dir, config)
     all_features = data.columns.drop(config['label_column'])
     classes = list(data[config['label_column']].unique())
     logger.info(f"DATA STATS:\ndata shape of {data.shape}\nLabel distributes:\n{data[config['label_column']].value_counts().sort_index()}\n")
