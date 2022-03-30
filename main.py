@@ -116,21 +116,26 @@ def k_medoids_features(coordinates, k):
     return r_features
 
 
-def store_results(dataset, features_prc, metric, acc, f1, classes, workdir):
+def store_results(dataset, features_prc, features_to_reduce_prc, dm_dim, metric, acc, f1, classes, workdir):
     # General Results File
     acc_results_df = pd.read_csv('results/all_datasets_results.csv')
-    if ((acc_results_df.dataset == dataset) & (acc_results_df.features_prc == features_prc)).any():
-        acc_results_df.loc[(acc_results_df.dataset == dataset) & (acc_results_df.features_prc == features_prc), metric] = sum(acc) / len(acc)
+    ds_results_mask = (
+            (acc_results_df.dataset == dataset) & (acc_results_df.features_prc == features_prc) &
+            (acc_results_df.features_to_reduce_prc == features_to_reduce_prc) & (acc_results_df.dm_dim == dm_dim)
+    )
+    if ds_results_mask.any():
+        acc_results_df.loc[ds_results_mask, metric] = sum(acc) / len(acc)
     else:
         today_date = datetime.now().strftime('%d-%m-%Y')
         new_df = pd.DataFrame(columns=acc_results_df.columns)
-        new_df.loc[len(new_df), ['date', 'dataset', 'features_prc', metric]] = [today_date, dataset, features_prc, (sum(acc) / len(acc))]
-        acc_results_df = pd.concat([acc_results_df, new_df]).sort_values(by=['dataset', 'features_prc'])
+        new_df.loc[len(new_df), ['date', 'dataset', 'features_prc', 'features_to_reduce_prc', 'dm_dim', metric]] = \
+            [today_date, dataset, features_prc, features_to_reduce_prc, dm_dim, (sum(acc) / len(acc))]
+        acc_results_df = pd.concat([acc_results_df, new_df]).sort_values(by=['dataset', 'features_prc', 'features_to_reduce_prc', 'dm_dim'])
     acc_results_df.to_csv('results/all_datasets_results.csv', index=False)
 
     # Dataset's F1 Results File
-    columns = ['features_prc', *[f'{metric}_{class_name}' for class_name in classes]]
-    values = [features_prc, *f1]
+    columns = ['features_prc', 'features_to_reduce_prc', 'dm_dim', *[f'{metric}_{class_name}' for class_name in classes]]
+    values = [features_prc, features_to_reduce_prc, dm_dim, *f1]
     data_dict = dict(zip(columns, values))
     f1_file = os.path.join(workdir, f'f1_scores.csv')
     new_data_df = pd.DataFrame([data_dict])
@@ -138,10 +143,14 @@ def store_results(dataset, features_prc, metric, acc, f1, classes, workdir):
         new_data_df.to_csv(f1_file, index=False)
     else:
         f1_results_df = pd.read_csv(f1_file)
-        if (f1_results_df.features_prc == features_prc).any():
-            f1_results_df.loc[f1_results_df.features_prc == features_prc, columns] = values
+        all_ds_results_mask = (
+                (f1_results_df.features_prc == features_prc) & (f1_results_df.features_to_reduce_prc == features_to_reduce_prc) &
+                (f1_results_df.dm_dim == dm_dim)
+        )
+        if all_ds_results_mask.any():
+            f1_results_df.loc[all_ds_results_mask, columns] = values
         else:
-            f1_results_df = pd.concat([f1_results_df, new_data_df]).sort_values(by=['features_prc'])
+            f1_results_df = pd.concat([f1_results_df, new_data_df]).sort_values(by=['features_prc', 'features_to_reduce_prc', 'dm_dim'])
         f1_results_df.to_csv(f1_file, index=False)
 
 
@@ -234,7 +243,7 @@ def run_experiments(config):
         X, y = data[all_features].copy(), data[config['label_column']].copy()
         all_features_acc, all_features_f1 = predict(X, y)
         all_features_f1_agg = calc_f1_score(all_features_f1)
-        store_results(config['dataset_name'], feature_percentage, 'all_features', all_features_acc, all_features_f1_agg, classes, workdir)
+        store_results(config['dataset_name'], feature_percentage, features_to_reduce_prc, dm_dim, 'all_features', all_features_acc, all_features_f1_agg, classes, workdir)
 
         logger.info(f"Running over {dataset_dir}, using {k} features out of {len(all_features)}")
         print_separation_dots(f'Using Random {k} features prediction')
@@ -244,7 +253,7 @@ def run_experiments(config):
         X, y = sampled_data[new_features].copy(), sampled_data[config['label_column']].copy()
         random_features_acc, random_features_f1 = predict(X, y)
         random_features_f1_agg = calc_f1_score(random_features_f1)
-        store_results(config['dataset_name'], feature_percentage, 'random_features', random_features_acc, random_features_f1_agg, classes, workdir)
+        store_results(config['dataset_name'], feature_percentage, features_to_reduce_prc, dm_dim, 'random_features', random_features_acc, random_features_f1_agg, classes, workdir)
 
         print_separation_dots(f'Using Fisher selection {k} features prediction')
         logger.info(f'Using Fisher selection {k} features prediction')
@@ -252,7 +261,7 @@ def run_experiments(config):
         fisher_ranks = fisher_score.fisher_score(X.to_numpy(), y.to_numpy())
         fisher_features_acc, fisher_features_f1 = predict(X.iloc[:, fisher_ranks[:k]], y)
         fisher_features_f1_agg = calc_f1_score(fisher_features_f1)
-        store_results(config['dataset_name'], feature_percentage, 'fisher', fisher_features_acc, fisher_features_f1_agg, classes, workdir)
+        store_results(config['dataset_name'], feature_percentage, features_to_reduce_prc, dm_dim, 'fisher', fisher_features_acc, fisher_features_f1_agg, classes, workdir)
 
         print_separation_dots(f'Using ReliefF selection {k} features prediction')
         logger.info(f'Using ReliefF selection {k} features prediction')
@@ -263,7 +272,7 @@ def run_experiments(config):
         df_relief_x = pd.DataFrame(data=X_relief, index=np.array(range(1, row + 1)), columns=np.array(range(1, col + 1)))
         relief_features_acc, relief_features_f1 = predict(df_relief_x, y)
         relief_features_f1_agg = calc_f1_score(relief_features_f1)
-        store_results(config['dataset_name'], feature_percentage, 'relief', relief_features_acc, relief_features_f1_agg, classes, workdir)
+        store_results(config['dataset_name'], feature_percentage, features_to_reduce_prc, dm_dim, 'relief', relief_features_acc, relief_features_f1_agg, classes, workdir)
 
         print_separation_dots(f'Using Chi-square Test selection {k} features prediction')
         logger.info(f'Using Chi-square Test selection {k} features prediction')
@@ -273,7 +282,7 @@ def run_experiments(config):
         df_chi2_x = pd.DataFrame(X_chi2)
         chi2_features_acc, chi2_features_f1 = predict(df_chi2_x, y)
         chi2_features_f1_agg = calc_f1_score(chi2_features_f1)
-        store_results(config['dataset_name'], feature_percentage, 'Chi_square', chi2_features_acc, chi2_features_f1_agg, classes, workdir)
+        store_results(config['dataset_name'], feature_percentage, features_to_reduce_prc, dm_dim, 'Chi_square', chi2_features_acc, chi2_features_f1_agg, classes, workdir)
 
         for dist in config['dist_functions']:
             print_separation_dots(f'Using Random {dist} features prediction')
@@ -295,25 +304,25 @@ def run_experiments(config):
             logger.info(f'best features by {dist} are: {features[ranking_idx]}')
             rank_acc, rank_f1 = predict(X.iloc[:, ranking_idx[-k:]], y)
             rank_f1_agg = calc_f1_score(rank_f1)
-            store_results(config['dataset_name'], feature_percentage, f'{dist}_rank', rank_acc, rank_f1_agg, classes, workdir)
+            store_results(config['dataset_name'], feature_percentage, features_to_reduce_prc, dm_dim, f'{dist}_rank', rank_acc, rank_f1_agg, classes, workdir)
 
             best_features, labels, features_rank = return_best_features_by_kmeans(coordinates, k)
             logger.info(f'Best features by KMeans are: {features[best_features]}')
             kmeans_acc, kmeans_f1 = predict(X.iloc[:, best_features], y)
             kmeans_f1_agg = calc_f1_score(kmeans_f1)
-            store_results(config['dataset_name'], feature_percentage, f'{dist}_kmeans', kmeans_acc, kmeans_f1_agg, classes, workdir)
+            store_results(config['dataset_name'], feature_percentage, features_to_reduce_prc, dm_dim, f'{dist}_kmeans', kmeans_acc, kmeans_f1_agg, classes, workdir)
 
             k_features = k_medoids_features(coordinates, k)
             logger.info(f'Best features by KMediods are: {features[k_features]}')
             kmediods_acc, kmediods_f1 = predict(X.iloc[:, k_features], y)
             kmediods_f1_agg = calc_f1_score(kmediods_f1)
-            store_results(config['dataset_name'], feature_percentage, f'{dist}_kmediods', kmediods_acc, kmediods_f1_agg, classes, workdir)
+            store_results(config['dataset_name'], feature_percentage, features_to_reduce_prc, dm_dim, f'{dist}_kmediods', kmediods_acc, kmediods_f1_agg, classes, workdir)
 
             best_features = return_farthest_features_from_center(coordinates, k)
             logger.info(f'best features by farest coordinate from (0,0) are: {features[best_features]}')
             distance_from_0_acc, distance_from_0_f1 = predict(X.iloc[:, best_features], y)
             distance_from_0_f1_agg = calc_f1_score(distance_from_0_f1)
-            store_results(config['dataset_name'], feature_percentage, f'{dist}_distance_from_0', distance_from_0_acc, distance_from_0_f1_agg, classes,
+            store_results(config['dataset_name'], feature_percentage, features_to_reduce_prc, dm_dim, f'{dist}_distance_from_0', distance_from_0_acc, distance_from_0_f1_agg, classes,
                           workdir)
     t_test(config['dataset_name'])
 
