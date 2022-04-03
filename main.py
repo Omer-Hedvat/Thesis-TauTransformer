@@ -340,8 +340,13 @@ def main():
     }
     # tuples of datasets names and target column name
     datasets = [
-        ('isolet', 'label'), ('glass', 'label'), ('crop', 'label'), ('adware', 'Class'), ('otto', 'target'),
-        ('ml_multiclass_classification_data', 'target'), ('digits', 'label'), ('faults', 'target')
+        ('glass', 'label'), ('crop', 'label'), ('adware', 'Class'), ('otto', 'target'), ('ml_multiclass_classification_data', 'target'),
+        ('digits', 'label'), ('faults', 'target'), ('isolet', 'label')
+    ]
+
+    datasets = [
+        ('glass', 'label'), ('crop', 'label'), ('adware', 'Class'), ('otto', 'target'), ('ml_multiclass_classification_data', 'target'),
+        ('digits', 'label'), ('faults', 'target')
     ]
 
     for dataset, label in datasets:
