@@ -229,7 +229,7 @@ def run_experiments(config):
 
     for feature_percentage, features_to_reduce_prc, dm_dim in \
             list(itertools.product(config['features_percentage'], config['features_to_reduce_prc'], config['dm_dim'])):
-        if feature_percentage + features_to_reduce_prc > 1:
+        if feature_percentage + features_to_reduce_prc >= 1:
             continue
         k = calc_k(all_features, feature_percentage)
         if k < 1 or k == len(all_features):
