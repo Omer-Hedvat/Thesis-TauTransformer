@@ -9,6 +9,7 @@
 1. work over Matan's dataset. from regression to unbalanced multiclass - Omer
 2. לסדר כל שורה של accuracy לפי חום קור תוצאות - להפוך לאוטומטי - Chen
 9. Add coordinates graph out from the diffusion maps (if points are too close to one another, we can change 'eps_factor' to a bigger value >>50)
+04.04.22
 10. run isolet & digits over 'features_percentage'<0.1 (0.01, 0.025, 0.05, 0.1, 0.2)
 11. clean adaware dataset from unwanted columns
 
