@@ -14,6 +14,9 @@
 11. clean adaware dataset from unwanted columns
 
 
+further work:
+1. combine 2 DM maps into single matrix (if dm_dim=3 --> we'll get 6 columns) and run DM over the merged data
+
 done:
 3. לסדר את כל הדאטהסטים בענן
 4. להביא עוד דאטהסטים מהאינטרנט
