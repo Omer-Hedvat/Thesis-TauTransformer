@@ -227,6 +227,9 @@ def read_from_csv(filepath, config):
         le = preprocessing.LabelEncoder()
         data[config['label_column']] = le.fit_transform(data[config['label_column']])
 
+        le_name_mapping = dict(zip(le.classes_, le.transform(le.classes_)))
+        logger.info(f"Target column mapping: {le_name_mapping}")
+
     return data
 
 

@@ -331,7 +331,7 @@ def main():
     config = {
         'features_percentage': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
         'dist_functions': ['wasserstein', 'hellinger', 'jm'],
-        'nrows': 100000,
+        'nrows': 10000,
         'features_to_reduce_prc': [0, 0.2, 0.35, 0.5],
         'dm_dim': [2, 3, 4],
         'alpha': 1,
@@ -345,8 +345,8 @@ def main():
     ]
 
     datasets = [
-        ('glass', 'label'), ('crop', 'label'), ('adware', 'Class'), ('otto', 'target'), ('ml_multiclass_classification_data', 'target'),
-        ('digits', 'label'), ('faults', 'target')
+        ('crop', 'label'), ('otto', 'target'), ('ml_multiclass_classification_data', 'target'), ('digits', 'label'), ('faults', 'target'),
+        ('adware', 'Class')
     ]
 
     for dataset, label in datasets:
