@@ -223,9 +223,9 @@ def run_experiments(config):
 
     logger.info(f'{dataset_dir=}')
     data = read_from_csv(dataset_dir, config)
-    all_features = data.columns.drop(config['label_column'])
-    classes = list(data[config['label_column']].unique())
-    logger.info(f"DATA STATS:\ndata shape of {data.shape}\nLabel distributes:\n{data[config['label_column']].value_counts().sort_index()}\n")
+    all_features = data.columns.drop('label')
+    classes = list(data['label'].unique())
+    logger.info(f"DATA STATS:\ndata shape of {data.shape}\nLabel distributes:\n{data['label'].value_counts().sort_index()}\n")
 
     for feature_percentage, features_to_reduce_prc, dm_dim in \
             list(itertools.product(config['features_percentage'], config['features_to_reduce_prc'], config['dm_dim'])):
@@ -240,7 +240,7 @@ def run_experiments(config):
                     )
 
         print_separation_dots('Using all features prediction')
-        X, y = data[all_features].copy(), data[config['label_column']].copy()
+        X, y = data[all_features].copy(), data['label'].copy()
         all_features_acc, all_features_f1 = predict(X, y)
         all_features_f1_agg = calc_f1_score(all_features_f1)
         store_results(config['dataset_name'], feature_percentage, features_to_reduce_prc, dm_dim, 'all_features', all_features_acc, all_features_f1_agg, classes, workdir)
@@ -249,15 +249,15 @@ def run_experiments(config):
         print_separation_dots(f'Using Random {k} features prediction')
         sampled_data = data[all_features].sample(n=k, axis='columns')
         new_features = sampled_data.columns
-        sampled_data[config['label_column']] = data[config['label_column']]
-        X, y = sampled_data[new_features].copy(), sampled_data[config['label_column']].copy()
+        sampled_data['label'] = data['label']
+        X, y = sampled_data[new_features].copy(), sampled_data['label'].copy()
         random_features_acc, random_features_f1 = predict(X, y)
         random_features_f1_agg = calc_f1_score(random_features_f1)
         store_results(config['dataset_name'], feature_percentage, features_to_reduce_prc, dm_dim, 'random_features', random_features_acc, random_features_f1_agg, classes, workdir)
 
         print_separation_dots(f'Using Fisher selection {k} features prediction')
         logger.info(f'Using Fisher selection {k} features prediction')
-        X, y = data[all_features].copy(), data[config['label_column']].copy()
+        X, y = data[all_features].copy(), data['label'].copy()
         fisher_ranks = fisher_score.fisher_score(X.to_numpy(), y.to_numpy())
         fisher_features_acc, fisher_features_f1 = predict(X.iloc[:, fisher_ranks[:k]], y)
         fisher_features_f1_agg = calc_f1_score(fisher_features_f1)
@@ -265,7 +265,7 @@ def run_experiments(config):
 
         print_separation_dots(f'Using ReliefF selection {k} features prediction')
         logger.info(f'Using ReliefF selection {k} features prediction')
-        X, y = data[all_features].copy(), data[config['label_column']].copy()
+        X, y = data[all_features].copy(), data['label'].copy()
         fs = ReliefF(n_neighbors=1, n_features_to_keep=k)
         X_relief = fs.fit_transform(X.to_numpy(), y.to_numpy())
         row, col = X_relief.shape
@@ -276,7 +276,7 @@ def run_experiments(config):
 
         print_separation_dots(f'Using Chi-square Test selection {k} features prediction')
         logger.info(f'Using Chi-square Test selection {k} features prediction')
-        X, y = data[all_features].copy(), data[config['label_column']].copy()
+        X, y = data[all_features].copy(), data['label'].copy()
         chi_features = SelectKBest(chi2, k=k)
         X_chi2 = chi_features.fit_transform(abs(X), y)
         df_chi2_x = pd.DataFrame(X_chi2)
@@ -287,10 +287,10 @@ def run_experiments(config):
         for dist in config['dist_functions']:
             print_separation_dots(f'Using Random {dist} features prediction')
 
-            X, y = data[all_features].copy(), data[config['label_column']].copy()
+            X, y = data[all_features].copy(), data['label'].copy()
             X_norm = min_max_scaler(X, all_features)
 
-            df_dists, dist_dict = calc_dist(dist, X_norm, y, config['label_column'])
+            df_dists, dist_dict = calc_dist(dist, X_norm, y, 'label')
             if features_to_reduce_prc > 0:
                 df_dists, valid_features = dist_features_reduction(df_dists, features_to_reduce_prc)
                 X = X.iloc[:, valid_features].copy()
@@ -331,7 +331,7 @@ def main():
     config = {
         'features_percentage': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
         'dist_functions': ['wasserstein', 'hellinger', 'jm'],
-        'nrows': 10000,
+        'nrows': 5000,
         'features_to_reduce_prc': [0, 0.2, 0.35, 0.5],
         'dm_dim': [2, 3, 4],
         'alpha': 1,
@@ -345,7 +345,7 @@ def main():
     ]
 
     datasets = [
-        ('crop', 'label'), ('otto', 'target'), ('ml_multiclass_classification_data', 'target'), ('digits', 'label'), ('faults', 'target'),
+        ('otto', 'target'), ('ml_multiclass_classification_data', 'target'), ('digits', 'label'), ('faults', 'target'),
         ('adware', 'Class')
     ]
 

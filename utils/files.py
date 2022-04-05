@@ -230,6 +230,9 @@ def read_from_csv(filepath, config):
         le_name_mapping = dict(zip(le.classes_, le.transform(le.classes_)))
         logger.info(f"Target column mapping: {le_name_mapping}")
 
+    if config['label_column'] != 'label':
+        data.rename(columns={config['label_column']: 'label'}, inplace=True)
+
     return data
 
 
