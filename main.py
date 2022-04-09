@@ -6,6 +6,9 @@ import numpy as np
 import os
 import pandas as pd
 
+import matplotlib.pyplot as plt
+from matplotlib.ticker import FixedFormatter
+
 from sklearn import metrics
 from sklearn.cluster import KMeans
 from sklearn.ensemble import RandomForestClassifier
@@ -214,6 +217,13 @@ def dist_features_reduction(df_dists, features_to_reduce_prc):
     new_df_dists = df_dists.iloc[features_to_keep]
     return new_df_dists, features_to_keep
 
+def all_results_colorful():
+    data = pd.read_csv("results/all_datasets_results.csv")
+    dat = data['dataset'] + " " + data['features_prc'].apply(str) + " " + data['features_to_reduce_prc'].apply(str) + " " + data['dm_dim'].apply(str)
+    data['raw'] = dat
+    data = data.set_index('raw')
+    data = data.drop(columns=['date', 'dataset', 'features_prc', 'features_to_reduce_prc', 'dm_dim'])
+    data.style.background_gradient(cmap='RdYlGn', axis=1).to_excel("results/all_resualts_colors.xlsx")
 
 def run_experiments(config):
     workdir = os.path.join(f'results', config['dataset_name'])
@@ -338,7 +348,7 @@ def main():
         'eps_type': 'maxmin',
         'eps_factor': 25
     }
-    # tuples of datasets names and target column name
+    #tuples of datasets names and target column name
     datasets = [
         ('glass', 'label'), ('crop', 'label'), ('adware', 'Class'), ('otto', 'target'), ('ml_multiclass_classification_data', 'target'),
         ('digits', 'label'), ('faults', 'target'), ('isolet', 'label')
@@ -354,6 +364,6 @@ def main():
         config['label_column'] = label
         run_experiments(config)
 
-
+    all_results_colorful()
 if __name__ == '__main__':
     main()
