@@ -223,7 +223,8 @@ def all_results_colorful():
     data['raw'] = dat
     data = data.set_index('raw')
     data = data.drop(columns=['date', 'dataset', 'features_prc', 'features_to_reduce_prc', 'dm_dim'])
-    data.style.background_gradient(cmap='RdYlGn', axis=1).to_excel("results/all_resualts_colors.xlsx")
+    cols = data.columns[1:]
+    data.style.background_gradient(cmap='RdYlGn', axis=1, subset=cols).to_excel("results/all_resualts_colors.xlsx")
 
 def run_experiments(config):
     workdir = os.path.join(f'results', config['dataset_name'])
@@ -367,3 +368,4 @@ def main():
     all_results_colorful()
 if __name__ == '__main__':
     main()
+
