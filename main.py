@@ -199,12 +199,16 @@ def t_test(dataset_name):
     data = pd.read_csv('results/all_datasets_results.csv')
     data = data[data['dataset'] == dataset_name]
     A_type = ['random_features', 'fisher', 'relief', 'Chi_square']
-    B_type = data.iloc[:, 8:].columns
+    B_type = ['hellinger_rank', 'hellinger_kmeans',
+               'hellinger_kmediods', 'hellinger_distance_from_0', 'jm_rank',
+               'jm_kmeans', 'jm_kmediods', 'jm_distance_from_0', 'wasserstein_rank',
+               'wasserstein_kmeans', 'wasserstein_kmediods',
+               'wasserstein_distance_from_0']
     df = pd.DataFrame(data={'dataset': [dataset_name]})
     for a in A_type:
         for b in B_type:
             # t test is A>B
-            df[a + ' ' + b] = stats.ttest_ind(data[a], data[b], alternative='less')[1]
+            df[a + ' ' + b] = stats.ttest_rel(data[a], data[b], alternative='less')[1]
     old_df = pd.read_csv('results/t_test_results.csv')
     df = pd.concat([df, old_df], ignore_index=True)
     df.to_csv('results/t_test_results.csv')
