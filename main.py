@@ -354,11 +354,6 @@ def main():
         ('digits', 'label'), ('faults', 'target'), ('isolet', 'label')
     ]
 
-    datasets = [
-        ('otto', 'target'), ('ml_multiclass_classification_data', 'target'), ('digits', 'label'), ('faults', 'target'),
-        ('adware', 'Class')
-    ]
-
     for dataset, label in datasets:
         config['dataset_name'] = dataset
         config['label_column'] = label
