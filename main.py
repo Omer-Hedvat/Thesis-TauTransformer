@@ -354,8 +354,7 @@ def main():
     }
     # tuples of datasets names and target column name
     datasets = [
-        ('glass', 'label'), ('crop', 'label'), ('adware', 'Class'), ('otto', 'target'), ('ml_multiclass_classification_data', 'target'),
-        ('digits', 'label'), ('faults', 'target'), ('isolet', 'label')
+        ('adware_balanced', 'label'), ('ml_multiclass_classification_data', 'target'), ('digits', 'label'), ('isolet', 'label')
     ]
 
     for dataset, label in datasets:
