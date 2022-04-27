@@ -221,6 +221,7 @@ def dist_features_reduction(df_dists, features_to_reduce_prc):
     new_df_dists = df_dists.iloc[features_to_keep]
     return new_df_dists, features_to_keep
 
+
 def all_results_colorful():
     data = pd.read_csv("results/all_datasets_results.csv")
     dat = data['dataset'] + " " + data['features_prc'].apply(str) + " " + data['features_to_reduce_prc'].apply(str) + " " + data['dm_dim'].apply(str)
@@ -228,6 +229,7 @@ def all_results_colorful():
     data = data.set_index('raw')
     data = data.drop(columns=['date', 'dataset', 'features_prc', 'features_to_reduce_prc', 'dm_dim'])
     data.style.background_gradient(cmap='RdYlGn', axis=1).to_excel("results/all_resualts_colors.xlsx")
+
 
 def run_experiments(config):
     workdir = os.path.join(f'results', config['dataset_name'])
@@ -290,9 +292,9 @@ def run_experiments(config):
 
         print_separation_dots(f'Using Chi-square Test selection {k} features prediction')
         logger.info(f'Using Chi-square Test selection {k} features prediction')
-        X, y = data[all_features].copy(), data['label'].copy()
         chi_features = SelectKBest(chi2, k=k)
-        X_chi2 = chi_features.fit_transform(abs(X), y)
+        X_norm = min_max_scaler(X, all_features)
+        X_chi2 = chi_features.fit_transform(X_norm, y)
         df_chi2_x = pd.DataFrame(X_chi2)
         chi2_features_acc, chi2_features_f1 = predict(df_chi2_x, y)
         chi2_features_f1_agg = calc_f1_score(chi2_features_f1)
@@ -313,48 +315,31 @@ def run_experiments(config):
                 features = all_features
             coordinates, ranking = (diffusion_mapping(df_dists, config['alpha'], config['eps_type'], config['eps_factor'], dim=dm_dim))
 
-            flat_ranking = [item for sublist in ranking for item in sublist]
-            ranking_idx = np.argsort(flat_ranking)
-            logger.info(f'best features by {dist} are: {features[ranking_idx]}')
-            rank_acc, rank_f1 = predict(X.iloc[:, ranking_idx[-k:]], y)
-            rank_f1_agg = calc_f1_score(rank_f1)
-            store_results(config['dataset_name'], feature_percentage, features_to_reduce_prc, dm_dim, f'{dist}_rank', rank_acc, rank_f1_agg, classes, workdir)
-
             best_features, labels, features_rank = return_best_features_by_kmeans(coordinates, k)
             logger.info(f'Best features by KMeans are: {features[best_features]}')
             kmeans_acc, kmeans_f1 = predict(X.iloc[:, best_features], y)
             kmeans_f1_agg = calc_f1_score(kmeans_f1)
             store_results(config['dataset_name'], feature_percentage, features_to_reduce_prc, dm_dim, f'{dist}_kmeans', kmeans_acc, kmeans_f1_agg, classes, workdir)
 
-            k_features = k_medoids_features(coordinates, k)
-            logger.info(f'Best features by KMediods are: {features[k_features]}')
-            kmediods_acc, kmediods_f1 = predict(X.iloc[:, k_features], y)
-            kmediods_f1_agg = calc_f1_score(kmediods_f1)
-            store_results(config['dataset_name'], feature_percentage, features_to_reduce_prc, dm_dim, f'{dist}_kmediods', kmediods_acc, kmediods_f1_agg, classes, workdir)
-
-            best_features = return_farthest_features_from_center(coordinates, k)
-            logger.info(f'best features by farest coordinate from (0,0) are: {features[best_features]}')
-            distance_from_0_acc, distance_from_0_f1 = predict(X.iloc[:, best_features], y)
-            distance_from_0_f1_agg = calc_f1_score(distance_from_0_f1)
-            store_results(config['dataset_name'], feature_percentage, features_to_reduce_prc, dm_dim, f'{dist}_distance_from_0', distance_from_0_acc, distance_from_0_f1_agg, classes,
-                          workdir)
     t_test(config['dataset_name'])
 
 
 def main():
     config = {
         'features_percentage': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
-        'dist_functions': ['wasserstein', 'hellinger', 'jm'],
-        'nrows': 10000,
+        'dist_functions': ['wasserstein', 'jm', 'hellinger'],
+        'nrows': 500,
         'features_to_reduce_prc': [0, 0.2, 0.35, 0.5],
-        'dm_dim': [2, 3, 4],
+        'dm_dim': [2],
         'alpha': 1,
         'eps_type': 'maxmin',
         'eps_factor': 25
     }
+
     # tuples of datasets names and target column name
     datasets = [
-        ('adware_balanced', 'label'), ('ml_multiclass_classification_data', 'target'), ('digits', 'label'), ('isolet', 'label')
+        ('adware_balanced', 'label'), ('ml_multiclass_classification_data', 'target'), ('digits', 'label'), ('isolet', 'label'),
+        ('otto_balanced', 'target')
     ]
 
     for dataset, label in datasets:
