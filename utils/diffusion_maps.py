@@ -73,7 +73,6 @@ def diffusion_mapping(data_list, alpha, eps_type, epsilon_factor, **kwargs):
     :param kwargs:
     :return:
     """
-    assert 'dim' in kwargs.keys()
 
     # compute epsilon of (data_list) eps_type can be 'mean' or 'maxmin'
     # dist is the L2 distances
@@ -97,7 +96,7 @@ def diffusion_mapping(data_list, alpha, eps_type, epsilon_factor, **kwargs):
     singular_vectors, singular_values, _ = LA.svd(m, full_matrices=False)
 
     # Compute embedding coordinates
-    diffusion_coordinates = singular_vectors[:, 1:kwargs['dim'] + 1].T * (singular_values[1:kwargs['dim'] + 1][:, None])
+    diffusion_coordinates = singular_vectors[:, 1:3].T * (singular_values[1:3][:, None])
     ranking = singular_vectors[:, :1]
 
     return diffusion_coordinates, ranking
