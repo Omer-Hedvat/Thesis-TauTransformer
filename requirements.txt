@@ -1,4 +1,4 @@
-matplotlib==3.3.2
+matplotlib==3.5.2
 numpy==1.22.2
 pandas==1.4.0
 ReliefF==0.1.2

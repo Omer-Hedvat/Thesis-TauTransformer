@@ -30,14 +30,6 @@ from utils.machine_learning import min_max_scaler
 logger = logging.getLogger(__name__)
 
 
-def return_farthest_features_from_center(coordinates, k):
-    dist = []
-    for c in coordinates.T:
-        dist.append(sqrt((c[0] ** 2) + (c[1] ** 2)))
-    ranking_idx = np.argsort(dist)
-    return ranking_idx[-k:]
-
-
 def execute_distance_func(df, function_name, feature, label1, label2):
     """
     Executes various distance functions by 'function_name' argument.
@@ -103,20 +95,6 @@ def return_best_features_by_kmeans(coordinates, k):
             selected_cetroids.append(labels[idx])
             best_features.append(idx)
     return best_features, labels, features_rank
-
-
-def k_medoids_features(coordinates, k):
-    # calc KMediod to get to centers
-    coordinates = coordinates.T
-    kmedoids = KMedoids(n_clusters=k, random_state=0).fit(coordinates)
-    centers = kmedoids.cluster_centers_
-
-    # search for the features index
-    r_features = []
-    for i, v in enumerate(coordinates):
-        if v in centers:
-            r_features.append(i)
-    return r_features
 
 
 def store_results(dataset, features_prc, features_to_reduce_prc, dm_dim, metric, acc, f1, classes, workdir):
