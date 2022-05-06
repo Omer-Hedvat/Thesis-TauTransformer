@@ -202,7 +202,9 @@ def features_reduction(all_features, dists_dict, features_to_reduce_prc):
     final_features_to_keep_idx = list(set(df_dists.index).difference(final_features_to_reduce_idx))
     final_features_to_keep = all_features[final_features_to_keep_idx]
     final_dists_dict = {key: value.iloc[final_features_to_keep_idx] for key, value in dists_dict.items()}
-    return final_dists_dict, final_features_to_keep
+
+    logger.info(f'features_reduction() decided to drop these features {all_features[list(final_features_to_reduce_idx)]} and to keep {final_features_to_keep}')
+    return final_dists_dict, final_features_to_keep_idx
 
 
 def dist_features_reduction(df_dists, features_to_reduce_prc):
@@ -234,6 +236,16 @@ def run_experiments(config):
     classes = list(data['label'].unique())
     logger.info(f"DATA STATS:\ndata shape of {data.shape}\nLabel distributes:\n{data['label'].value_counts().sort_index()}\n")
 
+    dists_dict = dict()
+    for dist in config['dist_functions']:
+        logger.info(f'Calculating distances by {dist}')
+
+        X, y = data[all_features].copy(), data['label'].copy()
+        X_norm = min_max_scaler(X, all_features)
+
+        df_dists, _ = calc_dist(dist, X_norm, y, 'label')
+        dists_dict[dist] = df_dists
+
     for feature_percentage, features_to_reduce_prc, dm_dim in \
             list(itertools.product(config['features_percentage'], config['features_to_reduce_prc'], config['dm_dim'])):
         if feature_percentage + features_to_reduce_prc >= 1:
@@ -262,45 +274,51 @@ def run_experiments(config):
         random_features_f1_agg = calc_f1_score(random_features_f1)
         store_results(config['dataset_name'], feature_percentage, features_to_reduce_prc, dm_dim, 'random_features', random_features_acc, random_features_f1_agg, classes, workdir)
 
-        print_separation_dots(f'Using Fisher selection {k} features prediction')
-        logger.info(f'Using Fisher selection {k} features prediction')
+        # print_separation_dots(f'Using Fisher selection {k} features prediction')
+        # logger.info(f'Using Fisher selection {k} features prediction')
+        # X, y = data[all_features].copy(), data['label'].copy()
+        # fisher_ranks = fisher_score.fisher_score(X.to_numpy(), y.to_numpy())
+        # fisher_features_acc, fisher_features_f1 = predict(X.iloc[:, fisher_ranks[:k]], y)
+        # fisher_features_f1_agg = calc_f1_score(fisher_features_f1)
+        # store_results(config['dataset_name'], feature_percentage, features_to_reduce_prc, dm_dim, 'fisher', fisher_features_acc, fisher_features_f1_agg, classes, workdir)
+        #
+        # print_separation_dots(f'Using ReliefF selection {k} features prediction')
+        # logger.info(f'Using ReliefF selection {k} features prediction')
+        # X, y = data[all_features].copy(), data['label'].copy()
+        # fs = ReliefF(n_neighbors=1, n_features_to_keep=k)
+        # X_relief = fs.fit_transform(X.to_numpy(), y.to_numpy())
+        # row, col = X_relief.shape
+        # df_relief_x = pd.DataFrame(data=X_relief, index=np.array(range(1, row + 1)), columns=np.array(range(1, col + 1)))
+        # relief_features_acc, relief_features_f1 = predict(df_relief_x, y)
+        # relief_features_f1_agg = calc_f1_score(relief_features_f1)
+        # store_results(config['dataset_name'], feature_percentage, features_to_reduce_prc, dm_dim, 'relief', relief_features_acc, relief_features_f1_agg, classes, workdir)
+        #
+        # print_separation_dots(f'Using Chi-square Test selection {k} features prediction')
+        # logger.info(f'Using Chi-square Test selection {k} features prediction')
+        # chi_features = SelectKBest(chi2, k=k)
+        # X_norm = min_max_scaler(X, all_features)
+        # X_chi2 = chi_features.fit_transform(X_norm, y)
+        # df_chi2_x = pd.DataFrame(X_chi2)
+        # chi2_features_acc, chi2_features_f1 = predict(df_chi2_x, y)
+        # chi2_features_f1_agg = calc_f1_score(chi2_features_f1)
+        # store_results(config['dataset_name'], feature_percentage, features_to_reduce_prc, dm_dim, 'Chi_square', chi2_features_acc, chi2_features_f1_agg, classes, workdir)
+
         X, y = data[all_features].copy(), data['label'].copy()
-        fisher_ranks = fisher_score.fisher_score(X.to_numpy(), y.to_numpy())
-        fisher_features_acc, fisher_features_f1 = predict(X.iloc[:, fisher_ranks[:k]], y)
-        fisher_features_f1_agg = calc_f1_score(fisher_features_f1)
-        store_results(config['dataset_name'], feature_percentage, features_to_reduce_prc, dm_dim, 'fisher', fisher_features_acc, fisher_features_f1_agg, classes, workdir)
-
-        print_separation_dots(f'Using ReliefF selection {k} features prediction')
-        logger.info(f'Using ReliefF selection {k} features prediction')
-        X, y = data[all_features].copy(), data['label'].copy()
-        fs = ReliefF(n_neighbors=1, n_features_to_keep=k)
-        X_relief = fs.fit_transform(X.to_numpy(), y.to_numpy())
-        row, col = X_relief.shape
-        df_relief_x = pd.DataFrame(data=X_relief, index=np.array(range(1, row + 1)), columns=np.array(range(1, col + 1)))
-        relief_features_acc, relief_features_f1 = predict(df_relief_x, y)
-        relief_features_f1_agg = calc_f1_score(relief_features_f1)
-        store_results(config['dataset_name'], feature_percentage, features_to_reduce_prc, dm_dim, 'relief', relief_features_acc, relief_features_f1_agg, classes, workdir)
-
-        dists_dict = dict()
-        for dist in config['dist_functions']:
-            print_separation_dots(f'Using Random {dist} features prediction')
-
-            X, y = data[all_features].copy(), data['label'].copy()
-            X_norm = min_max_scaler(X, all_features)
-
-            df_dists, _ = calc_dist(dist, X_norm, y, 'label')
-            dists_dict[dist] = df_dists
-
         if features_to_reduce_prc > 0:
-            dists_dict, valid_features = features_reduction(all_features, dists_dict, features_to_reduce_prc)
-            X = X.iloc[:, valid_features].copy()
-            features = all_features[valid_features]
+            dists_dict, features_to_keep_idx = features_reduction(all_features, dists_dict, features_to_reduce_prc)
+            X = X.iloc[:, features_to_keep_idx].copy()
+            features = all_features[features_to_keep_idx]
         else:
             features = all_features
+        dm_dict = {}
+        for dist in config['dist_functions']:
+            logger.info(f'Calculating diffusion maps by {dist}')
+            coordinates, ranking = diffusion_mapping(dists_dict[dist], config['alpha'], config['eps_type'], config['eps_factor'], dim=dm_dim)
+            dm_dict[dist] = {'coordinates': coordinates, 'ranking': ranking}
 
-        coordinates, ranking = (diffusion_mapping(df_dists, config['alpha'], config['eps_type'], config['eps_factor'], dim=dm_dim))
-
-        best_features, labels, features_rank = return_best_features_by_kmeans(coordinates, k)
+        agg_coordinates = np.concatenate([val['coordinates'] for val in dm_dict.values()]).T
+        final_coordinates, final_ranking = diffusion_mapping(agg_coordinates, config['alpha'], config['eps_type'], config['eps_factor'], dim=dm_dim)
+        best_features, labels, features_rank = return_best_features_by_kmeans(final_coordinates, k)
         logger.info(f'Best features by KMeans are: {features[best_features]}')
         kmeans_acc, kmeans_f1 = predict(X.iloc[:, best_features], y)
         kmeans_f1_agg = calc_f1_score(kmeans_f1)
@@ -314,7 +332,7 @@ def main():
         'features_percentage': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
         'dist_functions': ['wasserstein', 'jm', 'hellinger'],
         'nrows': 500,
-        'features_to_reduce_prc': [0.2, 0.35, 0.5],
+        'features_to_reduce_prc': [0, 0.2, 0.35, 0.5],
         'dm_dim': [2],
         'alpha': 1,
         'eps_type': 'maxmin',
