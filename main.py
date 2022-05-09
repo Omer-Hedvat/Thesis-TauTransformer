@@ -343,11 +343,6 @@ def main():
         ('otto_balanced', 'target')
     ]
 
-    datasets = [
-        ('ml_multiclass_classification_data', 'target')
-    ]
-    config['features_percentage'] = [0.1, 0.2, 0.3, 0.4, 0.5]
-
     for dataset, label in datasets:
         config['dataset_name'] = dataset
         config['label_column'] = label
