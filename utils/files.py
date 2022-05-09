@@ -229,6 +229,8 @@ def read_from_csv(filepath, config):
 
         le_name_mapping = dict(zip(le.classes_, le.transform(le.classes_)))
         logger.info(f"Target column mapping: {le_name_mapping}")
+    elif data[config['label_column']].dtype == 'float':
+        data[config['label_column']] = data[config['label_column']].astype('int')
 
     if config['label_column'] != 'label':
         data.rename(columns={config['label_column']: 'label'}, inplace=True)
