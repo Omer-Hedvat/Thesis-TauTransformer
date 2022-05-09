@@ -30,6 +30,43 @@ from utils.machine_learning import min_max_scaler
 logger = logging.getLogger(__name__)
 
 
+def kfolds_split(data, iter, n_splits=5, random_state=0):
+    data = data.sample(frac=1, random_state=random_state).reset_index(drop=True).copy()
+    split_len = int(data.shape[0]/n_splits)
+    val_i = n_splits - iter
+    val_set = data.iloc[val_i*split_len:(val_i+1)*split_len]
+    train_set = data[~data.index.isin(val_set.index)]
+    return train_set, val_set
+
+
+def predict(X_train, y_train, X_test=None, y_test=None):
+    kf = StratifiedKFold(n_splits=5, shuffle=True, random_state=0)
+    clf = RandomForestClassifier(random_state=1)
+    multi_target_forest = OneVsRestClassifier(clf, n_jobs=-1)
+    train_acc = []
+    f1_scores_list = []
+
+    for train_index, test_index in kf.split(X_train, y_train):
+        model = multi_target_forest.fit(X_train.iloc[train_index], y_train.iloc[train_index])
+        train_preds = model.predict(X_train.iloc[test_index])
+
+        train_acc.append(metrics.accuracy_score(y_train.iloc[test_index], train_preds))
+        f1_scores_list.append(list(metrics.f1_score(y_train.iloc[test_index], train_preds, average=None)))
+    if X_test is not None and y_test is not None:
+        model = multi_target_forest.fit(X_train, y_train)
+        preds = model.predict(X_test)
+        logger.info(metrics.classification_report(y_test, preds, digits=3))
+
+    train_avg_score = sum(train_acc) / len(train_acc)
+    logger.info(f"Cross validation accuracies = {train_acc}")
+    logger.info(f"Cross validation average accuracy = {train_avg_score}\n")
+    return train_acc, f1_scores_list
+
+
+def calc_f1_score(f1_lists):
+    return list(np.array(f1_lists).mean(axis=0))
+
+
 def execute_distance_func(df, function_name, feature, label1, label2):
     """
     Executes various distance functions by 'function_name' argument.
@@ -84,47 +121,6 @@ def calc_dist(dist_func_name, X_tr, classes, label_column):
     return df_dists, dist_dict
 
 
-def return_best_features_by_kmeans(coordinates, k):
-    features_rank = np.argsort(coordinates[0])
-    kmeans = KMeans(n_clusters=k, random_state=0)
-    labels = kmeans.fit(coordinates.T).labels_
-    best_features = []
-    selected_cetroids = []
-    for idx in features_rank:
-        if labels[idx] not in selected_cetroids:
-            selected_cetroids.append(labels[idx])
-            best_features.append(idx)
-    return best_features, labels, features_rank
-
-
-def predict(X_train, y_train, X_test=None, y_test=None):
-    kf = StratifiedKFold(n_splits=5, shuffle=True, random_state=0)
-    clf = RandomForestClassifier(random_state=1)
-    multi_target_forest = OneVsRestClassifier(clf, n_jobs=-1)
-    train_acc = []
-    f1_scores_list = []
-
-    for train_index, test_index in kf.split(X_train, y_train):
-        model = multi_target_forest.fit(X_train.iloc[train_index], y_train.iloc[train_index])
-        train_preds = model.predict(X_train.iloc[test_index])
-
-        train_acc.append(metrics.accuracy_score(y_train.iloc[test_index], train_preds))
-        f1_scores_list.append(list(metrics.f1_score(y_train.iloc[test_index], train_preds, average=None)))
-    if X_test is not None and y_test is not None:
-        model = multi_target_forest.fit(X_train, y_train)
-        preds = model.predict(X_test)
-        logger.info(metrics.classification_report(y_test, preds, digits=3))
-
-    train_avg_score = sum(train_acc) / len(train_acc)
-    logger.info(f"Cross validation accuracies = {train_acc}")
-    logger.info(f"Cross validation average accuracy = {train_avg_score}\n")
-    return train_acc, f1_scores_list
-
-
-def calc_f1_score(f1_lists):
-    return list(np.array(f1_lists).mean(axis=0))
-
-
 def calc_k(features, prc):
     return int(len(features) * prc)
 
@@ -152,6 +148,19 @@ def dist_features_reduction(df_dists, features_to_reduce_prc):
     features_to_keep_idx = df_feature_avg.iloc[np.argsort(df_feature_avg)][num_features_to_reduce:].index.sort_values()
     features_to_reduce_idx = list(set(df_feature_avg.index).difference(features_to_keep_idx))
     return features_to_keep_idx, features_to_reduce_idx
+
+
+def return_best_features_by_kmeans(coordinates, k):
+    features_rank = np.argsort(coordinates[0])
+    kmeans = KMeans(n_clusters=k, random_state=0)
+    labels = kmeans.fit(coordinates.T).labels_
+    best_features = []
+    selected_cetroids = []
+    for idx in features_rank:
+        if labels[idx] not in selected_cetroids:
+            selected_cetroids.append(labels[idx])
+            best_features.append(idx)
+    return best_features, labels, features_rank
 
 
 def store_results(dataset, features_prc, dm_dim, metric, acc, f1, classes, workdir):
