@@ -15,7 +15,6 @@ from sklearn.cluster import KMeans
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.model_selection import StratifiedKFold
-from sklearn_extra.cluster import KMedoids
 from skfeature.function.similarity_based import fisher_score
 from ReliefF import ReliefF
 from sklearn.feature_selection import SelectKBest
@@ -274,34 +273,34 @@ def run_experiments(config):
         random_features_f1_agg = calc_f1_score(random_features_f1)
         store_results(config['dataset_name'], feature_percentage, '-', dm_dim, 'random_features', random_features_acc, random_features_f1_agg, classes, workdir)
 
-        # print_separation_dots(f'Using Fisher selection {k} features prediction')
-        # logger.info(f'Using Fisher selection {k} features prediction')
-        # X, y = data[all_features].copy(), data['label'].copy()
-        # fisher_ranks = fisher_score.fisher_score(X.to_numpy(), y.to_numpy())
-        # fisher_features_acc, fisher_features_f1 = predict(X.iloc[:, fisher_ranks[:k]], y)
-        # fisher_features_f1_agg = calc_f1_score(fisher_features_f1)
-        # store_results(config['dataset_name'], feature_percentage, '-', dm_dim, 'fisher', fisher_features_acc, fisher_features_f1_agg, classes, workdir)
-        #
-        # print_separation_dots(f'Using ReliefF selection {k} features prediction')
-        # logger.info(f'Using ReliefF selection {k} features prediction')
-        # X, y = data[all_features].copy(), data['label'].copy()
-        # fs = ReliefF(n_neighbors=1, n_features_to_keep=k)
-        # X_relief = fs.fit_transform(X.to_numpy(), y.to_numpy())
-        # row, col = X_relief.shape
-        # df_relief_x = pd.DataFrame(data=X_relief, index=np.array(range(1, row + 1)), columns=np.array(range(1, col + 1)))
-        # relief_features_acc, relief_features_f1 = predict(df_relief_x, y)
-        # relief_features_f1_agg = calc_f1_score(relief_features_f1)
-        # store_results(config['dataset_name'], feature_percentage, '-', dm_dim, 'relief', relief_features_acc, relief_features_f1_agg, classes, workdir)
-        #
-        # print_separation_dots(f'Using Chi-square Test selection {k} features prediction')
-        # logger.info(f'Using Chi-square Test selection {k} features prediction')
-        # chi_features = SelectKBest(chi2, k=k)
-        # X_norm = min_max_scaler(X, all_features)
-        # X_chi2 = chi_features.fit_transform(X_norm, y)
-        # df_chi2_x = pd.DataFrame(X_chi2)
-        # chi2_features_acc, chi2_features_f1 = predict(df_chi2_x, y)
-        # chi2_features_f1_agg = calc_f1_score(chi2_features_f1)
-        # store_results(config['dataset_name'], feature_percentage, '-', dm_dim, 'Chi_square', chi2_features_acc, chi2_features_f1_agg, classes, workdir)
+        print_separation_dots(f'Using Fisher selection {k} features prediction')
+        logger.info(f'Using Fisher selection {k} features prediction')
+        X, y = data[all_features].copy(), data['label'].copy()
+        fisher_ranks = fisher_score.fisher_score(X.to_numpy(), y.to_numpy())
+        fisher_features_acc, fisher_features_f1 = predict(X.iloc[:, fisher_ranks[:k]], y)
+        fisher_features_f1_agg = calc_f1_score(fisher_features_f1)
+        store_results(config['dataset_name'], feature_percentage, '-', dm_dim, 'fisher', fisher_features_acc, fisher_features_f1_agg, classes, workdir)
+
+        print_separation_dots(f'Using ReliefF selection {k} features prediction')
+        logger.info(f'Using ReliefF selection {k} features prediction')
+        X, y = data[all_features].copy(), data['label'].copy()
+        fs = ReliefF(n_neighbors=1, n_features_to_keep=k)
+        X_relief = fs.fit_transform(X.to_numpy(), y.to_numpy())
+        row, col = X_relief.shape
+        df_relief_x = pd.DataFrame(data=X_relief, index=np.array(range(1, row + 1)), columns=np.array(range(1, col + 1)))
+        relief_features_acc, relief_features_f1 = predict(df_relief_x, y)
+        relief_features_f1_agg = calc_f1_score(relief_features_f1)
+        store_results(config['dataset_name'], feature_percentage, '-', dm_dim, 'relief', relief_features_acc, relief_features_f1_agg, classes, workdir)
+
+        print_separation_dots(f'Using Chi-square Test selection {k} features prediction')
+        logger.info(f'Using Chi-square Test selection {k} features prediction')
+        chi_features = SelectKBest(chi2, k=k)
+        X_norm = min_max_scaler(X, all_features)
+        X_chi2 = chi_features.fit_transform(X_norm, y)
+        df_chi2_x = pd.DataFrame(X_chi2)
+        chi2_features_acc, chi2_features_f1 = predict(df_chi2_x, y)
+        chi2_features_f1_agg = calc_f1_score(chi2_features_f1)
+        store_results(config['dataset_name'], feature_percentage, '-', dm_dim, 'Chi_square', chi2_features_acc, chi2_features_f1_agg, classes, workdir)
 
         for features_to_reduce_prc in config['features_to_reduce_prc']:
             if feature_percentage + features_to_reduce_prc >= 1:
@@ -316,8 +315,8 @@ def run_experiments(config):
             else:
                 distances_dict = dists_dict.copy()
                 features = all_features
-            dm_dict = {}
 
+            dm_dict = {}
             for dist in config['dist_functions']:
                 logger.info(f'Calculating diffusion maps by {dist}')
                 coordinates, ranking = diffusion_mapping(distances_dict[dist], config['alpha'], config['eps_type'], config['eps_factor'], dim=dm_dim)
@@ -338,7 +337,7 @@ def main():
     config = {
         'features_percentage': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
         'dist_functions': ['wasserstein', 'jm', 'hellinger'],
-        'nrows': 500,
+        'nrows': 10000,
         'features_to_reduce_prc': [0, 0.2, 0.35, 0.5],
         'dm_dim': [2],
         'alpha': 1,
