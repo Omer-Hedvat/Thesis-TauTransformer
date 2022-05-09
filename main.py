@@ -299,7 +299,7 @@ def run_experiments(config):
         for features_to_reduce_prc in config['features_to_reduce_prc']:
             if feature_percentage + features_to_reduce_prc >= 1:
                 continue
-            logger.info(f'features to reduce heuristic of {features_to_reduce_prc}%')
+            logger.info(f'features to reduce heuristic of {features_to_reduce_prc*100}%')
             X, y = data[all_features].copy(), data['label'].copy()
 
             if features_to_reduce_prc > 0:
