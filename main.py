@@ -230,6 +230,11 @@ def run_experiments(config):
     classes = list(data['label'].unique())
     logger.info(f"DATA STATS:\ndata shape of {data.shape}\nLabel distributes:\n{data['label'].value_counts().sort_index()}\n")
 
+    print_separation_dots('Using all features prediction')
+    X, y = data[all_features].copy(), data['label'].copy()
+    all_features_acc, all_features_f1 = predict(X, y)
+    all_features_f1_agg = calc_f1_score(all_features_f1)
+
     dists_dict = dict()
     for dist in config['dist_functions']:
         logger.info(f'Calculating distances by {dist}')
@@ -249,10 +254,7 @@ def run_experiments(config):
         with diffusion mapping dim of {dm_dim}"""
                     )
 
-        print_separation_dots('Using all features prediction')
-        X, y = data[all_features].copy(), data['label'].copy()
-        all_features_acc, all_features_f1 = predict(X, y)
-        all_features_f1_agg = calc_f1_score(all_features_f1)
+        # Storing the results of 'all_features' we've calculated earlier
         store_results(config['dataset_name'], feature_percentage, dm_dim, 'all_features', all_features_acc, all_features_f1_agg, classes, workdir)
 
         logger.info(f"Running over {dataset_dir}, using {k} features out of {len(all_features)}")
@@ -329,7 +331,7 @@ def main():
     config = {
         'features_percentage': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
         'dist_functions': ['wasserstein', 'jm', 'hellinger'],
-        'nrows': 500,
+        'nrows': 1000,
         'features_to_reduce_prc': [0.0, 0.2, 0.35, 0.5],
         'dm_dim': [2],
         'alpha': 1,
