@@ -1,11 +1,11 @@
 from datetime import datetime
-from functools import reduce
 import itertools
 import logging
 from math import sqrt
 import numpy as np
 import os
 import pandas as pd
+import random
 
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FixedFormatter
@@ -14,7 +14,6 @@ from sklearn import metrics
 from sklearn.cluster import KMeans
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.multiclass import OneVsRestClassifier
-from sklearn.model_selection import StratifiedKFold
 from skfeature.function.similarity_based import fisher_score
 from ReliefF import ReliefF
 from sklearn.feature_selection import SelectKBest
@@ -24,7 +23,7 @@ from scipy import stats
 from utils.diffusion_maps import diffusion_mapping
 from utils.distances import wasserstein_dist, bhattacharyya_dist, hellinger_dist, jm_dist
 from utils.files import create_work_dir, read_from_csv, print_separation_dots
-from utils.general import flatten, setup_logger
+from utils.general import flatten, setup_logger, lists_avg
 from utils.machine_learning import min_max_scaler
 
 logger = logging.getLogger(__name__)
@@ -39,27 +38,14 @@ def kfolds_split(data, iter, n_splits=5, random_state=0):
     return train_set, val_set
 
 
-def predict(X_train, y_train, X_test=None, y_test=None):
-    kf = StratifiedKFold(n_splits=5, shuffle=True, random_state=0)
+def predict(X_train, y_train, X_val, y_val):
     clf = RandomForestClassifier(random_state=1)
     multi_target_forest = OneVsRestClassifier(clf, n_jobs=-1)
-    train_acc = []
-    f1_scores_list = []
+    model = multi_target_forest.fit(X_train, y_train)
+    validation_preds = model.predict(X_val)
 
-    for train_index, test_index in kf.split(X_train, y_train):
-        model = multi_target_forest.fit(X_train.iloc[train_index], y_train.iloc[train_index])
-        train_preds = model.predict(X_train.iloc[test_index])
-
-        train_acc.append(metrics.accuracy_score(y_train.iloc[test_index], train_preds))
-        f1_scores_list.append(list(metrics.f1_score(y_train.iloc[test_index], train_preds, average=None)))
-    if X_test is not None and y_test is not None:
-        model = multi_target_forest.fit(X_train, y_train)
-        preds = model.predict(X_test)
-        logger.info(metrics.classification_report(y_test, preds, digits=3))
-
-    train_avg_score = sum(train_acc) / len(train_acc)
-    logger.info(f"Cross validation accuracies = {train_acc}")
-    logger.info(f"Cross validation average accuracy = {train_avg_score}\n")
+    train_acc = metrics.accuracy_score(y_val, validation_preds)
+    f1_scores_list = metrics.f1_score(y_val, validation_preds, average=None)
     return train_acc, f1_scores_list
 
 
@@ -164,6 +150,8 @@ def return_best_features_by_kmeans(coordinates, k):
 
 
 def store_results(dataset, features_prc, dm_dim, metric, acc, f1, classes, workdir):
+    class_avg_f1 = calc_f1_score(f1)
+
     # General Results File
     acc_results_df = pd.read_csv('results/all_datasets_results.csv')
     ds_results_mask = (
@@ -171,17 +159,17 @@ def store_results(dataset, features_prc, dm_dim, metric, acc, f1, classes, workd
             (acc_results_df.dm_dim == dm_dim)
     )
     if ds_results_mask.any():
-        acc_results_df.loc[ds_results_mask, metric] = sum(acc) / len(acc)
+        acc_results_df.loc[ds_results_mask, metric] = lists_avg(acc)
     else:
         today_date = datetime.now().strftime('%d-%m-%Y')
         new_df = pd.DataFrame(columns=acc_results_df.columns)
-        new_df.loc[len(new_df), ['date', 'dataset', 'features_prc', 'dm_dim', metric]] = [today_date, dataset, features_prc, dm_dim, (sum(acc) / len(acc))]
+        new_df.loc[len(new_df), ['date', 'dataset', 'features_prc', 'dm_dim', metric]] = [today_date, dataset, features_prc, dm_dim, lists_avg(acc)]
         acc_results_df = pd.concat([acc_results_df, new_df]).sort_values(by=['dataset', 'features_prc', 'dm_dim'])
     acc_results_df.to_csv('results/all_datasets_results.csv', index=False)
 
     # Dataset's F1 Results File
     columns = ['features_prc', 'dm_dim', *[f'{metric}_{class_name}' for class_name in classes]]
-    values = [features_prc, dm_dim, *f1]
+    values = [features_prc, dm_dim, *class_avg_f1]
     data_dict = dict(zip(columns, values))
     f1_file = os.path.join(workdir, f'f1_scores.csv')
     new_data_df = pd.DataFrame([data_dict])
@@ -239,19 +227,24 @@ def run_experiments(config):
     classes = list(data['label'].unique())
     logger.info(f"DATA STATS:\ndata shape of {data.shape}\nLabel distributes:\n{data['label'].value_counts().sort_index()}\n")
 
+    all_features_acc_agg, all_features_f1_agg = [], []
     print_separation_dots('Using all features prediction')
-    X, y = data[all_features].copy(), data['label'].copy()
-    all_features_acc, all_features_f1 = predict(X, y)
-    all_features_f1_agg = calc_f1_score(all_features_f1)
+    for kfold_iter in range(1, config['kfolds'] + 1):
+        train_set, val_set = kfolds_split(data, kfold_iter, n_splits=config['kfolds'], random_state=0)
+
+        X_tr, y_tr, X_test, y_test = train_set[all_features].copy(), train_set['label'].copy(), val_set[all_features].copy(), val_set['label'].copy()
+        all_features_acc, all_features_f1 = predict(X_tr, y_tr, X_test, y_test)
+        all_features_acc_agg.append(all_features_acc)
+        all_features_f1_agg.append(all_features_f1)
 
     dists_dict = dict()
     for dist in config['dist_functions']:
         logger.info(f'Calculating distances by {dist}')
 
-        X, y = data[all_features].copy(), data['label'].copy()
-        X_norm = min_max_scaler(X, all_features)
+        X_tr, y_tr = train_set[all_features].copy(), train_set['label'].copy()
+        X_tr_norm = min_max_scaler(X_tr, all_features)
 
-        df_dists, _ = calc_dist(dist, X_norm, y, 'label')
+        df_dists, _ = calc_dist(dist, X_tr_norm, y_tr, 'label')
         dists_dict[dist] = df_dists
 
     for feature_percentage, dm_dim in list(itertools.product(config['features_percentage'], config['dm_dim'])):
@@ -263,84 +256,109 @@ def run_experiments(config):
         with diffusion mapping dim of {dm_dim}"""
                     )
 
-        # Storing the results of 'all_features' we've calculated earlier
-        store_results(config['dataset_name'], feature_percentage, dm_dim, 'all_features', all_features_acc, all_features_f1_agg, classes, workdir)
+        # Init results lists
+        random_acc_agg, random_f1_agg = [], []
+        fisher_acc_agg, fisher_f1_agg = [], []
+        relief_acc_agg, relief_f1_agg = [], []
+        chi_square_acc_agg, chi_square_f1_agg = [], []
+        kmeans_acc_agg, kmeans_f1_agg = [], []
 
-        logger.info(f"Running over {dataset_dir}, using {k} features out of {len(all_features)}")
-        print_separation_dots(f'Using Random {k} features prediction')
-        sampled_data = data[all_features].sample(n=k, axis='columns')
-        new_features = sampled_data.columns
-        sampled_data['label'] = data['label']
-        X, y = sampled_data[new_features].copy(), sampled_data['label'].copy()
-        random_features_acc, random_features_f1 = predict(X, y)
-        random_features_f1_agg = calc_f1_score(random_features_f1)
-        store_results(config['dataset_name'], feature_percentage, dm_dim, 'random_features', random_features_acc, random_features_f1_agg, classes, workdir)
+        for kfold_iter in range(1, config['kfolds'] + 1):
+            final_kf_iter = kfold_iter == config['kfolds']
+            train_set, val_set = kfolds_split(data, kfold_iter, n_splits=config['kfolds'], random_state=0)
 
-        print_separation_dots(f'Using Fisher selection {k} features prediction')
-        logger.info(f'Using Fisher selection {k} features prediction')
-        X, y = data[all_features].copy(), data['label'].copy()
-        fisher_ranks = fisher_score.fisher_score(X.to_numpy(), y.to_numpy())
-        fisher_features_acc, fisher_features_f1 = predict(X.iloc[:, fisher_ranks[:k]], y)
-        fisher_features_f1_agg = calc_f1_score(fisher_features_f1)
-        store_results(config['dataset_name'], feature_percentage, dm_dim, 'fisher', fisher_features_acc, fisher_features_f1_agg, classes, workdir)
+            # Storing the results we've calculated earlier
+            if final_kf_iter:
+                store_results(config['dataset_name'], feature_percentage, dm_dim, 'all_features', all_features_acc_agg, all_features_f1_agg, classes, workdir)
 
-        print_separation_dots(f'Using ReliefF selection {k} features prediction')
-        logger.info(f'Using ReliefF selection {k} features prediction')
-        X, y = data[all_features].copy(), data['label'].copy()
-        fs = ReliefF(n_neighbors=1, n_features_to_keep=k)
-        X_relief = fs.fit_transform(X.to_numpy(), y.to_numpy())
-        row, col = X_relief.shape
-        df_relief_x = pd.DataFrame(data=X_relief, index=np.array(range(1, row + 1)), columns=np.array(range(1, col + 1)))
-        relief_features_acc, relief_features_f1 = predict(df_relief_x, y)
-        relief_features_f1_agg = calc_f1_score(relief_features_f1)
-        store_results(config['dataset_name'], feature_percentage, dm_dim, 'relief', relief_features_acc, relief_features_f1_agg, classes, workdir)
+            logger.info(f"Running over {dataset_dir}, using {k} features out of {len(all_features)}")
+            print_separation_dots(f'Using Random {k} features prediction')
+            random_features = random.sample(list(all_features), k)
+            X_tr, X_test = train_set[random_features].copy(), val_set[random_features].copy()
 
-        print_separation_dots(f'Using Chi-square Test selection {k} features prediction')
-        logger.info(f'Using Chi-square Test selection {k} features prediction')
-        chi_features = SelectKBest(chi2, k=k)
-        X_norm = min_max_scaler(X, all_features)
-        X_chi2 = chi_features.fit_transform(X_norm, y)
-        df_chi2_x = pd.DataFrame(X_chi2)
-        chi2_features_acc, chi2_features_f1 = predict(df_chi2_x, y)
-        chi2_features_f1_agg = calc_f1_score(chi2_features_f1)
-        store_results(config['dataset_name'], feature_percentage, dm_dim, 'chi_square', chi2_features_acc, chi2_features_f1_agg, classes, workdir)
+            random_acc, random_f1 = predict(X_tr, y_tr, X_test, y_test)
+            random_acc_agg.append(random_acc)
+            random_f1_agg.append(random_f1)
+            if final_kf_iter:
+                store_results(config['dataset_name'], feature_percentage, dm_dim, 'random_features', random_acc_agg, random_f1_agg, classes, workdir)
 
-        for features_to_reduce_prc in config['features_to_reduce_prc']:
-            if feature_percentage + features_to_reduce_prc >= 1:
-                continue
-            logger.info(f'features to reduce heuristic of {features_to_reduce_prc*100}%')
-            X, y = data[all_features].copy(), data['label'].copy()
+            print_separation_dots(f'Using Fisher selection {k} features prediction')
+            logger.info(f'Using Fisher selection {k} features prediction')
+            fisher_ranks = fisher_score.fisher_score(train_set[all_features].to_numpy(), train_set['label'].to_numpy())
+            fisher_features_idx = np.argsort(fisher_ranks, 0)[::-1][:k]
+            fisher_features = all_features[fisher_features_idx]
+            X_tr, X_test = train_set[fisher_features].copy(), val_set[fisher_features].copy()
 
-            if features_to_reduce_prc > 0:
-                distances_dict, features_to_keep_idx = features_reduction(all_features, dists_dict, features_to_reduce_prc)
-                X = X.iloc[:, features_to_keep_idx].copy()
-                features = all_features[features_to_keep_idx]
-            else:
-                distances_dict = dists_dict.copy()
-                features = all_features
+            fisher_acc, fisher_f1 = predict(X_tr, y_tr, X_test, y_test)
+            fisher_acc_agg.append(fisher_acc)
+            fisher_f1_agg.append(fisher_f1)
+            if final_kf_iter:
+                store_results(config['dataset_name'], feature_percentage, dm_dim, 'fisher', fisher_acc_agg, fisher_f1_agg, classes, workdir)
 
-            dm_dict = {}
-            for dist in config['dist_functions']:
-                logger.info(f'Calculating diffusion maps by {dist}')
-                coordinates, ranking = diffusion_mapping(distances_dict[dist], config['alpha'], config['eps_type'], config['eps_factor'], dim=dm_dim)
-                dm_dict[dist] = {'coordinates': coordinates, 'ranking': ranking}
+            print_separation_dots(f'Using ReliefF selection {k} features prediction')
+            logger.info(f'Using ReliefF selection {k} features prediction')
+            fs = ReliefF(n_neighbors=1, n_features_to_keep=k)
+            X_tr = fs.fit_transform(train_set[all_features].to_numpy(), train_set['label'].to_numpy())
+            X_test = fs.transform(val_set[all_features].to_numpy())
 
-            agg_coordinates = np.concatenate([val['coordinates'] for val in dm_dict.values()]).T
-            final_coordinates, final_ranking = diffusion_mapping(agg_coordinates, config['alpha'], config['eps_type'], config['eps_factor'], dim=dm_dim)
-            best_features, labels, features_rank = return_best_features_by_kmeans(final_coordinates, k)
-            logger.info(f'Best features by KMeans are: {features[best_features]}')
-            kmeans_acc, kmeans_f1 = predict(X.iloc[:, best_features], y)
-            kmeans_f1_agg = calc_f1_score(kmeans_f1)
-            store_results(config['dataset_name'], feature_percentage, dm_dim, f'kmeans_{features_to_reduce_prc}', kmeans_acc, kmeans_f1_agg, classes, workdir)
+            relief_acc, relief_f1 = predict(X_tr, y_tr, X_test, y_test)
+            relief_acc_agg.append(relief_acc)
+            relief_f1_agg.append(relief_f1)
+            if final_kf_iter:
+                store_results(config['dataset_name'], feature_percentage, dm_dim, 'relief', relief_acc_agg, relief_f1_agg, classes, workdir)
+
+            print_separation_dots(f'Using Chi-square Test selection {k} features prediction')
+            logger.info(f'Using Chi-square Test selection {k} features prediction')
+            chi_features = SelectKBest(chi2, k=k)
+            X_tr_norm, X_test_norm = min_max_scaler(train_set, all_features, val_set, return_as_df=False)
+            X_tr = chi_features.fit_transform(X_tr_norm, y_tr)
+            X_test = chi_features.transform(X_test_norm)
+
+            chi2_acc, chi2_f1 = predict(X_tr, y_tr, X_test, y_test)
+            chi_square_acc_agg.append(chi2_acc)
+            chi_square_f1_agg.append(chi2_f1)
+            if final_kf_iter:
+                store_results(config['dataset_name'], feature_percentage, dm_dim, 'chi_square', chi_square_acc_agg, chi_square_f1_agg, classes, workdir)
+
+            for features_to_reduce_prc in config['features_to_reduce_prc']:
+                if feature_percentage + features_to_reduce_prc >= 1:
+                    continue
+                logger.info(f'features to reduce heuristic of {features_to_reduce_prc*100}%')
+
+                if features_to_reduce_prc > 0:
+                    distances_dict, features_to_keep_idx = features_reduction(all_features, dists_dict, features_to_reduce_prc)
+                    features = all_features[features_to_keep_idx]
+                else:
+                    distances_dict = dists_dict.copy()
+                    features = all_features
+
+                dm_dict = {}
+                for dist in config['dist_functions']:
+                    logger.info(f'Calculating diffusion maps by {dist}')
+                    coordinates, ranking = diffusion_mapping(distances_dict[dist], config['alpha'], config['eps_type'], config['eps_factor'], dim=dm_dim)
+                    dm_dict[dist] = {'coordinates': coordinates, 'ranking': ranking}
+
+                agg_coordinates = np.concatenate([val['coordinates'] for val in dm_dict.values()]).T
+                final_coordinates, final_ranking = diffusion_mapping(agg_coordinates, config['alpha'], config['eps_type'], config['eps_factor'], dim=dm_dim)
+                best_features, labels, features_rank = return_best_features_by_kmeans(final_coordinates, k)
+                logger.info(f'Best features by KMeans are: {features[best_features]}')
+                X_tr, X_test = train_set[all_features].copy(), val_set[all_features].copy()
+
+                kmeans_acc, kmeans_f1 = predict(X_tr.iloc[:, best_features], y_tr, X_test.iloc[:, best_features], y_test)
+                kmeans_acc_agg.append(kmeans_acc)
+                kmeans_f1_agg.append(kmeans_f1)
+                if final_kf_iter:
+                    store_results(config['dataset_name'], feature_percentage, dm_dim, f'kmeans_{features_to_reduce_prc}', kmeans_acc_agg, kmeans_f1_agg, classes, workdir)
 
     t_test(config['dataset_name'])
 
 
 def main():
     config = {
+        'kfolds': 5,
         'features_percentage': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
         'dist_functions': ['wasserstein', 'jm', 'hellinger'],
-        'nrows': 1000,
+        'nrows': 500,
         'features_to_reduce_prc': [0.0, 0.2, 0.35, 0.5],
         'dm_dim': [2],
         'alpha': 1,

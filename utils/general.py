@@ -79,3 +79,7 @@ def update_dict(tree, keys, value):
         subtree = subtree[key]
 
     subtree[keys[-1]] = value
+
+
+def lists_avg(lst):
+    return sum(lst)/len(lst)
