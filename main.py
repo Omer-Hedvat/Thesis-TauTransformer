@@ -23,7 +23,7 @@ from scipy import stats
 from utils.diffusion_maps import diffusion_mapping
 from utils.distances import wasserstein_dist, bhattacharyya_dist, hellinger_dist, jm_dist
 from utils.files import create_work_dir, read_from_csv, print_separation_dots
-from utils.general import flatten, setup_logger, lists_avg, calc_k
+from utils.general import flatten, setup_logger, lists_avg, calc_k, return_datasets
 from utils.machine_learning import min_max_scaler, kfolds_split
 
 logger = logging.getLogger(__name__)
@@ -137,8 +137,6 @@ def return_best_features_by_kmeans(coordinates, k):
 
 
 def store_results(dataset, features_prc, dm_dim, metric, acc, f1, classes, workdir):
-    class_avg_f1 = calc_f1_score(f1)
-
     # General Results File
     acc_results_df = pd.read_csv('results/all_datasets_results.csv')
     ds_results_mask = (
@@ -156,6 +154,7 @@ def store_results(dataset, features_prc, dm_dim, metric, acc, f1, classes, workd
 
     # Dataset's F1 Results File
     columns = ['features_prc', 'dm_dim', *[f'{metric}_{class_name}' for class_name in classes]]
+    class_avg_f1 = calc_f1_score(f1)
     values = [features_prc, dm_dim, *class_avg_f1]
     data_dict = dict(zip(columns, values))
     f1_file = os.path.join(workdir, f'f1_scores.csv')
@@ -218,21 +217,11 @@ def run_experiments(config):
     print_separation_dots('Using all features prediction')
     for kfold_iter in range(1, config['kfolds'] + 1):
         train_set, val_set = kfolds_split(data, kfold_iter, n_splits=config['kfolds'], random_state=0)
+        X_tr, y_tr, X_test, y_test = return_datasets(train_set, val_set, all_features, return_y=True)
 
-        X_tr, y_tr, X_test, y_test = train_set[all_features].copy(), train_set['label'].copy(), val_set[all_features].copy(), val_set['label'].copy()
         all_features_acc, all_features_f1 = predict(X_tr, y_tr, X_test, y_test)
         all_features_acc_agg.append(all_features_acc)
         all_features_f1_agg.append(all_features_f1)
-
-    dists_dict = dict()
-    for dist in config['dist_functions']:
-        logger.info(f'Calculating distances by {dist}')
-
-        X_tr, y_tr = train_set[all_features].copy(), train_set['label'].copy()
-        X_tr_norm = min_max_scaler(X_tr, all_features)
-
-        df_dists, _ = calc_dist(dist, X_tr_norm, y_tr, 'label')
-        dists_dict[dist] = df_dists
 
     for feature_percentage, dm_dim in list(itertools.product(config['features_percentage'], config['dm_dim'])):
         k = calc_k(all_features, feature_percentage)
@@ -248,8 +237,6 @@ def run_experiments(config):
         fisher_acc_agg, fisher_f1_agg = [], []
         relief_acc_agg, relief_f1_agg = [], []
         chi_square_acc_agg, chi_square_f1_agg = [], []
-        kmeans_acc_agg, kmeans_f1_agg = [], []
-
         for kfold_iter in range(1, config['kfolds'] + 1):
             final_kf_iter = kfold_iter == config['kfolds']
             train_set, val_set = kfolds_split(data, kfold_iter, n_splits=config['kfolds'], random_state=0)
@@ -261,7 +248,7 @@ def run_experiments(config):
             logger.info(f"Running over {dataset_dir}, using {k} features out of {len(all_features)}")
             print_separation_dots(f'Using Random {k} features prediction')
             random_features = random.sample(list(all_features), k)
-            X_tr, X_test = train_set[random_features].copy(), val_set[random_features].copy()
+            X_tr, X_test = return_datasets(train_set, val_set, random_features, return_y=False)
 
             random_acc, random_f1 = predict(X_tr, y_tr, X_test, y_test)
             random_acc_agg.append(random_acc)
@@ -274,7 +261,7 @@ def run_experiments(config):
             fisher_ranks = fisher_score.fisher_score(train_set[all_features].to_numpy(), train_set['label'].to_numpy())
             fisher_features_idx = np.argsort(fisher_ranks, 0)[::-1][:k]
             fisher_features = all_features[fisher_features_idx]
-            X_tr, X_test = train_set[fisher_features].copy(), val_set[fisher_features].copy()
+            X_tr, X_test = return_datasets(train_set, val_set, fisher_features, return_y=False)
 
             fisher_acc, fisher_f1 = predict(X_tr, y_tr, X_test, y_test)
             fisher_acc_agg.append(fisher_acc)
@@ -307,20 +294,33 @@ def run_experiments(config):
             if final_kf_iter:
                 store_results(config['dataset_name'], feature_percentage, dm_dim, 'chi_square', chi_square_acc_agg, chi_square_f1_agg, classes, workdir)
 
-            for features_to_reduce_prc in config['features_to_reduce_prc']:
+        for features_to_reduce_prc in config['features_to_reduce_prc']:
+            kmeans_acc_agg, kmeans_f1_agg = [], []
+            for kfold_iter in range(1, config['kfolds'] + 1):
+                final_kf_iter = kfold_iter == config['kfolds']
+                train_set, val_set = kfolds_split(data, kfold_iter, n_splits=config['kfolds'], random_state=0)
+                X_tr, y_tr, X_test, y_test = return_datasets(train_set, val_set, all_features)
+
                 if feature_percentage + features_to_reduce_prc >= 1:
                     continue
                 logger.info(f'features to reduce heuristic of {features_to_reduce_prc*100}%')
 
-                if features_to_reduce_prc > 0:
-                    distances_dict, features_to_keep_idx = features_reduction(all_features, dists_dict, features_to_reduce_prc)
-                    features = all_features[features_to_keep_idx]
-                else:
-                    distances_dict = dists_dict.copy()
-                    features = all_features
-
                 dm_dict = {}
+                dists_dict = dict()
+                logger.info(f"Calculating distances using: {', '.join(config['dist_functions'])}")
                 for dist in config['dist_functions']:
+                    X_tr_norm = min_max_scaler(X_tr, all_features)
+                    df_dists, _ = calc_dist(dist, X_tr_norm, y_tr, 'label')
+                    dists_dict[dist] = df_dists
+
+                    if features_to_reduce_prc > 0:
+                        distances_dict, features_to_keep_idx = features_reduction(all_features, dists_dict,
+                                                                                  features_to_reduce_prc)
+                        features = all_features[features_to_keep_idx]
+                    else:
+                        distances_dict = dists_dict.copy()
+                        features = all_features
+
                     logger.info(f'Calculating diffusion maps by {dist}')
                     coordinates, ranking = diffusion_mapping(distances_dict[dist], config['alpha'], config['eps_type'], config['eps_factor'], dim=dm_dim)
                     dm_dict[dist] = {'coordinates': coordinates, 'ranking': ranking}
@@ -329,7 +329,6 @@ def run_experiments(config):
                 final_coordinates, final_ranking = diffusion_mapping(agg_coordinates, config['alpha'], config['eps_type'], config['eps_factor'], dim=dm_dim)
                 best_features, labels, features_rank = return_best_features_by_kmeans(final_coordinates, k)
                 logger.info(f'Best features by KMeans are: {features[best_features]}')
-                X_tr, X_test = train_set[all_features].copy(), val_set[all_features].copy()
 
                 kmeans_acc, kmeans_f1 = predict(X_tr.iloc[:, best_features], y_tr, X_test.iloc[:, best_features], y_test)
                 kmeans_acc_agg.append(kmeans_acc)
@@ -345,7 +344,7 @@ def main():
         'kfolds': 5,
         'features_percentage': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
         'dist_functions': ['wasserstein', 'jm', 'hellinger'],
-        'nrows': 500,
+        'nrows': 10000,
         'features_to_reduce_prc': [0.0, 0.2, 0.35, 0.5],
         'dm_dim': [2],
         'alpha': 1,
@@ -358,6 +357,8 @@ def main():
         ('adware_balanced', 'label'), ('ml_multiclass_classification_data', 'target'), ('digits', 'label'), ('isolet', 'label'),
         ('otto_balanced', 'target')
     ]
+    # datasets = [('adware_balanced', 'label')]
+    # config['features_percentage'] = [0.1, 0.2]
 
     for dataset, label in datasets:
         config['dataset_name'] = dataset
