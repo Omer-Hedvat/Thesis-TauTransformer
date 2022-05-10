@@ -86,3 +86,12 @@ def predict_np(X_tr, X_tst, y_train, y_test):
     preds = model.predict(X_tst)
     logger.info(metrics.classification_report(y_test, preds, digits=3))
     return train_acc
+
+
+def kfolds_split(data, iter, n_splits=5, random_state=0):
+    data = data.sample(frac=1, random_state=random_state).reset_index(drop=True).copy()
+    split_len = int(data.shape[0]/n_splits)
+    val_i = n_splits - iter
+    val_set = data.iloc[val_i*split_len:(val_i+1)*split_len]
+    train_set = data[~data.index.isin(val_set.index)]
+    return train_set, val_set

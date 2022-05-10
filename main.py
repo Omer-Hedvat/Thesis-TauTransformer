@@ -23,19 +23,10 @@ from scipy import stats
 from utils.diffusion_maps import diffusion_mapping
 from utils.distances import wasserstein_dist, bhattacharyya_dist, hellinger_dist, jm_dist
 from utils.files import create_work_dir, read_from_csv, print_separation_dots
-from utils.general import flatten, setup_logger, lists_avg
-from utils.machine_learning import min_max_scaler
+from utils.general import flatten, setup_logger, lists_avg, calc_k
+from utils.machine_learning import min_max_scaler, kfolds_split
 
 logger = logging.getLogger(__name__)
-
-
-def kfolds_split(data, iter, n_splits=5, random_state=0):
-    data = data.sample(frac=1, random_state=random_state).reset_index(drop=True).copy()
-    split_len = int(data.shape[0]/n_splits)
-    val_i = n_splits - iter
-    val_set = data.iloc[val_i*split_len:(val_i+1)*split_len]
-    train_set = data[~data.index.isin(val_set.index)]
-    return train_set, val_set
 
 
 def predict(X_train, y_train, X_val, y_val):
@@ -105,10 +96,6 @@ def calc_dist(dist_func_name, X_tr, classes, label_column):
     df_dists = pd.DataFrame(two_d_mat)
     dist_dict = {f'feature_{idx + 1}': pd.DataFrame(mat) for idx, mat in enumerate(distances)}
     return df_dists, dist_dict
-
-
-def calc_k(features, prc):
-    return int(len(features) * prc)
 
 
 def features_reduction(all_features, dists_dict, features_to_reduce_prc):

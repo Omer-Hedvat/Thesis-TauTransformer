@@ -83,3 +83,7 @@ def update_dict(tree, keys, value):
 
 def lists_avg(lst):
     return sum(lst)/len(lst)
+
+
+def calc_k(features, prc):
+    return int(len(features) * prc)
