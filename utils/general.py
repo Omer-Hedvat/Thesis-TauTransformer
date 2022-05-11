@@ -89,7 +89,7 @@ def calc_k(features, prc):
     return int(len(features) * prc)
 
 
-def return_datasets(train_set, val_set, feature, return_y=True):
+def train_test_split(train_set, val_set, feature, return_y=True):
     if return_y:
         return train_set[feature].copy(), train_set['label'].copy(), val_set[feature].copy(), val_set['label'].copy()
     else:

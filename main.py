@@ -23,7 +23,7 @@ from scipy import stats
 from utils.diffusion_maps import diffusion_mapping
 from utils.distances import wasserstein_dist, bhattacharyya_dist, hellinger_dist, jm_dist
 from utils.files import create_work_dir, read_from_csv, print_separation_dots
-from utils.general import flatten, setup_logger, lists_avg, calc_k, return_datasets
+from utils.general import flatten, setup_logger, lists_avg, calc_k, train_test_split
 from utils.machine_learning import min_max_scaler, kfolds_split
 
 logger = logging.getLogger(__name__)
@@ -217,7 +217,7 @@ def run_experiments(config):
     print_separation_dots('Using all features prediction')
     for kfold_iter in range(1, config['kfolds'] + 1):
         train_set, val_set = kfolds_split(data, kfold_iter, n_splits=config['kfolds'], random_state=0)
-        X_tr, y_tr, X_test, y_test = return_datasets(train_set, val_set, all_features, return_y=True)
+        X_tr, y_tr, X_test, y_test = train_test_split(train_set, val_set, all_features, return_y=True)
 
         all_features_acc, all_features_f1 = predict(X_tr, y_tr, X_test, y_test)
         all_features_acc_agg.append(all_features_acc)
@@ -248,7 +248,7 @@ def run_experiments(config):
             logger.info(f"Running over {dataset_dir}, using {k} features out of {len(all_features)}")
             print_separation_dots(f'Using Random {k} features prediction')
             random_features = random.sample(list(all_features), k)
-            X_tr, X_test = return_datasets(train_set, val_set, random_features, return_y=False)
+            X_tr, X_test = train_test_split(train_set, val_set, random_features, return_y=False)
 
             random_acc, random_f1 = predict(X_tr, y_tr, X_test, y_test)
             random_acc_agg.append(random_acc)
@@ -261,7 +261,7 @@ def run_experiments(config):
             fisher_ranks = fisher_score.fisher_score(train_set[all_features].to_numpy(), train_set['label'].to_numpy())
             fisher_features_idx = np.argsort(fisher_ranks, 0)[::-1][:k]
             fisher_features = all_features[fisher_features_idx]
-            X_tr, X_test = return_datasets(train_set, val_set, fisher_features, return_y=False)
+            X_tr, X_test = train_test_split(train_set, val_set, fisher_features, return_y=False)
 
             fisher_acc, fisher_f1 = predict(X_tr, y_tr, X_test, y_test)
             fisher_acc_agg.append(fisher_acc)
@@ -295,15 +295,15 @@ def run_experiments(config):
                 store_results(config['dataset_name'], feature_percentage, dm_dim, 'chi_square', chi_square_acc_agg, chi_square_f1_agg, classes, workdir)
 
         for features_to_reduce_prc in config['features_to_reduce_prc']:
+            if feature_percentage + features_to_reduce_prc >= 1:
+                continue
+            logger.info(f'features to reduce heuristic of {features_to_reduce_prc * 100}%')
+
             kmeans_acc_agg, kmeans_f1_agg = [], []
             for kfold_iter in range(1, config['kfolds'] + 1):
                 final_kf_iter = kfold_iter == config['kfolds']
                 train_set, val_set = kfolds_split(data, kfold_iter, n_splits=config['kfolds'], random_state=0)
-                X_tr, y_tr, X_test, y_test = return_datasets(train_set, val_set, all_features)
-
-                if feature_percentage + features_to_reduce_prc >= 1:
-                    continue
-                logger.info(f'features to reduce heuristic of {features_to_reduce_prc*100}%')
+                X_tr, y_tr, X_test, y_test = train_test_split(train_set, val_set, all_features)
 
                 dm_dict = {}
                 dists_dict = dict()
@@ -357,8 +357,8 @@ def main():
         ('adware_balanced', 'label'), ('ml_multiclass_classification_data', 'target'), ('digits', 'label'), ('isolet', 'label'),
         ('otto_balanced', 'target')
     ]
-    # datasets = [('adware_balanced', 'label')]
-    # config['features_percentage'] = [0.1, 0.2]
+    datasets = [('adware_balanced', 'label')]
+    config['features_percentage'] = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
 
     for dataset, label in datasets:
         config['dataset_name'] = dataset
