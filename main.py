@@ -10,6 +10,7 @@ import random
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FixedFormatter
 
+import mrmr
 from sklearn import metrics
 from sklearn.cluster import KMeans
 from sklearn.ensemble import RandomForestClassifier
@@ -233,6 +234,7 @@ def run_experiments(config):
                     )
 
         # Init results lists
+        # TODO: add mrmr to print
         print_separation_dots(f'Starting baseline heuristics using: random features, Fisher score, ReliefF selection & Chi-square Test selection for {k} features out of {len(all_features)}')
         random_acc_agg, random_f1_agg = [], []
         fisher_acc_agg, fisher_f1_agg = [], []
@@ -297,6 +299,9 @@ def run_experiments(config):
                 logger.info(f"chi_square accuracy result: {acc_result}%")
                 store_results(config['dataset_name'], feature_percentage, dm_dim, 'chi_square', chi_square_acc_agg, chi_square_f1_agg, classes, workdir)
 
+            # TODO: add mrmr to block to here
+            # TODO: add mrmr to results files
+
         for features_to_reduce_prc in config['features_to_reduce_prc']:
             if feature_percentage + features_to_reduce_prc >= 1:
                 continue
@@ -360,7 +365,7 @@ def run_experiments(config):
 def main():
     config = {
         'kfolds': 5,
-        'features_percentage': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
+        'features_percentage': [0.02, 0.05, 0.1, 0.2, 0.3, 0.5],
         'dist_functions': ['wasserstein', 'jm', 'hellinger'],
         'nrows': 10000,
         'features_to_reduce_prc': [0.0, 0.2, 0.35, 0.5],
