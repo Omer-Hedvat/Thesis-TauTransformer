@@ -379,7 +379,7 @@ def main():
     # tuples of datasets names and target column name
     datasets = [
         ('adware_balanced', 'label'), ('ml_multiclass_classification_data', 'target'), ('digits', 'label'), ('isolet', 'label'),
-        ('otto_balanced', 'target')
+        ('otto_balanced', 'target'), ('gene_data', 'label')
     ]
     # datasets = [('adware_balanced', 'label')]
     # config['features_percentage'] = [0.1]
