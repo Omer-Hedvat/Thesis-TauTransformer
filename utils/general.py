@@ -79,3 +79,18 @@ def update_dict(tree, keys, value):
         subtree = subtree[key]
 
     subtree[keys[-1]] = value
+
+
+def lists_avg(lst):
+    return sum(lst)/len(lst)
+
+
+def calc_k(features, prc):
+    return int(len(features) * prc)
+
+
+def return_datasets(train_set, val_set, feature, return_y=True):
+    if return_y:
+        return train_set[feature].copy(), train_set['label'].copy(), val_set[feature].copy(), val_set['label'].copy()
+    else:
+        return train_set[feature].copy(), val_set[feature].copy()
