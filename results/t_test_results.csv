@@ -1,6 +1,1 @@
-dataset,random_features_vs_kmeans_0.0,random_features_vs_kmeans_0.2,random_features_vs_kmeans_0.35,random_features_vs_kmeans_0.5,fisher_vs_kmeans_0.0,fisher_vs_kmeans_0.2,fisher_vs_kmeans_0.35,fisher_vs_kmeans_0.5,relief_vs_kmeans_0.0,relief_vs_kmeans_0.2,relief_vs_kmeans_0.35,relief_vs_kmeans_0.5,chi_square_vs_kmeans_0.0,chi_square_vs_kmeans_0.2,chi_square_vs_kmeans_0.35,chi_square_vs_kmeans_0.5
-otto_balanced,0.008889970887957021,,,,0.7370664408065262,,,,0.00020279512094840813,,,,0.9968073271045448,,,
-isolet,0.4211357661580245,,,,0.0016669241623935,,,,0.1211408087840152,,,,0.0696032597690116,,,
-digits,0.0667121315608918,,,,0.0237051889360997,,,,0.0006777458028023,,,,0.2191737655271752,,,
-ml_multiclass_classification_data,0.0090358009152706,,,,0.03786866539825,,,,0.0330248185006013,,,,0.012091538931471,,,
-adware_balanced,0.0058728528667928,,,,0.1361735211595033,,,,0.7922357686974271,,,,0.3631830483324532,,,
+dataset,random_features_vs_kmeans_0.0,random_features_vs_kmeans_0.2,random_features_vs_kmeans_0.35,random_features_vs_kmeans_0.5,fisher_vs_kmeans_0.0,fisher_vs_kmeans_0.2,fisher_vs_kmeans_0.35,fisher_vs_kmeans_0.5,relief_vs_kmeans_0.0,relief_vs_kmeans_0.2,relief_vs_kmeans_0.35,relief_vs_kmeans_0.5,chi_square_vs_kmeans_0.0,chi_square_vs_kmeans_0.2,chi_square_vs_kmeans_0.35,chi_square_vs_kmeans_0.5,mrmr_vs_kmeans_0.0,mrmr_vs_kmeans_0.2,mrmr_vs_kmeans_0.35,mrmr_vs_kmeans_0.5

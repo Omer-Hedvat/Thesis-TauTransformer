@@ -10,7 +10,7 @@ import random
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FixedFormatter
 
-import mrmr
+from mrmr import mrmr_classif
 from sklearn import metrics
 from sklearn.cluster import KMeans
 from sklearn.ensemble import RandomForestClassifier
@@ -200,7 +200,7 @@ def all_results_colorful():
     data['raw'] = dat
     data = data.set_index('raw')
     data = data.drop(columns=['date', 'dataset', 'features_prc', 'dm_dim'])
-    data.style.background_gradient(cmap='RdYlGn', axis=1).to_excel("results/all_resualts_colors.xlsx")
+    data.style.background_gradient(cmap='RdYlGn', axis=1).to_excel("results/all_results_colors.xlsx")
 
 
 def run_experiments(config):
@@ -234,12 +234,12 @@ def run_experiments(config):
                     )
 
         # Init results lists
-        # TODO: add mrmr to print
-        print_separation_dots(f'Starting baseline heuristics using: random features, Fisher score, ReliefF selection & Chi-square Test selection for {k} features out of {len(all_features)}')
+        print_separation_dots(f'Starting baseline heuristics using: random features, Fisher score, ReliefF selection, Chi-square Test selection &  & mRMR for {k} features out of {len(all_features)}')
         random_acc_agg, random_f1_agg = [], []
         fisher_acc_agg, fisher_f1_agg = [], []
         relief_acc_agg, relief_f1_agg = [], []
         chi_square_acc_agg, chi_square_f1_agg = [], []
+        mrmr_acc_agg, mrmr_f1_agg = [], []
         for kfold_iter in range(1, config['kfolds'] + 1):
             final_kf_iter = kfold_iter == config['kfolds']
             train_set, val_set = kfolds_split(data, kfold_iter, n_splits=config['kfolds'], random_state=0)
@@ -299,8 +299,17 @@ def run_experiments(config):
                 logger.info(f"chi_square accuracy result: {acc_result}%")
                 store_results(config['dataset_name'], feature_percentage, dm_dim, 'chi_square', chi_square_acc_agg, chi_square_f1_agg, classes, workdir)
 
-            # TODO: add mrmr to block to here
-            # TODO: add mrmr to results files
+            mrmr_features = mrmr_classif(X=train_set[all_features], y=train_set['label'], K=k)
+            X_tr, X_test = train_test_split(train_set, val_set, mrmr_features, return_y=False)
+            mrmr_acc, mrmr_f1 = predict(X_tr, y_tr, X_test, y_test)
+            mrmr_acc_agg.append(mrmr_acc)
+            mrmr_f1_agg.append(mrmr_f1)
+
+            if final_kf_iter:
+                acc_result = round(lists_avg(mrmr_acc_agg) * 100, 2)
+                logger.info(f"mRMR accuracy result: {acc_result}%")
+                store_results(config['dataset_name'], feature_percentage, dm_dim, 'mrmr', mrmr_acc_agg,
+                              mrmr_f1_agg, classes, workdir)
 
         for features_to_reduce_prc in config['features_to_reduce_prc']:
             if feature_percentage + features_to_reduce_prc >= 1:
