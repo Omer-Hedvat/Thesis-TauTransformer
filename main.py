@@ -200,7 +200,7 @@ def all_results_colorful():
     data['raw'] = dat
     data = data.set_index('raw')
     data = data.drop(columns=['date', 'dataset', 'features_prc', 'dm_dim'])
-    data.style.background_gradient(cmap='RdYlGn', axis=1).to_excel("results/all_resualts_colors.xlsx")
+    data.style.background_gradient(cmap='RdYlGn', axis=1).to_excel("results/all_results_colors.xlsx")
 
 
 def run_experiments(config):
@@ -308,7 +308,7 @@ def run_experiments(config):
             if final_kf_iter:
                 acc_result = round(lists_avg(mrmr_acc_agg) * 100, 2)
                 logger.info(f"mRMR accuracy result: {acc_result}%")
-                store_results(config['dataset_name'], feature_percentage, dm_dim, 'mRMR', mrmr_acc_agg,
+                store_results(config['dataset_name'], feature_percentage, dm_dim, 'mrmr', mrmr_acc_agg,
                               mrmr_f1_agg, classes, workdir)
 
         for features_to_reduce_prc in config['features_to_reduce_prc']:
