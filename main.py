@@ -299,8 +299,8 @@ def run_experiments(config):
                 logger.info(f"chi_square accuracy result: {acc_result}%")
                 store_results(config['dataset_name'], feature_percentage, dm_dim, 'chi_square', chi_square_acc_agg, chi_square_f1_agg, classes, workdir)
 
-            X_tr, X_test = train_test_split(train_set, val_set, random_features, return_y=False)
-            selected_features = mrmr_classif(X=X_tr, y=y_tr, K=k)
+            mrmr_features = mrmr_classif(X=train_set[all_features], y=train_set['label'], K=k)
+            X_tr, X_test = train_test_split(train_set, val_set, mrmr_features, return_y=False)
             mrmr_acc, mrmr_f1 = predict(X_tr, y_tr, X_test, y_test)
             mrmr_acc_agg.append(mrmr_acc)
             mrmr_f1_agg.append(mrmr_f1)
