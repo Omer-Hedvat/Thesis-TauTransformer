@@ -376,7 +376,7 @@ def main():
         'kfolds': 5,
         'features_percentage': [0.02, 0.05, 0.1, 0.2, 0.3, 0.5],
         'dist_functions': ['wasserstein', 'jm', 'hellinger'],
-        'nrows': 500,
+        'nrows': 10000,
         'features_to_reduce_prc': [0.0, 0.2, 0.35, 0.5],
         'dm_dim': [2],
         'alpha': 1,
@@ -390,9 +390,9 @@ def main():
         ('adware_balanced', 'label'), ('ml_multiclass_classification_data', 'target'), ('digits', 'label'), ('isolet', 'label'),
         ('otto_balanced', 'target'), ('gene_data', 'label')
     ]
-    datasets = [('adware_balanced', 'label')]
-    config['features_percentage'] = [0.1]
-    config['features_to_reduce_prc']: [0.0, 0.2]
+    # datasets = [('adware_balanced', 'label')]
+    # config['features_percentage'] = [0.1]
+    # config['features_to_reduce_prc']: [0.0, 0.2]
 
     for dataset, label in datasets:
         config['dataset_name'] = dataset
