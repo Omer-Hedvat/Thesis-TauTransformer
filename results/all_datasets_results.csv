@@ -1,2 +1,1 @@
-date,dataset,features_prc,dm_dim,all_features,random_features,fisher,relief,chi_square,mrmr,kmeans_0.0,kmeans_0.2,kmeans_0.35,kmeans_0.5
-,,,,,,,,,,,,,
+date,dataset,features_prc,dm_dim,all_features,random_features,fisher,relief,chi_square,mrmr,shirs_algo,kmeans_0.0,kmeans_0.2,kmeans_0.35,kmeans_0.5
