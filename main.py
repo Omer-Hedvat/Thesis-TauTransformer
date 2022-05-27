@@ -313,7 +313,7 @@ def run_experiments(config):
                               mrmr_f1_agg, classes, workdir)
 
             jm_dict = {}
-            X_tr_norm = min_max_scaler(X_tr, all_features)
+            X_tr_norm = min_max_scaler(train_set, all_features)
             jm_dists, _ = calc_dist('jm', X_tr_norm, y_tr, 'label')
             jm_dict['jm'] = jm_dists
             if feature_percentage + 0.5 < 1:
@@ -322,8 +322,9 @@ def run_experiments(config):
                 jm_distances_dict = jm_dict.copy()
             jm_coordinates, jm_ranking = diffusion_mapping(jm_distances_dict['jm'], config['alpha'], config['eps_type'], config['eps_factor'], dim=dm_dim)
 
-            jm_best_features, _, _ = return_best_features_by_kmeans(jm_coordinates, k)
-            jm_kmeans_acc, jm_kmeans_f1 = predict(X_tr.iloc[:, jm_best_features], y_tr, X_test.iloc[:, jm_best_features], y_test)
+            jm_features, _, _ = return_best_features_by_kmeans(jm_coordinates, k)
+            X_tr, X_test = train_test_split(train_set, val_set, all_features, return_y=False)
+            jm_kmeans_acc, jm_kmeans_f1 = predict(X_tr.iloc[:, jm_features], y_tr, X_test.iloc[:, jm_features], y_test)
             jm_kmeans_acc_agg.append(jm_kmeans_acc)
             jm_kmeans_f1_agg.append(jm_kmeans_f1)
 
