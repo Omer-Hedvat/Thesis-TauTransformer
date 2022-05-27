@@ -254,6 +254,7 @@ def run_experiments(config):
             random_features = random.sample(list(all_features), k)
             X_tr, X_test = train_test_split(train_set, val_set, random_features, return_y=False)
 
+            # Random Features
             random_acc, random_f1 = predict(X_tr, y_tr, X_test, y_test)
             random_acc_agg.append(random_acc)
             random_f1_agg.append(random_f1)
@@ -262,6 +263,7 @@ def run_experiments(config):
                 logger.info(f"random_features accuracy result: {acc_result}%")
                 store_results(config['dataset_name'], feature_percentage, dm_dim, 'random_features', random_acc_agg, random_f1_agg, classes, workdir)
 
+            # Fisher Score Features
             fisher_ranks = fisher_score.fisher_score(train_set[all_features].to_numpy(), train_set['label'].to_numpy())
             fisher_features_idx = np.argsort(fisher_ranks, 0)[::-1][:k]
             fisher_features = all_features[fisher_features_idx]
@@ -275,6 +277,7 @@ def run_experiments(config):
                 logger.info(f"fisher_score accuracy result: {acc_result}%")
                 store_results(config['dataset_name'], feature_percentage, dm_dim, 'fisher', fisher_acc_agg, fisher_f1_agg, classes, workdir)
 
+            # ReliefF Features
             fs = ReliefF(n_neighbors=1, n_features_to_keep=k)
             X_tr = fs.fit_transform(train_set[all_features].to_numpy(), train_set['label'].to_numpy())
             X_test = fs.transform(val_set[all_features].to_numpy())
@@ -287,6 +290,7 @@ def run_experiments(config):
                 logger.info(f"Relief accuracy result: {acc_result}%")
                 store_results(config['dataset_name'], feature_percentage, dm_dim, 'relief', relief_acc_agg, relief_f1_agg, classes, workdir)
 
+            # Chi Suare Features
             chi_features = SelectKBest(chi2, k=k)
             X_tr_norm, X_test_norm = min_max_scaler(train_set, all_features, val_set, return_as_df=False)
             X_tr = chi_features.fit_transform(X_tr_norm, y_tr)
@@ -300,6 +304,7 @@ def run_experiments(config):
                 logger.info(f"chi_square accuracy result: {acc_result}%")
                 store_results(config['dataset_name'], feature_percentage, dm_dim, 'chi_square', chi_square_acc_agg, chi_square_f1_agg, classes, workdir)
 
+            # mRMR Features
             mrmr_features = mrmr_classif(X=train_set[all_features], y=train_set['label'], K=k)
             X_tr, X_test = train_test_split(train_set, val_set, mrmr_features, return_y=False)
             mrmr_acc, mrmr_f1 = predict(X_tr, y_tr, X_test, y_test)
@@ -312,6 +317,7 @@ def run_experiments(config):
                 store_results(config['dataset_name'], feature_percentage, dm_dim, 'mrmr', mrmr_acc_agg,
                               mrmr_f1_agg, classes, workdir)
 
+            # Shir's Approach Features
             jm_dict = {}
             X_tr_norm = min_max_scaler(train_set, all_features)
             jm_dists, _ = calc_dist('jm', X_tr_norm, y_tr, 'label')
@@ -333,6 +339,7 @@ def run_experiments(config):
                 logger.info(f"Shir's algo kmeans accuracy result w/ {int(0.5 * 100)}% huristic: {jm_acc_result}%")
                 store_results(config['dataset_name'], feature_percentage, dm_dim, 'shirs_algo', jm_kmeans_acc_agg, jm_kmeans_f1_agg, classes, workdir)
 
+        # New Approach Features
         for features_to_reduce_prc in config['features_to_reduce_prc']:
             if feature_percentage + features_to_reduce_prc >= 1:
                 continue

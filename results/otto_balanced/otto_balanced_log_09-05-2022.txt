@@ -1,0 +1,72 @@
+2022-05-09 21:52:57 INFO: (general/32) Default log file at: C:\Users\omerh\AppData\Local\Temp\log_f8ny42vf.txt
+2022-05-09 21:52:57 INFO: (general/34) Log file at: results\otto_balanced\otto_balanced_log_09-05-2022.txt
+2022-05-09 21:52:57 INFO: (test/68) dataset_dir='data/otto_balanced.csv'
+2022-05-09 21:52:57 INFO: (files/231) Target column mapping: {'Class_1': 0, 'Class_2': 1, 'Class_3': 2, 'Class_4': 3, 'Class_5': 4, 'Class_6': 5, 'Class_7': 6, 'Class_8': 7, 'Class_9': 8}
+2022-05-09 21:52:57 INFO: (test/72) DATA STATS:
+data shape of (1000, 94)
+Label distributes:
+0    111
+1    106
+2    119
+3    109
+4    110
+5    109
+6    100
+7    124
+8    112
+Name: label, dtype: int64
+
+2022-05-09 21:58:41 INFO: (general/32) Default log file at: C:\Users\omerh\AppData\Local\Temp\log_yh5dwmrl.txt
+2022-05-09 21:58:41 INFO: (general/34) Log file at: results\otto_balanced\otto_balanced_log_09-05-2022.txt
+2022-05-09 21:58:41 INFO: (test/70) dataset_dir='data/otto_balanced.csv'
+2022-05-09 21:58:42 INFO: (files/231) Target column mapping: {'Class_1': 0, 'Class_2': 1, 'Class_3': 2, 'Class_4': 3, 'Class_5': 4, 'Class_6': 5, 'Class_7': 6, 'Class_8': 7, 'Class_9': 8}
+2022-05-09 21:58:42 INFO: (test/74) DATA STATS:
+data shape of (500, 94)
+Label distributes:
+0    51
+1    51
+2    68
+3    51
+4    59
+5    61
+6    40
+7    65
+8    54
+Name: label, dtype: int64
+
+2022-05-09 22:03:03 INFO: (general/32) Default log file at: C:\Users\omerh\AppData\Local\Temp\log_oz870fbu.txt
+2022-05-09 22:03:03 INFO: (general/34) Log file at: results\otto_balanced\otto_balanced_log_09-05-2022.txt
+2022-05-09 22:03:03 INFO: (test/72) dataset_dir='data/otto_balanced.csv'
+2022-05-09 22:03:03 INFO: (files/231) Target column mapping: {'Class_1': 0, 'Class_2': 1, 'Class_3': 2, 'Class_4': 3, 'Class_5': 4, 'Class_6': 5, 'Class_7': 6, 'Class_8': 7, 'Class_9': 8}
+2022-05-09 22:03:03 INFO: (test/76) DATA STATS:
+data shape of (500, 94)
+Label distributes:
+0    51
+1    51
+2    68
+3    51
+4    59
+5    61
+6    40
+7    65
+8    54
+Name: label, dtype: int64
+
+2022-05-09 22:03:59 INFO: (general/32) Default log file at: C:\Users\omerh\AppData\Local\Temp\log__97ttoqh.txt
+2022-05-09 22:03:59 INFO: (general/34) Log file at: results\otto_balanced\otto_balanced_log_09-05-2022.txt
+2022-05-09 22:03:59 INFO: (test/72) dataset_dir='data/otto_balanced.csv'
+2022-05-09 22:03:59 INFO: (files/231) Target column mapping: {'Class_1': 0, 'Class_2': 1, 'Class_3': 2, 'Class_4': 3, 'Class_5': 4, 'Class_6': 5, 'Class_7': 6, 'Class_8': 7, 'Class_9': 8}
+2022-05-09 22:03:59 INFO: (test/76) DATA STATS:
+data shape of (500, 94)
+Label distributes:
+0    51
+1    51
+2    68
+3    51
+4    59
+5    61
+6    40
+7    65
+8    54
+Name: label, dtype: int64
+
