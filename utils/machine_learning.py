@@ -1,9 +1,13 @@
 import logging
+import numpy as np
+import pandas as pd
 
 from sklearn import metrics
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.model_selection import StratifiedKFold
+
+from utils.general import train_test_split
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +21,6 @@ def min_max_scaler(df1, features, df2=None, return_as_df=True):
     :param return_as_df: a boolean flag which determines if we want Numpy array or Pandas DataFrame
     :return: normalized dataframe/s (features only)
     """
-    import pandas as pd
     from sklearn.preprocessing import MinMaxScaler
 
     scaler = MinMaxScaler()
@@ -95,3 +98,110 @@ def kfolds_split(data, iter, n_splits=5, random_state=0):
     val_set = data.iloc[val_i*split_len:(val_i+1)*split_len]
     train_set = data[~data.index.isin(val_set.index)]
     return train_set, val_set
+
+
+def calc_f1_score(f1_lists):
+    return list(np.array(f1_lists).mean(axis=0))
+
+
+def t_test(dataset_name):
+    """
+    :param dataset_name: the name of the dataset we are using
+    :return: add all t_test p-valus for the dataset.
+    The T test calculation is done for each of our methods versus the rest of our conventional
+    methods we compare: 'random_features', 'fisher', 'relief', 'chi_square'
+    """
+    from scipy import stats
+
+    data = pd.read_csv('results/all_datasets_results.csv')
+    data = data[data['dataset'] == dataset_name]
+    A_type = ['random_features', 'fisher', 'relief', 'chi_square']
+    B_type = ['kmeans_0.0', 'kmeans_0.2', 'kmeans_0.35', 'kmeans_0.5']
+    df = pd.DataFrame(data={'dataset': [dataset_name]})
+    for a in A_type:
+        for b in B_type:
+            # t test is A>B
+            df[f'{a}_vs_{b}'] = stats.ttest_rel(data[a], data[b], alternative='less')[1]
+    old_df = pd.read_csv('results/t_test_results.csv')
+    df = pd.concat([df, old_df], ignore_index=True)
+    df.to_csv('results/t_test_results.csv', index=False)
+
+
+def predict(X_train, y_train, X_val, y_val):
+    clf = RandomForestClassifier(random_state=1)
+    multi_target_forest = OneVsRestClassifier(clf, n_jobs=-1)
+    model = multi_target_forest.fit(X_train, y_train)
+    validation_preds = model.predict(X_val)
+
+    train_acc = metrics.accuracy_score(y_val, validation_preds)
+    f1_scores_list = metrics.f1_score(y_val, validation_preds, average=None)
+    return train_acc, f1_scores_list
+
+
+def random_features_predict(train_set, val_set, k, all_features, random_acc_agg, random_f1_agg):
+    import random
+
+    random_features = random.sample(list(all_features), k)
+    X_tr, y_tr, X_test, y_test = train_test_split(train_set, val_set, random_features, return_y=True)
+    random_acc, random_f1 = predict(X_tr, y_tr, X_test, y_test)
+    random_acc_agg.append(random_acc)
+    random_f1_agg.append(random_f1)
+
+    return random_acc_agg, random_f1_agg
+
+
+def fisher_ranks_predict(train_set, val_set, k, all_features, fisher_acc_agg, fisher_f1_agg):
+    from skfeature.function.similarity_based import fisher_score
+
+    fisher_ranks = fisher_score.fisher_score(train_set[all_features].to_numpy(), train_set['label'].to_numpy())
+    fisher_features_idx = np.argsort(fisher_ranks, 0)[::-1][:k]
+    fisher_features = all_features[fisher_features_idx]
+    X_tr, y_tr, X_test, y_test = train_test_split(train_set, val_set, fisher_features, return_y=True)
+
+    fisher_acc, fisher_f1 = predict(X_tr, y_tr, X_test, y_test)
+    fisher_acc_agg.append(fisher_acc)
+    fisher_f1_agg.append(fisher_f1)
+    return fisher_acc_agg, fisher_f1_agg
+
+
+def relieff_predict(train_set, val_set, k, all_features, relief_acc_agg, relief_f1_agg):
+    from ReliefF import ReliefF
+
+    fs = ReliefF(n_neighbors=1, n_features_to_keep=k)
+    X_tr, y_tr, X_test, y_test = train_test_split(train_set, val_set, all_features, return_y=True)
+    X_tr = fs.fit_transform(train_set[all_features].to_numpy(), train_set['label'].to_numpy())
+    X_test = fs.transform(val_set[all_features].to_numpy())
+
+    relief_acc, relief_f1 = predict(X_tr, y_tr, X_test, y_test)
+    relief_acc_agg.append(relief_acc)
+    relief_f1_agg.append(relief_f1)
+    return relief_acc_agg, relief_f1_agg
+
+
+def chi_square_predict(train_set, val_set, k, all_features, chi_square_acc_agg, chi_square_f1_agg):
+    from sklearn.feature_selection import chi2
+    from sklearn.feature_selection import SelectKBest
+
+    chi_features = SelectKBest(chi2, k=k)
+    X_tr, y_tr, X_test, y_test = train_test_split(train_set, val_set, all_features, return_y=True)
+    X_tr_norm, X_test_norm = min_max_scaler(train_set, all_features, val_set, return_as_df=False)
+    X_tr = chi_features.fit_transform(X_tr_norm, y_tr)
+    X_test = chi_features.transform(X_test_norm)
+
+    chi2_acc, chi2_f1 = predict(X_tr, y_tr, X_test, y_test)
+    chi_square_acc_agg.append(chi2_acc)
+    chi_square_f1_agg.append(chi2_f1)
+    return chi_square_acc_agg, chi_square_f1_agg
+
+
+def mrmr_predict(train_set, val_set, k, all_features, mrmr_acc_agg, mrmr_f1_agg):
+    from mrmr import mrmr_classif
+
+    mrmr_features = mrmr_classif(X=train_set[all_features], y=train_set['label'], K=k)
+    X_tr, y_tr, X_test, y_test = train_test_split(train_set, val_set, mrmr_features, return_y=True)
+
+    mrmr_acc, mrmr_f1 = predict(X_tr, y_tr, X_test, y_test)
+    mrmr_acc_agg.append(mrmr_acc)
+    mrmr_f1_agg.append(mrmr_f1)
+    return mrmr_acc_agg, mrmr_f1_agg
+
