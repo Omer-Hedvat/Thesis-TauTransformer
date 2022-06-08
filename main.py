@@ -419,7 +419,7 @@ def main():
         ('adware_balanced', 'label'), ('ml_multiclass_classification_data', 'target'), ('digits', 'label'), ('isolet', 'label'),
         ('otto_balanced', 'target'), ('gene_data', 'label')
     ]
-    # datasets = [('adware_balanced', 'label')]
+    # datasets = [('isolet', 'label'), ('otto_balanced', 'target'), ('gene_data', 'label')]
     # config['features_percentage'] = [0.1, 0.6]
     # config['features_to_reduce_prc']: [0.0, 0.2]
 
