@@ -240,6 +240,7 @@ def run_experiments(config):
         relief_acc_agg, relief_f1_agg = [], []
         chi_square_acc_agg, chi_square_f1_agg = [], []
         mrmr_acc_agg, mrmr_f1_agg = [], []
+        jm_kmeans_acc_agg, jm_kmeans_f1_agg = [], []
         for kfold_iter in range(1, config['kfolds'] + 1):
             final_kf_iter = kfold_iter == config['kfolds']
             train_set, val_set = kfolds_split(data, kfold_iter, n_splits=config['kfolds'], random_state=0)
@@ -253,6 +254,7 @@ def run_experiments(config):
             random_features = random.sample(list(all_features), k)
             X_tr, X_test = train_test_split(train_set, val_set, random_features, return_y=False)
 
+            # Random Features
             random_acc, random_f1 = predict(X_tr, y_tr, X_test, y_test)
             random_acc_agg.append(random_acc)
             random_f1_agg.append(random_f1)
@@ -261,6 +263,7 @@ def run_experiments(config):
                 logger.info(f"random_features accuracy result: {acc_result}%")
                 store_results(config['dataset_name'], feature_percentage, dm_dim, 'random_features', random_acc_agg, random_f1_agg, classes, workdir)
 
+            # Fisher Score Features
             fisher_ranks = fisher_score.fisher_score(train_set[all_features].to_numpy(), train_set['label'].to_numpy())
             fisher_features_idx = np.argsort(fisher_ranks, 0)[::-1][:k]
             fisher_features = all_features[fisher_features_idx]
@@ -274,6 +277,7 @@ def run_experiments(config):
                 logger.info(f"fisher_score accuracy result: {acc_result}%")
                 store_results(config['dataset_name'], feature_percentage, dm_dim, 'fisher', fisher_acc_agg, fisher_f1_agg, classes, workdir)
 
+            # ReliefF Features
             fs = ReliefF(n_neighbors=1, n_features_to_keep=k)
             X_tr = fs.fit_transform(train_set[all_features].to_numpy(), train_set['label'].to_numpy())
             X_test = fs.transform(val_set[all_features].to_numpy())
@@ -286,6 +290,7 @@ def run_experiments(config):
                 logger.info(f"Relief accuracy result: {acc_result}%")
                 store_results(config['dataset_name'], feature_percentage, dm_dim, 'relief', relief_acc_agg, relief_f1_agg, classes, workdir)
 
+            # Chi Suare Features
             chi_features = SelectKBest(chi2, k=k)
             X_tr_norm, X_test_norm = min_max_scaler(train_set, all_features, val_set, return_as_df=False)
             X_tr = chi_features.fit_transform(X_tr_norm, y_tr)
@@ -299,6 +304,7 @@ def run_experiments(config):
                 logger.info(f"chi_square accuracy result: {acc_result}%")
                 store_results(config['dataset_name'], feature_percentage, dm_dim, 'chi_square', chi_square_acc_agg, chi_square_f1_agg, classes, workdir)
 
+            # mRMR Features
             mrmr_features = mrmr_classif(X=train_set[all_features], y=train_set['label'], K=k)
             X_tr, X_test = train_test_split(train_set, val_set, mrmr_features, return_y=False)
             mrmr_acc, mrmr_f1 = predict(X_tr, y_tr, X_test, y_test)
@@ -311,6 +317,29 @@ def run_experiments(config):
                 store_results(config['dataset_name'], feature_percentage, dm_dim, 'mrmr', mrmr_acc_agg,
                               mrmr_f1_agg, classes, workdir)
 
+            # Shir's Approach Features
+            jm_dict = {}
+            X_tr_norm = min_max_scaler(train_set, all_features)
+            jm_dists, _ = calc_dist('jm', X_tr_norm, y_tr, 'label')
+            jm_dict['jm'] = jm_dists
+            if feature_percentage + 0.5 < 1:
+                jm_distances_dict, _ = features_reduction(all_features, jm_dict, 0.5, config['verbose'])
+            else:
+                jm_distances_dict = jm_dict.copy()
+            jm_coordinates, jm_ranking = diffusion_mapping(jm_distances_dict['jm'], config['alpha'], config['eps_type'], config['eps_factor'], dim=dm_dim)
+
+            jm_features, _, _ = return_best_features_by_kmeans(jm_coordinates, k)
+            X_tr, X_test = train_test_split(train_set, val_set, all_features, return_y=False)
+            jm_kmeans_acc, jm_kmeans_f1 = predict(X_tr.iloc[:, jm_features], y_tr, X_test.iloc[:, jm_features], y_test)
+            jm_kmeans_acc_agg.append(jm_kmeans_acc)
+            jm_kmeans_f1_agg.append(jm_kmeans_f1)
+
+            if final_kf_iter:
+                jm_acc_result = round(lists_avg(jm_kmeans_acc_agg) * 100, 2)
+                logger.info(f"Shir's algo kmeans accuracy result w/ {int(0.5 * 100)}% huristic: {jm_acc_result}%")
+                store_results(config['dataset_name'], feature_percentage, dm_dim, 'shirs_algo', jm_kmeans_acc_agg, jm_kmeans_f1_agg, classes, workdir)
+
+        # New Approach Features
         for features_to_reduce_prc in config['features_to_reduce_prc']:
             if feature_percentage + features_to_reduce_prc >= 1:
                 continue
@@ -349,7 +378,7 @@ def run_experiments(config):
 
                 if config['verbose']:
                     logger.info(
-                        f"""Ranking the {int((1-features_to_reduce_prc)*100)}% remain features using a combined coordinate matrix ('agg_corrdinates'),  
+                        f"""Ranking the {int((1-features_to_reduce_prc)*100)}% remain features using a combined coordinate matrix ('agg_corrdinates'),
                         inserting 'agg_corrdinates' into a 2nd diffusion map and storing the 2nd diffusion map results into 'final_coordinates'"""
                     )
                 agg_coordinates = np.concatenate([val['coordinates'] for val in dm_dict.values()]).T
@@ -390,8 +419,8 @@ def main():
         ('adware_balanced', 'label'), ('ml_multiclass_classification_data', 'target'), ('digits', 'label'), ('isolet', 'label'),
         ('otto_balanced', 'target'), ('gene_data', 'label')
     ]
-    # datasets = [('adware_balanced', 'label')]
-    # config['features_percentage'] = [0.1]
+    # datasets = [('isolet', 'label'), ('otto_balanced', 'target'), ('gene_data', 'label')]
+    # config['features_percentage'] = [0.1, 0.6]
     # config['features_to_reduce_prc']: [0.0, 0.2]
 
     for dataset, label in datasets:

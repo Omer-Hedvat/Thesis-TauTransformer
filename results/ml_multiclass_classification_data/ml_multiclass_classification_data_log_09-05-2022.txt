@@ -1,0 +1,51 @@
+2022-05-09 15:36:41 INFO: (general/32) Default log file at: C:\Users\omerh\AppData\Local\Temp\log_maz31be6.txt
+2022-05-09 15:36:41 INFO: (general/34) Log file at: results\ml_multiclass_classification_data\ml_multiclass_classification_data_log_09-05-2022.txt
+2022-05-09 15:36:41 INFO: (main/227) dataset_dir='data/ml_multiclass_classification_data.csv'
+2022-05-09 15:36:41 INFO: (main/231) DATA STATS:
+data shape of (500, 21)
+Label distributes:
+0.0    62
+1.0    70
+2.0    71
+3.0    72
+4.0    72
+5.0    73
+6.0    80
+Name: label, dtype: int64
+
+2022-05-09 15:36:41 INFO: (main/235) Calculating distances by wasserstein
+2022-05-09 15:36:42 INFO: (main/235) Calculating distances by jm
+2022-05-09 15:36:44 INFO: (main/235) Calculating distances by hellinger
+2022-05-09 15:36:44 INFO: (main/247) 
+        Running over features percentage of 0.1, which is 2 features out of 20,
+        with diffusion mapping dim of 2
+2022-05-09 15:36:44 INFO: (files/241) ****************************************************************************************************
+2022-05-09 15:36:44 INFO: (files/242) ********************************** Using all features prediction **********************************
+2022-05-09 15:36:44 INFO: (files/243) ****************************************************************************************************
+2022-05-09 15:37:29 INFO: (general/32) Default log file at: C:\Users\omerh\AppData\Local\Temp\log_dqfu2bmv.txt
+2022-05-09 15:37:29 INFO: (general/34) Log file at: results\ml_multiclass_classification_data\ml_multiclass_classification_data_log_09-05-2022.txt
+2022-05-09 15:37:29 INFO: (main/227) dataset_dir='data/ml_multiclass_classification_data.csv'
+2022-05-09 15:39:10 INFO: (general/32) Default log file at: C:\Users\omerh\AppData\Local\Temp\log_cmu7gidp.txt
+2022-05-09 15:39:10 INFO: (general/34) Log file at: results\ml_multiclass_classification_data\ml_multiclass_classification_data_log_09-05-2022.txt
+2022-05-09 15:39:10 INFO: (main/227) dataset_dir='data/ml_multiclass_classification_data.csv'
+2022-05-09 15:39:10 INFO: (main/231) DATA STATS:
+data shape of (500, 21)
+Label distributes:
+0    62
+1    70
+2    71
+3    72
+4    72
+5    73
+6    80
+Name: label, dtype: int64
+
+2022-05-09 15:39:10 INFO: (main/235) Calculating distances by wasserstein
+2022-05-09 15:39:11 INFO: (main/235) Calculating distances by jm
+2022-05-09 15:39:12 INFO: (main/235) Calculating distances by hellinger
+2022-05-09 15:39:13 INFO: (main/247) 
+        Running over features percentage of 0.1, which is 2 features out of 20,
+        with diffusion mapping dim of 2
+2022-05-09 15:39:13 INFO: (files/244) ****************************************************************************************************
+2022-05-09 15:39:13 INFO: (files/245) ********************************** Using all features prediction **********************************
+2022-05-09 15:39:13 INFO: (files/246) ****************************************************************************************************

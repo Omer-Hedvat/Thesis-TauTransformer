@@ -1,0 +1,132 @@
+2022-05-22 12:33:45 INFO: (general/32) Default log file at: C:\Users\omerh\AppData\Local\Temp\log_qne3jkw8.txt
+2022-05-22 12:33:45 INFO: (general/34) Log file at: results\adware_balanced\adware_balanced_log_22-05-2022.txt
+2022-05-22 12:33:45 INFO: (main/212) dataset_dir='data/adware_balanced.csv'
+2022-05-22 12:33:47 INFO: (main/216) DATA STATS:
+data shape of (500, 78)
+Label distributes:
+0     81
+1     69
+2     82
+3     77
+4    106
+5     85
+Name: label, dtype: int64
+
+2022-05-22 12:33:47 INFO: (files/243) ****************************************************************************************************
+2022-05-22 12:33:47 INFO: (files/244) ********************************** Using all features prediction **********************************
+2022-05-22 12:33:47 INFO: (files/245) ****************************************************************************************************
+2022-05-22 12:33:53 INFO: (main/232) 
+        Running over features percentage of 0.1, which is 7 features out of 77, with diffusion mapping dimension of 2
+2022-05-22 12:33:53 INFO: (files/243) ****************************************************************************************************
+2022-05-22 12:33:53 INFO: (files/244)  Starting baseline heuristics using: random features, Fisher score, ReliefF selection, Chi-square Test selection &  & mRMR for 7 features out of 77 
+2022-05-22 12:33:53 INFO: (files/245) ****************************************************************************************************
+2022-05-22 12:39:15 INFO: (general/32) Default log file at: C:\Users\omerh\AppData\Local\Temp\log_d288x2al.txt
+2022-05-22 12:39:15 INFO: (general/34) Log file at: results\adware_balanced\adware_balanced_log_22-05-2022.txt
+2022-05-22 12:39:15 INFO: (main/212) dataset_dir='data/adware_balanced.csv'
+2022-05-22 12:39:16 INFO: (main/216) DATA STATS:
+data shape of (500, 78)
+Label distributes:
+0     81
+1     69
+2     82
+3     77
+4    106
+5     85
+Name: label, dtype: int64
+
+2022-05-22 12:39:16 INFO: (files/243) ****************************************************************************************************
+2022-05-22 12:39:16 INFO: (files/244) ********************************** Using all features prediction **********************************
+2022-05-22 12:39:16 INFO: (files/245) ****************************************************************************************************
+2022-05-22 12:39:25 INFO: (main/232) 
+        Running over features percentage of 0.1, which is 7 features out of 77, with diffusion mapping dimension of 2
+2022-05-22 12:39:25 INFO: (files/243) ****************************************************************************************************
+2022-05-22 12:39:25 INFO: (files/244)  Starting baseline heuristics using: random features, Fisher score, ReliefF selection, Chi-square Test selection &  & mRMR for 7 features out of 77 
+2022-05-22 12:39:25 INFO: (files/245) ****************************************************************************************************
+2022-05-22 12:40:25 INFO: (general/32) Default log file at: C:\Users\omerh\AppData\Local\Temp\log_sus9dx86.txt
+2022-05-22 12:40:25 INFO: (general/34) Log file at: results\adware_balanced\adware_balanced_log_22-05-2022.txt
+2022-05-22 12:40:25 INFO: (main/212) dataset_dir='data/adware_balanced.csv'
+2022-05-22 12:40:26 INFO: (main/216) DATA STATS:
+data shape of (500, 78)
+Label distributes:
+0     81
+1     69
+2     82
+3     77
+4    106
+5     85
+Name: label, dtype: int64
+
+2022-05-22 12:40:26 INFO: (files/243) ****************************************************************************************************
+2022-05-22 12:40:26 INFO: (files/244) ********************************** Using all features prediction **********************************
+2022-05-22 12:40:26 INFO: (files/245) ****************************************************************************************************
+2022-05-22 12:40:31 INFO: (main/232) 
+        Running over features percentage of 0.1, which is 7 features out of 77, with diffusion mapping dimension of 2
+2022-05-22 12:40:31 INFO: (files/243) ****************************************************************************************************
+2022-05-22 12:40:31 INFO: (files/244)  Starting baseline heuristics using: random features, Fisher score, ReliefF selection, Chi-square Test selection &  & mRMR for 7 features out of 77 
+2022-05-22 12:40:31 INFO: (files/245) ****************************************************************************************************
+2022-05-22 12:40:40 INFO: (main/250) all_features accuracy result: 23.6%
+2022-05-22 12:40:41 INFO: (main/261) random_features accuracy result: 13.8%
+2022-05-22 12:40:41 INFO: (main/274) fisher_score accuracy result: 20.2%
+2022-05-22 12:40:42 INFO: (main/286) Relief accuracy result: 19.6%
+2022-05-22 12:40:42 INFO: (main/299) chi_square accuracy result: 17.6%
+2022-05-22 12:40:43 INFO: (main/310) mRMR accuracy result: 17.2%
+2022-05-22 12:40:43 INFO: (files/243) ****************************************************************************************************
+2022-05-22 12:40:43 INFO: (files/244) ******************************** features to reduce heuristic of 0% ********************************
+2022-05-22 12:40:43 INFO: (files/245) ****************************************************************************************************
+2022-05-22 12:41:07 INFO: (main/368) kmeans accuracy result w/ 0% huristic: 19.6%
+2022-05-22 12:41:07 INFO: (files/243) ****************************************************************************************************
+2022-05-22 12:41:07 INFO: (files/244) ******************************** features to reduce heuristic of 20% ********************************
+2022-05-22 12:41:07 INFO: (files/245) ****************************************************************************************************
+2022-05-22 12:41:29 INFO: (main/368) kmeans accuracy result w/ 20% huristic: 20.2%
+2022-05-22 12:41:29 INFO: (files/243) ****************************************************************************************************
+2022-05-22 12:41:29 INFO: (files/244) ******************************** features to reduce heuristic of 35% ********************************
+2022-05-22 12:41:29 INFO: (files/245) ****************************************************************************************************
+2022-05-22 12:41:53 INFO: (main/368) kmeans accuracy result w/ 35% huristic: 20.0%
+2022-05-22 12:41:53 INFO: (files/243) ****************************************************************************************************
+2022-05-22 12:41:53 INFO: (files/244) ******************************** features to reduce heuristic of 50% ********************************
+2022-05-22 12:41:53 INFO: (files/245) ****************************************************************************************************
+2022-05-22 12:42:16 INFO: (main/368) kmeans accuracy result w/ 50% huristic: 22.6%
+2022-05-22 12:54:41 INFO: (general/32) Default log file at: C:\Users\omerh\AppData\Local\Temp\log_r6kq0sx_.txt
+2022-05-22 12:54:41 INFO: (general/34) Log file at: results\adware_balanced\adware_balanced_log_22-05-2022.txt
+2022-05-22 12:54:41 INFO: (main/212) dataset_dir='data/adware_balanced.csv'
+2022-05-22 12:54:42 INFO: (main/216) DATA STATS:
+data shape of (500, 78)
+Label distributes:
+0     81
+1     69
+2     82
+3     77
+4    106
+5     85
+Name: label, dtype: int64
+
+2022-05-22 12:54:42 INFO: (files/243) ****************************************************************************************************
+2022-05-22 12:54:42 INFO: (files/244) ********************************** Using all features prediction **********************************
+2022-05-22 12:54:42 INFO: (files/245) ****************************************************************************************************
+2022-05-22 12:54:48 INFO: (main/232) 
+        Running over features percentage of 0.1, which is 7 features out of 77, with diffusion mapping dimension of 2
+2022-05-22 12:54:48 INFO: (files/243) ****************************************************************************************************
+2022-05-22 12:54:48 INFO: (files/244)  Starting baseline heuristics using: random features, Fisher score, ReliefF selection, Chi-square Test selection &  & mRMR for 7 features out of 77 
+2022-05-22 12:54:48 INFO: (files/245) ****************************************************************************************************
+2022-05-22 12:54:56 INFO: (main/250) all_features accuracy result: 23.6%
+2022-05-22 12:54:57 INFO: (main/261) random_features accuracy result: 15.0%
+2022-05-22 12:54:57 INFO: (main/274) fisher_score accuracy result: 20.2%
+2022-05-22 12:54:57 INFO: (main/286) Relief accuracy result: 19.6%
+2022-05-22 12:54:58 INFO: (main/299) chi_square accuracy result: 17.6%
+2022-05-22 12:54:58 INFO: (main/310) mRMR accuracy result: 17.2%
+2022-05-22 12:54:58 INFO: (files/243) ****************************************************************************************************
+2022-05-22 12:54:58 INFO: (files/244) ******************************** features to reduce heuristic of 0% ********************************
+2022-05-22 12:54:58 INFO: (files/245) ****************************************************************************************************
+2022-05-22 12:55:21 INFO: (main/368) kmeans accuracy result w/ 0% huristic: 19.6%
+2022-05-22 12:55:21 INFO: (files/243) ****************************************************************************************************
+2022-05-22 12:55:21 INFO: (files/244) ******************************** features to reduce heuristic of 20% ********************************
+2022-05-22 12:55:21 INFO: (files/245) ****************************************************************************************************
+2022-05-22 12:55:43 INFO: (main/368) kmeans accuracy result w/ 20% huristic: 20.2%
+2022-05-22 12:55:43 INFO: (files/243) ****************************************************************************************************
+2022-05-22 12:55:43 INFO: (files/244) ******************************** features to reduce heuristic of 35% ********************************
+2022-05-22 12:55:43 INFO: (files/245) ****************************************************************************************************
+2022-05-22 12:56:05 INFO: (main/368) kmeans accuracy result w/ 35% huristic: 20.0%
+2022-05-22 12:56:05 INFO: (files/243) ****************************************************************************************************
+2022-05-22 12:56:05 INFO: (files/244) ******************************** features to reduce heuristic of 50% ********************************
+2022-05-22 12:56:05 INFO: (files/245) ****************************************************************************************************
+2022-05-22 12:56:27 INFO: (main/368) kmeans accuracy result w/ 50% huristic: 22.6%
