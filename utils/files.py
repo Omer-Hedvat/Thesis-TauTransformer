@@ -258,11 +258,12 @@ def store_results(dataset, features_prc, dm_dim, metric, acc, f1, classes, workd
             (acc_results_df.dm_dim == dm_dim)
     )
     if ds_results_mask.any():
-        acc_results_df.loc[ds_results_mask, metric] = lists_avg(acc)
+        acc_results_df.loc[ds_results_mask, metric] = round(lists_avg(acc), 3)
     else:
         today_date = datetime.now().strftime('%d-%m-%Y')
         new_df = pd.DataFrame(columns=acc_results_df.columns)
-        new_df.loc[len(new_df), ['date', 'dataset', 'features_prc', 'dm_dim', metric]] = [today_date, dataset, features_prc, dm_dim, lists_avg(acc)]
+        new_df.loc[len(new_df), ['date', 'dataset', 'features_prc', 'dm_dim', metric]] = \
+            [today_date, dataset, features_prc, dm_dim, round(lists_avg(acc), 3)]
         acc_results_df = pd.concat([acc_results_df, new_df]).sort_values(by=['dataset', 'features_prc', 'dm_dim'])
     acc_results_df.to_csv('results/all_datasets_results.csv', index=False)
 

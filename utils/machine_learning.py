@@ -138,9 +138,10 @@ def predict(X_train, y_train, X_val, y_val):
     return train_acc, f1_scores_list
 
 
-def random_features_predict(train_set, val_set, k, all_features, random_acc_agg, random_f1_agg):
+def random_features_predict(train_set, val_set, k, all_features, random_acc_agg, random_f1_agg, random_state):
     import random
 
+    random.seed(random_state)
     random_features = random.sample(list(all_features), k)
     X_tr, y_tr, X_test, y_test = train_test_split(train_set, val_set, random_features, return_y=True)
     random_acc, random_f1 = predict(X_tr, y_tr, X_test, y_test)

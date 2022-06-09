@@ -153,7 +153,7 @@ def run_experiments(config):
         jm_kmeans_acc_agg, jm_kmeans_f1_agg = [], []
         for kfold_iter in range(1, config['kfolds'] + 1):
             final_kf_iter = kfold_iter == config['kfolds']
-            train_set, val_set = kfolds_split(data, kfold_iter, n_splits=config['kfolds'], random_state=0)
+            train_set, val_set = kfolds_split(data, kfold_iter, n_splits=config['kfolds'], random_state=config['random_state'])
 
             # Storing the results we've calculated earlier for all_features
             if final_kf_iter:
@@ -162,7 +162,7 @@ def run_experiments(config):
                 store_results(config['dataset_name'], feature_percentage, dm_dim, 'all_features', all_features_acc_agg, all_features_f1_agg, classes, workdir)
 
             # Random Features
-            random_acc_agg, random_f1_agg = random_features_predict(train_set, val_set, k, all_features, random_acc_agg, random_f1_agg)
+            random_acc_agg, random_f1_agg = random_features_predict(train_set, val_set, k, all_features, random_acc_agg, random_f1_agg, config['random_state'])
             if final_kf_iter:
                 acc_result = round(lists_avg(random_acc_agg) * 100, 2)
                 logger.info(f"random_features accuracy result: {acc_result}%")
@@ -290,7 +290,8 @@ def main():
         'alpha': 1,
         'eps_type': 'maxmin',
         'eps_factor': 25,
-        'verbose': False
+        'verbose': False,
+        'random_state': 0
     }
 
     # tuples of datasets names and target column name
@@ -298,9 +299,9 @@ def main():
         ('adware_balanced', 'label'), ('ml_multiclass_classification_data', 'target'), ('digits', 'label'), ('isolet', 'label'),
         ('otto_balanced', 'target'), ('gene_data', 'label')
     ]
-    datasets = [('ml_multiclass_classification_data', 'target')]
-    config['features_percentage'] = [0.02, 0.1, 0.3]
-    config['features_to_reduce_prc']: [0.0, 0.2]
+    # datasets = [('ml_multiclass_classification_data', 'target')]
+    # config['features_percentage'] = [0.02, 0.1, 0.3]
+    # config['features_to_reduce_prc']: [0.0, 0.2]
 
     for dataset, label in datasets:
         config['dataset_name'] = dataset
