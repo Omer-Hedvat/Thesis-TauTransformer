@@ -1,48 +1,23 @@
 from datetime import datetime
 import itertools
 import logging
-from math import sqrt
 import numpy as np
 import os
 import pandas as pd
-import random
 
-import matplotlib.pyplot as plt
-from matplotlib.ticker import FixedFormatter
-
-from mrmr import mrmr_classif
-from sklearn import metrics
 from sklearn.cluster import KMeans
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.multiclass import OneVsRestClassifier
-from skfeature.function.similarity_based import fisher_score
-from ReliefF import ReliefF
-from sklearn.feature_selection import SelectKBest
-from sklearn.feature_selection import chi2
-from scipy import stats
 
 from utils.diffusion_maps import diffusion_mapping
 from utils.distances import wasserstein_dist, bhattacharyya_dist, hellinger_dist, jm_dist
-from utils.files import create_work_dir, read_from_csv, print_separation_dots
+from utils.files import create_work_dir, read_from_csv, print_separation_dots, store_results, all_results_colorful
 from utils.general import flatten, setup_logger, lists_avg, calc_k, train_test_split
-from utils.machine_learning import min_max_scaler, kfolds_split
+from utils.machine_learning import min_max_scaler, t_test, kfolds_split
+from utils.machine_learning import (
+    predict, random_features_predict, fisher_ranks_predict, relieff_predict, chi_square_predict, mrmr_predict
+)
+
 
 logger = logging.getLogger(__name__)
-
-
-def predict(X_train, y_train, X_val, y_val):
-    clf = RandomForestClassifier(random_state=1)
-    multi_target_forest = OneVsRestClassifier(clf, n_jobs=-1)
-    model = multi_target_forest.fit(X_train, y_train)
-    validation_preds = model.predict(X_val)
-
-    train_acc = metrics.accuracy_score(y_val, validation_preds)
-    f1_scores_list = metrics.f1_score(y_val, validation_preds, average=None)
-    return train_acc, f1_scores_list
-
-
-def calc_f1_score(f1_lists):
-    return list(np.array(f1_lists).mean(axis=0))
 
 
 def execute_distance_func(df, function_name, feature, label1, label2):
@@ -138,71 +113,6 @@ def return_best_features_by_kmeans(coordinates, k):
     return best_features, labels, features_rank
 
 
-def store_results(dataset, features_prc, dm_dim, metric, acc, f1, classes, workdir):
-    # General Results File
-    acc_results_df = pd.read_csv('results/all_datasets_results.csv')
-    ds_results_mask = (
-            (acc_results_df.dataset == dataset) & (acc_results_df.features_prc == features_prc) &
-            (acc_results_df.dm_dim == dm_dim)
-    )
-    if ds_results_mask.any():
-        acc_results_df.loc[ds_results_mask, metric] = lists_avg(acc)
-    else:
-        today_date = datetime.now().strftime('%d-%m-%Y')
-        new_df = pd.DataFrame(columns=acc_results_df.columns)
-        new_df.loc[len(new_df), ['date', 'dataset', 'features_prc', 'dm_dim', metric]] = [today_date, dataset, features_prc, dm_dim, lists_avg(acc)]
-        acc_results_df = pd.concat([acc_results_df, new_df]).sort_values(by=['dataset', 'features_prc', 'dm_dim'])
-    acc_results_df.to_csv('results/all_datasets_results.csv', index=False)
-
-    # Dataset's F1 Results File
-    columns = ['features_prc', 'dm_dim', *[f'{metric}_{class_name}' for class_name in classes]]
-    class_avg_f1 = calc_f1_score(f1)
-    values = [features_prc, dm_dim, *class_avg_f1]
-    data_dict = dict(zip(columns, values))
-    f1_file = os.path.join(workdir, f'f1_scores.csv')
-    new_data_df = pd.DataFrame([data_dict])
-    if not os.path.exists(f1_file):
-        new_data_df.to_csv(f1_file, index=False)
-    else:
-        f1_results_df = pd.read_csv(f1_file)
-        all_ds_results_mask = ((f1_results_df.features_prc == features_prc) & (f1_results_df.dm_dim == dm_dim))
-        if all_ds_results_mask.any():
-            f1_results_df.loc[all_ds_results_mask, columns] = values
-        else:
-            f1_results_df = pd.concat([f1_results_df, new_data_df]).sort_values(by=['features_prc', 'dm_dim'])
-        f1_results_df.to_csv(f1_file, index=False)
-
-
-def t_test(dataset_name):
-    """
-    :param dataset_name: the name of the dataset we are using
-    :return: add all t_test p-valus for the dataset.
-    The T test calculation is done for each of our methods versus the rest of our conventional
-    methods we compare: 'random_features', 'fisher', 'relief', 'chi_square'
-    """
-    data = pd.read_csv('results/all_datasets_results.csv')
-    data = data[data['dataset'] == dataset_name]
-    A_type = ['random_features', 'fisher', 'relief', 'chi_square']
-    B_type = ['kmeans_0.0', 'kmeans_0.2', 'kmeans_0.35', 'kmeans_0.5']
-    df = pd.DataFrame(data={'dataset': [dataset_name]})
-    for a in A_type:
-        for b in B_type:
-            # t test is A>B
-            df[f'{a}_vs_{b}'] = stats.ttest_rel(data[a], data[b], alternative='less')[1]
-    old_df = pd.read_csv('results/t_test_results.csv')
-    df = pd.concat([df, old_df], ignore_index=True)
-    df.to_csv('results/t_test_results.csv', index=False)
-
-
-def all_results_colorful():
-    data = pd.read_csv("results/all_datasets_results.csv")
-    dat = data['dataset'] + " " + data['features_prc'].apply(str) + " " + data['dm_dim'].apply(str)
-    data['raw'] = dat
-    data = data.set_index('raw')
-    data = data.drop(columns=['date', 'dataset', 'features_prc', 'dm_dim'])
-    data.style.background_gradient(cmap='RdYlGn', axis=1).to_excel("results/all_results_colors.xlsx")
-
-
 def run_experiments(config):
     workdir = os.path.join(f'results', config['dataset_name'])
     create_work_dir(workdir, on_exists='ignore')
@@ -243,74 +153,44 @@ def run_experiments(config):
         jm_kmeans_acc_agg, jm_kmeans_f1_agg = [], []
         for kfold_iter in range(1, config['kfolds'] + 1):
             final_kf_iter = kfold_iter == config['kfolds']
-            train_set, val_set = kfolds_split(data, kfold_iter, n_splits=config['kfolds'], random_state=0)
+            train_set, val_set = kfolds_split(data, kfold_iter, n_splits=config['kfolds'], random_state=config['random_state'])
 
-            # Storing the results we've calculated earlier
+            # Storing the results we've calculated earlier for all_features
             if final_kf_iter:
                 acc_result = round(lists_avg(all_features_acc_agg)*100, 2)
                 logger.info(f"all_features accuracy result: {acc_result}%")
                 store_results(config['dataset_name'], feature_percentage, dm_dim, 'all_features', all_features_acc_agg, all_features_f1_agg, classes, workdir)
 
-            random_features = random.sample(list(all_features), k)
-            X_tr, X_test = train_test_split(train_set, val_set, random_features, return_y=False)
-
             # Random Features
-            random_acc, random_f1 = predict(X_tr, y_tr, X_test, y_test)
-            random_acc_agg.append(random_acc)
-            random_f1_agg.append(random_f1)
+            random_acc_agg, random_f1_agg = random_features_predict(train_set, val_set, k, all_features, random_acc_agg, random_f1_agg, config['random_state'])
             if final_kf_iter:
                 acc_result = round(lists_avg(random_acc_agg) * 100, 2)
                 logger.info(f"random_features accuracy result: {acc_result}%")
                 store_results(config['dataset_name'], feature_percentage, dm_dim, 'random_features', random_acc_agg, random_f1_agg, classes, workdir)
 
             # Fisher Score Features
-            fisher_ranks = fisher_score.fisher_score(train_set[all_features].to_numpy(), train_set['label'].to_numpy())
-            fisher_features_idx = np.argsort(fisher_ranks, 0)[::-1][:k]
-            fisher_features = all_features[fisher_features_idx]
-            X_tr, X_test = train_test_split(train_set, val_set, fisher_features, return_y=False)
-
-            fisher_acc, fisher_f1 = predict(X_tr, y_tr, X_test, y_test)
-            fisher_acc_agg.append(fisher_acc)
-            fisher_f1_agg.append(fisher_f1)
+            fisher_acc_agg, fisher_f1_agg = fisher_ranks_predict(train_set, val_set, k, all_features, fisher_acc_agg, fisher_f1_agg)
             if final_kf_iter:
                 acc_result = round(lists_avg(fisher_acc_agg) * 100, 2)
                 logger.info(f"fisher_score accuracy result: {acc_result}%")
                 store_results(config['dataset_name'], feature_percentage, dm_dim, 'fisher', fisher_acc_agg, fisher_f1_agg, classes, workdir)
 
             # ReliefF Features
-            fs = ReliefF(n_neighbors=1, n_features_to_keep=k)
-            X_tr = fs.fit_transform(train_set[all_features].to_numpy(), train_set['label'].to_numpy())
-            X_test = fs.transform(val_set[all_features].to_numpy())
-
-            relief_acc, relief_f1 = predict(X_tr, y_tr, X_test, y_test)
-            relief_acc_agg.append(relief_acc)
-            relief_f1_agg.append(relief_f1)
+            relief_acc_agg, relief_f1_agg = relieff_predict(train_set, val_set, k, all_features, relief_acc_agg, relief_f1_agg)
             if final_kf_iter:
                 acc_result = round(lists_avg(relief_acc_agg) * 100, 2)
                 logger.info(f"Relief accuracy result: {acc_result}%")
                 store_results(config['dataset_name'], feature_percentage, dm_dim, 'relief', relief_acc_agg, relief_f1_agg, classes, workdir)
 
             # Chi Suare Features
-            chi_features = SelectKBest(chi2, k=k)
-            X_tr_norm, X_test_norm = min_max_scaler(train_set, all_features, val_set, return_as_df=False)
-            X_tr = chi_features.fit_transform(X_tr_norm, y_tr)
-            X_test = chi_features.transform(X_test_norm)
-
-            chi2_acc, chi2_f1 = predict(X_tr, y_tr, X_test, y_test)
-            chi_square_acc_agg.append(chi2_acc)
-            chi_square_f1_agg.append(chi2_f1)
+            chi_square_acc_agg, chi_square_f1_agg = chi_square_predict(train_set, val_set, k, all_features, chi_square_acc_agg, chi_square_f1_agg)
             if final_kf_iter:
                 acc_result = round(lists_avg(chi_square_acc_agg) * 100, 2)
                 logger.info(f"chi_square accuracy result: {acc_result}%")
                 store_results(config['dataset_name'], feature_percentage, dm_dim, 'chi_square', chi_square_acc_agg, chi_square_f1_agg, classes, workdir)
 
             # mRMR Features
-            mrmr_features = mrmr_classif(X=train_set[all_features], y=train_set['label'], K=k)
-            X_tr, X_test = train_test_split(train_set, val_set, mrmr_features, return_y=False)
-            mrmr_acc, mrmr_f1 = predict(X_tr, y_tr, X_test, y_test)
-            mrmr_acc_agg.append(mrmr_acc)
-            mrmr_f1_agg.append(mrmr_f1)
-
+            mrmr_acc_agg, mrmr_f1_agg = mrmr_predict(train_set, val_set, k, all_features, mrmr_acc_agg, mrmr_f1_agg)
             if final_kf_iter:
                 acc_result = round(lists_avg(mrmr_acc_agg) * 100, 2)
                 logger.info(f"mRMR accuracy result: {acc_result}%")
@@ -333,7 +213,6 @@ def run_experiments(config):
             jm_kmeans_acc, jm_kmeans_f1 = predict(X_tr.iloc[:, jm_features], y_tr, X_test.iloc[:, jm_features], y_test)
             jm_kmeans_acc_agg.append(jm_kmeans_acc)
             jm_kmeans_f1_agg.append(jm_kmeans_f1)
-
             if final_kf_iter:
                 jm_acc_result = round(lists_avg(jm_kmeans_acc_agg) * 100, 2)
                 logger.info(f"Shir's algo kmeans accuracy result w/ {int(0.5 * 100)}% huristic: {jm_acc_result}%")
@@ -411,7 +290,8 @@ def main():
         'alpha': 1,
         'eps_type': 'maxmin',
         'eps_factor': 25,
-        'verbose': False
+        'verbose': False,
+        'random_state': 0
     }
 
     # tuples of datasets names and target column name
@@ -419,8 +299,8 @@ def main():
         ('adware_balanced', 'label'), ('ml_multiclass_classification_data', 'target'), ('digits', 'label'), ('isolet', 'label'),
         ('otto_balanced', 'target'), ('gene_data', 'label')
     ]
-    # datasets = [('isolet', 'label'), ('otto_balanced', 'target'), ('gene_data', 'label')]
-    # config['features_percentage'] = [0.1, 0.6]
+    # datasets = [('otto_balanced', 'target')]
+    # config['features_percentage'] = [0.02, 0.1, 0.3]
     # config['features_to_reduce_prc']: [0.0, 0.2]
 
     for dataset, label in datasets:
