@@ -1,0 +1,103 @@
+2022-06-08 22:03:58 INFO: (general/32) Default log file at: C:\Users\omerh\AppData\Local\Temp\log_nrrkh19d.txt
+2022-06-08 22:03:58 INFO: (general/34) Log file at: results\isolet\isolet_log_08-06-2022.txt
+2022-06-08 22:03:58 INFO: (main/212) dataset_dir='data/isolet.csv'
+2022-06-08 22:04:00 INFO: (main/216) DATA STATS:
+data shape of (7797, 618)
+Label distributes:
+1     300
+2     300
+3     300
+4     300
+5     300
+6     298
+7     300
+8     300
+9     300
+10    300
+11    300
+12    300
+13    299
+14    300
+15    300
+16    300
+17    300
+18    300
+19    300
+20    300
+21    300
+22    300
+23    300
+24    300
+25    300
+26    300
+Name: label, dtype: int64
+
+2022-06-08 22:04:00 INFO: (main/212) dataset_dir='data/otto_balanced.csv'
+2022-06-08 22:04:00 INFO: (files/231) Target column mapping: {'Class_1': 0, 'Class_2': 1, 'Class_3': 2, 'Class_4': 3, 'Class_5': 4, 'Class_6': 5, 'Class_7': 6, 'Class_8': 7, 'Class_9': 8}
+2022-06-08 22:04:00 INFO: (main/216) DATA STATS:
+data shape of (10000, 94)
+Label distributes:
+0    1128
+1    1135
+2    1128
+3    1070
+4    1109
+5    1107
+6    1071
+7    1131
+8    1121
+Name: label, dtype: int64
+
+2022-06-08 22:04:00 INFO: (main/212) dataset_dir='data/gene_data.csv'
+2022-06-08 22:04:09 INFO: (main/216) DATA STATS:
+data shape of (801, 16384)
+Label distributes:
+1    136
+2    141
+3    300
+4    146
+5     78
+Name: label, dtype: int64
+
+2022-06-08 22:48:00 INFO: (general/32) Default log file at: C:\Users\omerh\AppData\Local\Temp\log_3h6ocrgp.txt
+2022-06-08 22:48:00 INFO: (general/34) Log file at: results\isolet\isolet_log_08-06-2022.txt
+2022-06-08 22:48:00 INFO: (main/124) dataset_dir='data/isolet.csv'
+2022-06-08 22:48:01 INFO: (main/128) DATA STATS:
+data shape of (7797, 618)
+Label distributes:
+1     300
+2     300
+3     300
+4     300
+5     300
+6     298
+7     300
+8     300
+9     300
+10    300
+11    300
+12    300
+13    299
+14    300
+15    300
+16    300
+17    300
+18    300
+19    300
+20    300
+21    300
+22    300
+23    300
+24    300
+25    300
+26    300
+Name: label, dtype: int64
+
+2022-06-08 22:48:01 INFO: (files/243) ****************************************************************************************************
+2022-06-08 22:48:01 INFO: (files/244) ********************************** Using all features prediction **********************************
+2022-06-08 22:48:01 INFO: (files/245) ****************************************************************************************************
+2022-06-08 22:51:25 INFO: (main/144) 
+        Running over features percentage of 0.1, which is 61 features out of 617, with diffusion mapping dimension of 2
+2022-06-08 22:51:25 INFO: (files/243) ****************************************************************************************************
+2022-06-08 22:51:25 INFO: (files/244)  Starting baseline heuristics using: random features, Fisher score, ReliefF selection, Chi-square Test selection &  & mRMR for 61 features out of 617 
+2022-06-08 22:51:25 INFO: (files/245) ****************************************************************************************************

@@ -1,0 +1,102 @@
+2022-06-08 22:04:20 INFO: (general/32) Default log file at: C:\Users\omerh\AppData\Local\Temp\log__p1tadm3.txt
+2022-06-08 22:04:20 INFO: (general/34) Log file at: results\adware_balanced\adware_balanced_log_08-06-2022.txt
+2022-06-08 22:04:20 INFO: (main/212) dataset_dir='data/adware_balanced.csv'
+2022-06-08 22:04:21 INFO: (main/216) DATA STATS:
+data shape of (10000, 78)
+Label distributes:
+0    1712
+1    1695
+2    1621
+3    1626
+4    1694
+5    1652
+Name: label, dtype: int64
+
+2022-06-08 22:04:21 INFO: (main/212) dataset_dir='data/ml_multiclass_classification_data.csv'
+2022-06-08 22:04:21 INFO: (main/216) DATA STATS:
+data shape of (1000, 21)
+Label distributes:
+0    141
+1    143
+2    144
+3    144
+4    144
+5    141
+6    143
+Name: label, dtype: int64
+
+2022-06-08 22:04:21 INFO: (main/212) dataset_dir='data/digits.csv'
+2022-06-08 22:04:22 INFO: (main/216) DATA STATS:
+data shape of (2000, 650)
+Label distributes:
+0    200
+1    200
+2    200
+3    200
+4    200
+5    200
+6    200
+7    200
+8    200
+9    200
+Name: label, dtype: int64
+
+2022-06-08 22:04:22 INFO: (main/212) dataset_dir='data/isolet.csv'
+2022-06-08 22:04:23 INFO: (main/216) DATA STATS:
+data shape of (7797, 618)
+Label distributes:
+1     300
+2     300
+3     300
+4     300
+5     300
+6     298
+7     300
+8     300
+9     300
+10    300
+11    300
+12    300
+13    299
+14    300
+15    300
+16    300
+17    300
+18    300
+19    300
+20    300
+21    300
+22    300
+23    300
+24    300
+25    300
+26    300
+Name: label, dtype: int64
+
+2022-06-08 22:04:23 INFO: (main/212) dataset_dir='data/otto_balanced.csv'
+2022-06-08 22:04:23 INFO: (files/231) Target column mapping: {'Class_1': 0, 'Class_2': 1, 'Class_3': 2, 'Class_4': 3, 'Class_5': 4, 'Class_6': 5, 'Class_7': 6, 'Class_8': 7, 'Class_9': 8}
+2022-06-08 22:04:23 INFO: (main/216) DATA STATS:
+data shape of (10000, 94)
+Label distributes:
+0    1128
+1    1135
+2    1128
+3    1070
+4    1109
+5    1107
+6    1071
+7    1131
+8    1121
+Name: label, dtype: int64
+
+2022-06-08 22:04:23 INFO: (main/212) dataset_dir='data/gene_data.csv'
+2022-06-08 22:04:33 INFO: (main/216) DATA STATS:
+data shape of (801, 16384)
+Label distributes:
+1    136
+2    141
+3    300
+4    146
+5     78
+Name: label, dtype: int64
+

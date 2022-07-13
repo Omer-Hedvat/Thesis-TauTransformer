@@ -7,6 +7,7 @@ import pandas as pd
 
 from sklearn.cluster import KMeans
 
+import TauTransformer
 from utils.diffusion_maps import diffusion_mapping
 from utils.distances import wasserstein_dist, bhattacharyya_dist, hellinger_dist, jm_dist
 from utils.files import create_work_dir, read_from_csv, print_separation_dots, store_results, all_results_colorful
@@ -230,43 +231,10 @@ def run_experiments(config):
                 train_set, val_set = kfolds_split(data, kfold_iter, n_splits=config['kfolds'], random_state=0)
                 X_tr, y_tr, X_test, y_test = train_test_split(train_set, val_set, all_features)
 
-                dm_dict = {}
-                dists_dict = dict()
-                if config['verbose']:
-                    logger.info(f"Calculating distances for {', '.join(config['dist_functions'])}")
-
-                for dist in config['dist_functions']:
-                    X_tr_norm = min_max_scaler(X_tr, all_features)
-                    df_dists, _ = calc_dist(dist, X_tr_norm, y_tr, 'label')
-                    dists_dict[dist] = df_dists
-
-                if config['verbose']:
-                    logger.info(f"Reducing {int(features_to_reduce_prc*100)}% features using 'features_reduction()' heuristic")
-                if features_to_reduce_prc > 0:
-                    distances_dict, features_to_keep_idx = features_reduction(all_features, dists_dict, features_to_reduce_prc, config['verbose'])
-                    features = all_features[features_to_keep_idx]
-                else:
-                    distances_dict = dists_dict.copy()
-                    features = all_features
-
-                if config['verbose']:
-                    logger.info(f"Calculating diffusion maps over the distance matrix")
-                for dist in config['dist_functions']:
-                    coordinates, ranking = diffusion_mapping(distances_dict[dist], config['alpha'], config['eps_type'], config['eps_factor'], dim=dm_dim)
-                    dm_dict[dist] = {'coordinates': coordinates, 'ranking': ranking}
-
-                if config['verbose']:
-                    logger.info(
-                        f"""Ranking the {int((1-features_to_reduce_prc)*100)}% remain features using a combined coordinate matrix ('agg_corrdinates'),
-                        inserting 'agg_corrdinates' into a 2nd diffusion map and storing the 2nd diffusion map results into 'final_coordinates'"""
-                    )
-                agg_coordinates = np.concatenate([val['coordinates'] for val in dm_dict.values()]).T
-                final_coordinates, final_ranking = diffusion_mapping(agg_coordinates, config['alpha'], config['eps_type'], config['eps_factor'], dim=dm_dim)
-                best_features, labels, features_rank = return_best_features_by_kmeans(final_coordinates, k)
-
-                if config['verbose']:
-                    logger.info(f'Best features by KMeans are: {features[best_features]}')
-                    logger.info(f"Using KMeans algorithm in order to rank the features who are in final_coordinates")
+                tau_trans = TauTransformer(
+                    X_tr, y_tr, k, features_to_reduce_prc, config['dist_functions'], dm_dim, config['alpha'], config['eps_type'],
+                    config['eps_factor'], config['random_state'], config['verbose'])
+                best_features = tau_trans.transform()
 
                 kmeans_acc, kmeans_f1 = predict(X_tr.iloc[:, best_features], y_tr, X_test.iloc[:, best_features], y_test)
                 kmeans_acc_agg.append(kmeans_acc)
