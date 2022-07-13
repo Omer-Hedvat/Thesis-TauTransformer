@@ -55,26 +55,39 @@ class TauTransformer:
             'jm': lambda: jm_dist(df, feature, label1, label2)
         }[function_name]()
 
-    def calc_dist(self, dist_func_name, label_col_name):
+    @staticmethod
+    def flatten(t):
+        """
+        given a matrix, returns a flatten list
+        :param t:
+        :return:
+        """
+        return [item for sublist in t for item in sublist]
+
+    @staticmethod
+    def calc_k(features, prc):
+        return int(len(features) * prc)
+
+    def calc_dist(self, dist_func_name, X_tr_norm, label_col_name):
         """
         Calculates distances of each feature w/ itself in different target classses
         for each DataFrame & distance functions
         :param dist_func_name: Distance function name
+        :param X_tr_norm: the normalized X DF
         :param label_col_name: label column name in the data
         return: df_dists, dist_dict
         df_dists - a flatten df of all features (each feature is a row)
         dist_dict - a dictionary of feature names & dataframes (e.g. {'feature_1': feature_1_df, ...}
         """
         features = self.X.columns
-        df = self.X
         self.y.reset_index(drop=True, inplace=True)
-        df[label_col_name] = self.y
+        X_tr_norm[label_col_name] = self.y
         distances = []
         for feature in features:
             class_dist = []
             for cls_feature1 in self.y.unique():
                 class_row = [
-                    self.execute_distance_func(df, dist_func_name, feature, cls_feature1, cls_feature2)
+                    self.execute_distance_func(X_tr_norm, dist_func_name, feature, cls_feature1, cls_feature2)
                     if cls_feature1 != cls_feature2 else 0
                     for cls_feature2 in self.y.unique()
                 ]
@@ -118,13 +131,13 @@ class TauTransformer:
         features_rank = np.argsort(coordinates[0])
         kmeans = KMeans(n_clusters=self.k, random_state=self.random_state)
         labels = kmeans.fit(coordinates.T).labels_
-        best_features = []
+        best_features_idx = []
         selected_cetroids = []
         for idx in features_rank:
             if labels[idx] not in selected_cetroids:
                 selected_cetroids.append(labels[idx])
-                best_features.append(idx)
-        return best_features, labels, features_rank
+                best_features_idx.append(idx)
+        return best_features_idx, labels, features_rank
 
     def transform(self):
         dists_dict = dict()
@@ -132,14 +145,14 @@ class TauTransformer:
             logger.info(f"Calculating distances for {', '.join(self.dist_functions)}")
         for dist in self.dist_functions:
             X_tr_norm = min_max_scaler(self.X, self.all_features)
-            df_dists, _ = self.calc_dist(dist, 'label')
+            df_dists, _ = self.calc_dist(dist, X_tr_norm, 'label')
             dists_dict[dist] = df_dists
 
         if self.verbose:
             logger.info(f"Reducing {int(self.features_to_reduce_prc * 100)}% features using 'features_reduction()' heuristic")
 
         if self.features_to_reduce_prc > 0:
-            distances_dict, features_to_keep_idx = self.features_reduction(self.all_features, self.dists_dict)
+            distances_dict, features_to_keep_idx = self.features_reduction(self.all_features, dists_dict)
             self.all_features = self.all_features[features_to_keep_idx]
         else:
             distances_dict = dists_dict.copy()
@@ -157,10 +170,10 @@ class TauTransformer:
             )
         agg_coordinates = np.concatenate([val['coordinates'] for val in self.dm_dict.values()]).T
         final_coordinates, final_ranking = diffusion_mapping(agg_coordinates, self.alpha, self.eps_type, self.eps_factor, dim=self.dm_dim)
-        best_features, labels, features_rank = self.return_best_features_by_kmeans(final_coordinates)
+        best_features_idx, labels, features_rank = self.return_best_features_by_kmeans(final_coordinates)
 
         if self.verbose:
-            logger.info(f'Best features by KMeans are: {self.all_features[best_features]}')
+            logger.info(f'Best features by KMeans are: {self.all_features[best_features_idx]}')
             logger.info(f"Using KMeans algorithm in order to rank the features who are in final_coordinates")
-        return self.all_features[best_features]
+        return self.all_features[best_features_idx], best_features_idx
 
