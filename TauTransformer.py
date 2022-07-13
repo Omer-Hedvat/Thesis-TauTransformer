@@ -19,14 +19,16 @@ class TauTransformer:
         self.y = y
         self.k = k
         self.features_to_reduce_prc = features_to_reduce_prc
+        self.dist_functions = dist_functions
+
         self.dm_dim = dm_dim
         self.alpha = alpha
         self.eps_type = eps_type
         self.eps_factor = eps_factor
+
         self.random_state = random_state
         self.verbose = verbose
 
-        self.dist_functions = dist_functions
         self.all_features = self.X.columns
         self.dm_dict = dict()
         self.df_dists = None
@@ -58,7 +60,8 @@ class TauTransformer:
         Calculates distances of each feature w/ itself in different target classses
         for each DataFrame & distance functions
         :param dist_func_name: Distance function name
-        :param classes: y_train
+        :param classes: label column classes as DF
+        :param label_col_name: label column name in the data
         return: df_dists, dist_dict
         df_dists - a flatten df of all features (each feature is a row)
         dist_dict - a dictionary of feature names & dataframes (e.g. {'feature_1': feature_1_df, ...}
@@ -124,12 +127,13 @@ class TauTransformer:
                 best_features.append(idx)
         return best_features, labels, features_rank
 
-    def transform(self, dist_functions, all_features, dists_dict):
+    def transform(self):
+        dists_dict = dict()
         if self.verbose:
-            logger.info(f"Calculating distances for {', '.join(dist_functions)}")
-        for dist in dist_functions:
-            X_tr_norm = min_max_scaler(self.X, all_features)
-            df_dists, _ = self.calc_dist(dist, X_tr_norm, self.y, 'label')
+            logger.info(f"Calculating distances for {', '.join(self.dist_functions)}")
+        for dist in self.dist_functions:
+            X_tr_norm = min_max_scaler(self.X, self.all_features)
+            df_dists, _ = self.calc_dist(dist, X_tr_norm, 'label')
             dists_dict[dist] = df_dists
 
         if self.verbose:
@@ -139,7 +143,7 @@ class TauTransformer:
             distances_dict, features_to_keep_idx = self.features_reduction(self.all_features, self.dists_dict)
             self.all_features = self.all_features[features_to_keep_idx]
         else:
-            distances_dict = self.dists_dict.copy()
+            distances_dict = dists_dict.copy()
 
         if self.verbose:
             logger.info(f"Calculating diffusion maps over the distance matrix")
