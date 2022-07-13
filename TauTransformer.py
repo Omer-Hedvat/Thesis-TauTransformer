@@ -55,12 +55,11 @@ class TauTransformer:
             'jm': lambda: jm_dist(df, feature, label1, label2)
         }[function_name]()
 
-    def calc_dist(self, dist_func_name, classes, label_col_name):
+    def calc_dist(self, dist_func_name, label_col_name):
         """
         Calculates distances of each feature w/ itself in different target classses
         for each DataFrame & distance functions
         :param dist_func_name: Distance function name
-        :param classes: label column classes as DF
         :param label_col_name: label column name in the data
         return: df_dists, dist_dict
         df_dists - a flatten df of all features (each feature is a row)
@@ -68,16 +67,16 @@ class TauTransformer:
         """
         features = self.X.columns
         df = self.X
-        classes.reset_index(drop=True, inplace=True)
-        df[label_col_name] = classes
+        self.y.reset_index(drop=True, inplace=True)
+        df[label_col_name] = self.y
         distances = []
         for feature in features:
             class_dist = []
-            for cls_feature1 in classes.unique():
+            for cls_feature1 in self.y.unique():
                 class_row = [
                     self.execute_distance_func(df, dist_func_name, feature, cls_feature1, cls_feature2)
                     if cls_feature1 != cls_feature2 else 0
-                    for cls_feature2 in classes.unique()
+                    for cls_feature2 in self.y.unique()
                 ]
                 class_dist.append(class_row)
             distances.append(class_dist)
@@ -133,7 +132,7 @@ class TauTransformer:
             logger.info(f"Calculating distances for {', '.join(self.dist_functions)}")
         for dist in self.dist_functions:
             X_tr_norm = min_max_scaler(self.X, self.all_features)
-            df_dists, _ = self.calc_dist(dist, X_tr_norm, 'label')
+            df_dists, _ = self.calc_dist(dist, 'label')
             dists_dict[dist] = df_dists
 
         if self.verbose:
