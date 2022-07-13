@@ -6,7 +6,6 @@ from sklearn.cluster import KMeans
 
 from utils.diffusion_maps import diffusion_mapping
 from utils.distances import wasserstein_dist, bhattacharyya_dist, hellinger_dist, jm_dist
-from utils.general import flatten, setup_logger, lists_avg, calc_k
 from utils.machine_learning import min_max_scaler
 
 
@@ -94,13 +93,13 @@ class TauTransformer:
                 class_dist.append(class_row)
             distances.append(class_dist)
 
-        two_d_mat = [flatten(distances[idx]) for idx in range(len(distances))]
+        two_d_mat = [self.flatten(distances[idx]) for idx in range(len(distances))]
         df_dists = pd.DataFrame(two_d_mat)
         dist_dict = {f'feature_{idx + 1}': pd.DataFrame(mat) for idx, mat in enumerate(distances)}
         return df_dists, dist_dict
 
     def features_reduction(self, dists_dict, dist_features_reduction):
-        features_to_reduce_num = calc_k(self.all_features, self.features_to_reduce_prc)
+        features_to_reduce_num = self.calc_k(self.all_features, self.features_to_reduce_prc)
         features_to_reduce_df = pd.DataFrame(
             {'features': [*range(0, len(self.all_features), 1)], 'count': len(self.all_features) * [0]})
         for dist, df_dists in dists_dict.items():
