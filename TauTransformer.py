@@ -12,7 +12,10 @@ logger = logging.getLogger(__name__)
 
 
 class TauTransformer:
-    def __init__(self, X, y, feature_percentage, features_to_reduce_prc, dist_functions, dm_dim, alpha, eps_type, eps_factor, random_state=0, verbose=False):
+    def __init__(
+            self, X, y, feature_percentage, features_to_reduce_prc, dist_functions, dm_dim=2, alpha=1, eps_type='maxmin', eps_factor=25,
+            random_state=0, verbose=False
+    ):
         self.X = X
         self.y = y
         self.feature_percentage = feature_percentage
