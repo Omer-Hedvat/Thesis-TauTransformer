@@ -232,7 +232,7 @@ def run_experiments(config):
                 X_tr, y_tr, X_test, y_test = train_test_split(train_set, val_set, all_features)
 
                 tau_trans = TauTransformer(
-                    X_tr, y_tr, k, features_to_reduce_prc, config['dist_functions'], dm_dim, config['alpha'], config['eps_type'],
+                    X_tr, y_tr, feature_percentage, features_to_reduce_prc, config['dist_functions'], dm_dim, config['alpha'], config['eps_type'],
                     config['eps_factor'], config['random_state'], config['verbose'])
                 best_features, best_features_idx = tau_trans.transform()
 
@@ -252,7 +252,7 @@ def main():
         'kfolds': 5,
         'features_percentage': [0.02, 0.05, 0.1, 0.2, 0.3, 0.5],
         'dist_functions': ['wasserstein', 'jm', 'hellinger'],
-        'nrows': 1001,
+        'nrows': 1000,
         'features_to_reduce_prc': [0.0, 0.2, 0.35, 0.5],
         'dm_dim': [2],
         'alpha': 1,

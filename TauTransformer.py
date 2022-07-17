@@ -8,15 +8,14 @@ from utils.diffusion_maps import diffusion_mapping
 from utils.distances import wasserstein_dist, bhattacharyya_dist, hellinger_dist, jm_dist
 from utils.machine_learning import min_max_scaler
 
-
 logger = logging.getLogger(__name__)
 
 
 class TauTransformer:
-    def __init__(self, X, y, k, features_to_reduce_prc, dist_functions, dm_dim, alpha, eps_type, eps_factor, random_state=0, verbose=False):
+    def __init__(self, X, y, feature_percentage, features_to_reduce_prc, dist_functions, dm_dim, alpha, eps_type, eps_factor, random_state=0, verbose=False):
         self.X = X
         self.y = y
-        self.k = k
+        self.feature_percentage = feature_percentage
         self.features_to_reduce_prc = features_to_reduce_prc
         self.dist_functions = dist_functions
 
@@ -31,7 +30,7 @@ class TauTransformer:
         self.all_features = self.X.columns
         self.dm_dict = dict()
         self.df_dists = None
-
+        self.k = self.calc_k(self.all_features, self.feature_percentage)
 
     @staticmethod
     def execute_distance_func(df, function_name, feature, label1, label2):
@@ -94,33 +93,32 @@ class TauTransformer:
             distances.append(class_dist)
 
         two_d_mat = [self.flatten(distances[idx]) for idx in range(len(distances))]
-        df_dists = pd.DataFrame(two_d_mat)
+        self.df_dists = pd.DataFrame(two_d_mat)
         dist_dict = {f'feature_{idx + 1}': pd.DataFrame(mat) for idx, mat in enumerate(distances)}
-        return df_dists, dist_dict
+        return dist_dict
 
-    def features_reduction(self, dists_dict, dist_features_reduction):
-        features_to_reduce_num = self.calc_k(self.all_features, self.features_to_reduce_prc)
+    def features_reduction(self, dists_dict):
         features_to_reduce_df = pd.DataFrame(
             {'features': [*range(0, len(self.all_features), 1)], 'count': len(self.all_features) * [0]})
-        for dist, df_dists in dists_dict.items():
-            features_to_keep_idx, features_to_reduce_idx = dist_features_reduction(df_dists, self.features_to_reduce_prc)
+        for dist, self.df_dists in dists_dict.items():
+            features_to_keep_idx, features_to_reduce_idx = self.dist_features_reduction()
             for feature in features_to_reduce_idx:
                 features_to_reduce_df.at[feature, 'count'] += 1
 
         features_to_reduce_df.sort_values(by='count', ascending=False, inplace=True)
-        final_features_to_reduce_idx = set(features_to_reduce_df.iloc[:features_to_reduce_num]['features'].tolist())
+        final_features_to_reduce_idx = set(features_to_reduce_df.iloc[:self.k]['features'].tolist())
         final_features_to_keep_idx = list(set(self.df_dists.index).difference(final_features_to_reduce_idx))
         final_dists_dict = {key: value.iloc[final_features_to_keep_idx] for key, value in dists_dict.items()}
 
         if self.verbose:
             logger.info(
-                f"""features_reduction() -  By a majority of votes, a {self.features_to_reduce_prc}%, {features_to_reduce_num} 
+                f"""features_reduction() -  By a majority of votes, a {self.features_to_reduce_prc}%, {self.k} 
                 features reduction of features has been to:\n{self.all_features[list(final_features_to_reduce_idx)]}""")
         return final_dists_dict, final_features_to_keep_idx
 
-    def dist_features_reduction(self, df_dists):
-        df_feature_avg = df_dists.mean(axis=1)
-        num_features_to_reduce = int(len(df_dists) * self.features_to_reduce_prc)
+    def dist_features_reduction(self):
+        df_feature_avg = self.df_dists.mean(axis=1)
+        num_features_to_reduce = int(len(self.df_dists) * self.features_to_reduce_prc)
         features_to_keep_idx = df_feature_avg.iloc[np.argsort(df_feature_avg)][
                                num_features_to_reduce:].index.sort_values()
         features_to_reduce_idx = list(set(df_feature_avg.index).difference(features_to_keep_idx))
@@ -144,14 +142,14 @@ class TauTransformer:
             logger.info(f"Calculating distances for {', '.join(self.dist_functions)}")
         for dist in self.dist_functions:
             X_tr_norm = min_max_scaler(self.X, self.all_features)
-            df_dists, _ = self.calc_dist(dist, X_tr_norm, 'label')
-            dists_dict[dist] = df_dists
+            _ = self.calc_dist(dist, X_tr_norm, 'label')
+            dists_dict[dist] = self.df_dists
 
         if self.verbose:
             logger.info(f"Reducing {int(self.features_to_reduce_prc * 100)}% features using 'features_reduction()' heuristic")
 
         if self.features_to_reduce_prc > 0:
-            distances_dict, features_to_keep_idx = self.features_reduction(self.all_features, dists_dict)
+            distances_dict, features_to_keep_idx = self.features_reduction(dists_dict)
             self.all_features = self.all_features[features_to_keep_idx]
         else:
             distances_dict = dists_dict.copy()
@@ -175,4 +173,3 @@ class TauTransformer:
             logger.info(f'Best features by KMeans are: {self.all_features[best_features_idx]}')
             logger.info(f"Using KMeans algorithm in order to rank the features who are in final_coordinates")
         return self.all_features[best_features_idx], best_features_idx
-
