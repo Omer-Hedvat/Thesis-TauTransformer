@@ -5,13 +5,13 @@ import os
 
 from TauTransformer import TauTransformer
 from utils.diffusion_maps import diffusion_mapping
+from utils.distances import calc_dist, features_reduction
 from utils.files import create_work_dir, read_from_csv, print_separation_dots, store_results, all_results_colorful
 from utils.general import setup_logger, lists_avg, calc_k, arrange_data_features
 from utils.machine_learning import min_max_scaler, t_test, kfolds_split
 from utils.machine_learning import (
-    predict, random_features_predict, fisher_ranks_predict, relieff_predict, chi_square_predict, mrmr_predict
+    predict, random_features_predict, fisher_ranks_predict, relieff_predict, chi_square_predict, mrmr_predict, return_best_features_by_kmeans
 )
-import utils.shirs_algo as sa
 
 
 logger = logging.getLogger(__name__)
@@ -105,15 +105,15 @@ def run_experiments(config, api_params):
             # Shir's Approach Features
             jm_dict = {}
             X_tr_norm = min_max_scaler(train_set, all_features)
-            jm_dists, _ = sa.calc_dist('jm', X_tr_norm, y_tr, 'label')
+            jm_dists, _ = calc_dist('jm', X_tr_norm, y_tr, 'label')
             jm_dict['jm'] = jm_dists
             if feature_percentage + 0.5 < 1:
-                jm_distances_dict, _ = sa.features_reduction(all_features, jm_dict, 0.5, config['verbose'])
+                jm_distances_dict, _ = features_reduction(all_features, jm_dict, 0.5)
             else:
                 jm_distances_dict = jm_dict.copy()
             jm_coordinates, jm_ranking = diffusion_mapping(jm_distances_dict['jm'], config['alpha'], config['eps_type'], config['eps_factor'], dim=dm_dim)
 
-            jm_features, _, _ = sa.return_best_features_by_kmeans(jm_coordinates, k)
+            jm_features, _, _ = return_best_features_by_kmeans(jm_coordinates, k)
             X_tr, X_test = arrange_data_features(train_set, val_set, all_features, return_y=False)
             jm_kmeans_acc, jm_kmeans_f1 = predict(X_tr.iloc[:, jm_features], y_tr, X_test.iloc[:, jm_features], y_test)
             jm_kmeans_acc_agg.append(jm_kmeans_acc)
