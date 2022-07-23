@@ -11,7 +11,7 @@ from TauTransformer import TauTransformer
 from utils.diffusion_maps import diffusion_mapping
 from utils.distances import wasserstein_dist, bhattacharyya_dist, hellinger_dist, jm_dist
 from utils.files import create_work_dir, read_from_csv, print_separation_dots, store_results, all_results_colorful
-from utils.general import flatten, setup_logger, lists_avg, calc_k, train_test_split
+from utils.general import flatten, setup_logger, lists_avg, calc_k, arrange_data_features
 from utils.machine_learning import min_max_scaler, t_test, kfolds_split
 from utils.machine_learning import (
     predict, random_features_predict, fisher_ranks_predict, relieff_predict, chi_square_predict, mrmr_predict
@@ -130,7 +130,7 @@ def run_experiments(config, api_params):
     print_separation_dots('Using all features prediction')
     for kfold_iter in range(1, config['kfolds'] + 1):
         train_set, val_set = kfolds_split(data, kfold_iter, n_splits=config['kfolds'], random_state=0)
-        X_tr, y_tr, X_test, y_test = train_test_split(train_set, val_set, all_features, return_y=True)
+        X_tr, y_tr, X_test, y_test = arrange_data_features(train_set, val_set, all_features, return_y=True)
 
         all_features_acc, all_features_f1 = predict(X_tr, y_tr, X_test, y_test)
         all_features_acc_agg.append(all_features_acc)
@@ -211,7 +211,7 @@ def run_experiments(config, api_params):
             jm_coordinates, jm_ranking = diffusion_mapping(jm_distances_dict['jm'], config['alpha'], config['eps_type'], config['eps_factor'], dim=dm_dim)
 
             jm_features, _, _ = return_best_features_by_kmeans(jm_coordinates, k)
-            X_tr, X_test = train_test_split(train_set, val_set, all_features, return_y=False)
+            X_tr, X_test = arrange_data_features(train_set, val_set, all_features, return_y=False)
             jm_kmeans_acc, jm_kmeans_f1 = predict(X_tr.iloc[:, jm_features], y_tr, X_test.iloc[:, jm_features], y_test)
             jm_kmeans_acc_agg.append(jm_kmeans_acc)
             jm_kmeans_f1_agg.append(jm_kmeans_f1)
@@ -230,7 +230,7 @@ def run_experiments(config, api_params):
             for kfold_iter in range(1, config['kfolds'] + 1):
                 final_kf_iter = kfold_iter == config['kfolds']
                 train_set, val_set = kfolds_split(data, kfold_iter, n_splits=config['kfolds'], random_state=0)
-                X_train, y_train, X_test, y_test = train_test_split(train_set, val_set, all_features)
+                X_train, y_train, X_test, y_test = arrange_data_features(train_set, val_set, all_features)
 
                 tt = TauTransformer(feature_percentage, features_to_reduce_prc, config['dist_functions'], **api_params)
                 X_tr = tt.fit_transform(X_train, y_train)
