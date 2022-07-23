@@ -7,10 +7,11 @@ import pandas as pd
 
 from sklearn.cluster import KMeans
 
+from TauTransformer import TauTransformer
 from utils.diffusion_maps import diffusion_mapping
 from utils.distances import wasserstein_dist, bhattacharyya_dist, hellinger_dist, jm_dist
 from utils.files import create_work_dir, read_from_csv, print_separation_dots, store_results, all_results_colorful
-from utils.general import flatten, setup_logger, lists_avg, calc_k, train_test_split
+from utils.general import flatten, setup_logger, lists_avg, calc_k, arrange_data_features
 from utils.machine_learning import min_max_scaler, t_test, kfolds_split
 from utils.machine_learning import (
     predict, random_features_predict, fisher_ranks_predict, relieff_predict, chi_square_predict, mrmr_predict
@@ -113,7 +114,7 @@ def return_best_features_by_kmeans(coordinates, k):
     return best_features, labels, features_rank
 
 
-def run_experiments(config):
+def run_experiments(config, api_params):
     workdir = os.path.join(f'results', config['dataset_name'])
     create_work_dir(workdir, on_exists='ignore')
     setup_logger("config_files/logger_config.json", os.path.join(workdir, f"{config['dataset_name']}_log_{datetime.now().strftime('%d-%m-%Y')}.txt"))
@@ -129,13 +130,14 @@ def run_experiments(config):
     print_separation_dots('Using all features prediction')
     for kfold_iter in range(1, config['kfolds'] + 1):
         train_set, val_set = kfolds_split(data, kfold_iter, n_splits=config['kfolds'], random_state=0)
-        X_tr, y_tr, X_test, y_test = train_test_split(train_set, val_set, all_features, return_y=True)
+        X_tr, y_tr, X_test, y_test = arrange_data_features(train_set, val_set, all_features, return_y=True)
 
         all_features_acc, all_features_f1 = predict(X_tr, y_tr, X_test, y_test)
         all_features_acc_agg.append(all_features_acc)
         all_features_f1_agg.append(all_features_f1)
 
     for feature_percentage, dm_dim in list(itertools.product(config['features_percentage'], config['dm_dim'])):
+        api_params['dm_dim'] = dm_dim
         k = calc_k(all_features, feature_percentage)
         if k < 1 or k == len(all_features):
             continue
@@ -209,7 +211,7 @@ def run_experiments(config):
             jm_coordinates, jm_ranking = diffusion_mapping(jm_distances_dict['jm'], config['alpha'], config['eps_type'], config['eps_factor'], dim=dm_dim)
 
             jm_features, _, _ = return_best_features_by_kmeans(jm_coordinates, k)
-            X_tr, X_test = train_test_split(train_set, val_set, all_features, return_y=False)
+            X_tr, X_test = arrange_data_features(train_set, val_set, all_features, return_y=False)
             jm_kmeans_acc, jm_kmeans_f1 = predict(X_tr.iloc[:, jm_features], y_tr, X_test.iloc[:, jm_features], y_test)
             jm_kmeans_acc_agg.append(jm_kmeans_acc)
             jm_kmeans_f1_agg.append(jm_kmeans_f1)
@@ -228,47 +230,13 @@ def run_experiments(config):
             for kfold_iter in range(1, config['kfolds'] + 1):
                 final_kf_iter = kfold_iter == config['kfolds']
                 train_set, val_set = kfolds_split(data, kfold_iter, n_splits=config['kfolds'], random_state=0)
-                X_tr, y_tr, X_test, y_test = train_test_split(train_set, val_set, all_features)
+                X_train, y_train, X_test, y_test = arrange_data_features(train_set, val_set, all_features)
 
-                dm_dict = {}
-                dists_dict = dict()
-                if config['verbose']:
-                    logger.info(f"Calculating distances for {', '.join(config['dist_functions'])}")
+                tt = TauTransformer(feature_percentage, features_to_reduce_prc, config['dist_functions'], **api_params)
+                X_tr = tt.fit_transform(X_train, y_train)
+                X_tst = tt.transform(X_test)
 
-                for dist in config['dist_functions']:
-                    X_tr_norm = min_max_scaler(X_tr, all_features)
-                    df_dists, _ = calc_dist(dist, X_tr_norm, y_tr, 'label')
-                    dists_dict[dist] = df_dists
-
-                if config['verbose']:
-                    logger.info(f"Reducing {int(features_to_reduce_prc*100)}% features using 'features_reduction()' heuristic")
-                if features_to_reduce_prc > 0:
-                    distances_dict, features_to_keep_idx = features_reduction(all_features, dists_dict, features_to_reduce_prc, config['verbose'])
-                    features = all_features[features_to_keep_idx]
-                else:
-                    distances_dict = dists_dict.copy()
-                    features = all_features
-
-                if config['verbose']:
-                    logger.info(f"Calculating diffusion maps over the distance matrix")
-                for dist in config['dist_functions']:
-                    coordinates, ranking = diffusion_mapping(distances_dict[dist], config['alpha'], config['eps_type'], config['eps_factor'], dim=dm_dim)
-                    dm_dict[dist] = {'coordinates': coordinates, 'ranking': ranking}
-
-                if config['verbose']:
-                    logger.info(
-                        f"""Ranking the {int((1-features_to_reduce_prc)*100)}% remain features using a combined coordinate matrix ('agg_corrdinates'),
-                        inserting 'agg_corrdinates' into a 2nd diffusion map and storing the 2nd diffusion map results into 'final_coordinates'"""
-                    )
-                agg_coordinates = np.concatenate([val['coordinates'] for val in dm_dict.values()]).T
-                final_coordinates, final_ranking = diffusion_mapping(agg_coordinates, config['alpha'], config['eps_type'], config['eps_factor'], dim=dm_dim)
-                best_features, labels, features_rank = return_best_features_by_kmeans(final_coordinates, k)
-
-                if config['verbose']:
-                    logger.info(f'Best features by KMeans are: {features[best_features]}')
-                    logger.info(f"Using KMeans algorithm in order to rank the features who are in final_coordinates")
-
-                kmeans_acc, kmeans_f1 = predict(X_tr.iloc[:, best_features], y_tr, X_test.iloc[:, best_features], y_test)
+                kmeans_acc, kmeans_f1 = predict(X_tr, y_train, X_tst, y_test)
                 kmeans_acc_agg.append(kmeans_acc)
                 kmeans_f1_agg.append(kmeans_f1)
                 if final_kf_iter:
@@ -284,7 +252,7 @@ def main():
         'kfolds': 5,
         'features_percentage': [0.02, 0.05, 0.1, 0.2, 0.3, 0.5],
         'dist_functions': ['wasserstein', 'jm', 'hellinger'],
-        'nrows': 10000,
+        'nrows': 1000,
         'features_to_reduce_prc': [0.0, 0.2, 0.35, 0.5],
         'dm_dim': [2],
         'alpha': 1,
@@ -294,19 +262,27 @@ def main():
         'random_state': 0
     }
 
+    api_params = {
+        'alpha': config['alpha'],
+        'eps_type': config['eps_type'],
+        'eps_factor': config['eps_factor'],
+        'verbose': config['verbose'],
+        'random_state': config['random_state']
+    }
+
     # tuples of datasets names and target column name
     datasets = [
         ('adware_balanced', 'label'), ('ml_multiclass_classification_data', 'target'), ('digits', 'label'), ('isolet', 'label'),
         ('otto_balanced', 'target'), ('gene_data', 'label')
     ]
-    # datasets = [('otto_balanced', 'target')]
-    # config['features_percentage'] = [0.02, 0.1, 0.3]
-    # config['features_to_reduce_prc']: [0.0, 0.2]
+    datasets = [('otto_balanced', 'target')]
+    config['features_percentage'] = [0.1, 0.2, 0.3]
+    config['features_to_reduce_prc'] = [0.2, 0.35]
 
     for dataset, label in datasets:
         config['dataset_name'] = dataset
         config['label_column'] = label
-        run_experiments(config)
+        run_experiments(config, api_params)
 
     all_results_colorful()
 

@@ -7,7 +7,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.model_selection import StratifiedKFold
 
-from utils.general import train_test_split
+from utils.general import arrange_data_features
 
 logger = logging.getLogger(__name__)
 
@@ -143,7 +143,7 @@ def random_features_predict(train_set, val_set, k, all_features, random_acc_agg,
 
     random.seed(random_state)
     random_features = random.sample(list(all_features), k)
-    X_tr, y_tr, X_test, y_test = train_test_split(train_set, val_set, random_features, return_y=True)
+    X_tr, y_tr, X_test, y_test = arrange_data_features(train_set, val_set, random_features, return_y=True)
     random_acc, random_f1 = predict(X_tr, y_tr, X_test, y_test)
     random_acc_agg.append(random_acc)
     random_f1_agg.append(random_f1)
@@ -157,7 +157,7 @@ def fisher_ranks_predict(train_set, val_set, k, all_features, fisher_acc_agg, fi
     fisher_ranks = fisher_score.fisher_score(train_set[all_features].to_numpy(), train_set['label'].to_numpy())
     fisher_features_idx = np.argsort(fisher_ranks, 0)[::-1][:k]
     fisher_features = all_features[fisher_features_idx]
-    X_tr, y_tr, X_test, y_test = train_test_split(train_set, val_set, fisher_features, return_y=True)
+    X_tr, y_tr, X_test, y_test = arrange_data_features(train_set, val_set, fisher_features, return_y=True)
 
     fisher_acc, fisher_f1 = predict(X_tr, y_tr, X_test, y_test)
     fisher_acc_agg.append(fisher_acc)
@@ -169,7 +169,7 @@ def relieff_predict(train_set, val_set, k, all_features, relief_acc_agg, relief_
     from ReliefF import ReliefF
 
     fs = ReliefF(n_neighbors=1, n_features_to_keep=k)
-    X_tr, y_tr, X_test, y_test = train_test_split(train_set, val_set, all_features, return_y=True)
+    X_tr, y_tr, X_test, y_test = arrange_data_features(train_set, val_set, all_features, return_y=True)
     X_tr = fs.fit_transform(train_set[all_features].to_numpy(), train_set['label'].to_numpy())
     X_test = fs.transform(val_set[all_features].to_numpy())
 
@@ -184,7 +184,7 @@ def chi_square_predict(train_set, val_set, k, all_features, chi_square_acc_agg, 
     from sklearn.feature_selection import SelectKBest
 
     chi_features = SelectKBest(chi2, k=k)
-    X_tr, y_tr, X_test, y_test = train_test_split(train_set, val_set, all_features, return_y=True)
+    X_tr, y_tr, X_test, y_test = arrange_data_features(train_set, val_set, all_features, return_y=True)
     X_tr_norm, X_test_norm = min_max_scaler(train_set, all_features, val_set, return_as_df=False)
     X_tr = chi_features.fit_transform(X_tr_norm, y_tr)
     X_test = chi_features.transform(X_test_norm)
@@ -199,7 +199,7 @@ def mrmr_predict(train_set, val_set, k, all_features, mrmr_acc_agg, mrmr_f1_agg)
     from mrmr import mrmr_classif
 
     mrmr_features = mrmr_classif(X=train_set[all_features], y=train_set['label'], K=k)
-    X_tr, y_tr, X_test, y_test = train_test_split(train_set, val_set, mrmr_features, return_y=True)
+    X_tr, y_tr, X_test, y_test = arrange_data_features(train_set, val_set, mrmr_features, return_y=True)
 
     mrmr_acc, mrmr_f1 = predict(X_tr, y_tr, X_test, y_test)
     mrmr_acc_agg.append(mrmr_acc)
