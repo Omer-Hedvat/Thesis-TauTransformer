@@ -37,7 +37,7 @@ def min_max_scaler(df1, features, df2=None, return_as_df=True):
 
 def export_heatmaps(df, features, dist_type1, dist_type2, to_norm=False):
     import matplotlib as plt
-    from main import calc_dist
+    from utils.shirs_algo import calc_dist
     from utils.distances import norm_by_dist_type
     import seaborn as sns
 
