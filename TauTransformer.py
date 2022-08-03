@@ -1,3 +1,4 @@
+from joblib import Parallel, delayed
 import logging
 import numpy as np
 import pandas as pd
@@ -146,10 +147,14 @@ class TauTransformer:
         self.all_features = self.X.columns
 
         dists_dict = dict()
+        X_tr_norm = min_max_scaler(self.X, self.all_features)
         if self.verbose:
             logger.info(f"Calculating distances for {', '.join(self.dist_functions)}")
+        # Parallel(n_jobs=len(self.dist_functions))(
+        #     delayed(self.calc_dist)(y, dist, X_tr_norm, 'label')
+        #     for dist in self.dist_functions
+        # )
         for dist in self.dist_functions:
-            X_tr_norm = min_max_scaler(self.X, self.all_features)
             _ = self.calc_dist(y, dist, X_tr_norm, 'label')
             dists_dict[dist] = self.df_dists
 
