@@ -1,0 +1,2 @@
+date,dataset,features_prc,dm_dim,all_features,random_features,fisher,relief,chi_square,mrmr,shirs_algo,kmeans_0.0,kmeans_0.2,kmeans_0.35,kmeans_0.5
+03-08-2022,adware_balanced,0.02,2,2.809,0.749,0.82,0.995,0.757,1.219,7.016,11.806,10.893,11.472,

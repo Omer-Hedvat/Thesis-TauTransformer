@@ -239,13 +239,13 @@ def read_from_csv(filepath, config):
 
 
 def print_separation_dots(message):
-    star_number = round((100 - len(message) - 2)/2)
+    star_number = round((100 - len(message) - 2) / 2)
     logger.info('*' * 100)
     logger.info(f"{'*' * star_number} {message} {'*' * star_number}")
     logger.info('*' * 100)
 
 
-def store_results(dataset, features_prc, dm_dim, metric, acc, f1, classes, workdir):
+def store_results(dataset, features_prc, dm_dim, metric, acc, f1, classes, workdir, timer_list=None):
     from datetime import datetime
     import os
     from utils.general import lists_avg
@@ -284,6 +284,24 @@ def store_results(dataset, features_prc, dm_dim, metric, acc, f1, classes, workd
         else:
             f1_results_df = pd.concat([f1_results_df, new_data_df]).sort_values(by=['features_prc', 'dm_dim'])
         f1_results_df.to_csv(f1_file, index=False)
+
+    # Timer Results File
+    if timer_list:
+        timer_avg = round(lists_avg([t.to_int() for t in timer_list]), 3)
+        timer_df = pd.read_csv('results/timer_results.csv')
+        ds_results_mask = (
+                (timer_df.dataset == dataset) & (timer_df.features_prc == features_prc) &
+                (timer_df.dm_dim == dm_dim)
+        )
+        if ds_results_mask.any():
+            timer_df.loc[ds_results_mask, metric] = timer_avg
+        else:
+            today_date = datetime.now().strftime('%d-%m-%Y')
+            new_df = pd.DataFrame(columns=timer_df.columns)
+            new_df.loc[len(new_df), ['date', 'dataset', 'features_prc', 'dm_dim', metric]] = \
+                [today_date, dataset, features_prc, dm_dim, timer_avg]
+            timer_df = pd.concat([timer_df, new_df]).sort_values(by=['dataset', 'features_prc', 'dm_dim'])
+        timer_df.to_csv('results/timer_results.csv', index=False)
 
 
 def all_results_colorful():
