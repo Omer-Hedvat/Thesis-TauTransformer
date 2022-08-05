@@ -8,7 +8,6 @@ from sklearn.cluster import KMeans
 from utils.diffusion_maps import diffusion_mapping
 from utils.distances import wasserstein_dist, bhattacharyya_dist, hellinger_dist, jm_dist
 from utils.machine_learning import min_max_scaler
-from utils.timer import Timer
 
 logger = logging.getLogger(__name__)
 
@@ -154,14 +153,12 @@ class TauTransformer:
         X_tr_norm = min_max_scaler(self.X, self.all_features)
         if self.verbose:
             logger.info(f"Calculating distances for {', '.join(self.dist_functions)}")
-        with Timer() as timer:
-            dist_dict = Parallel(n_jobs=len(self.dist_functions))(
-                delayed(self.calc_dist)(y, dist, X_tr_norm, 'label')
-                for dist in self.dist_functions
-            )
-            self.dists_dict = {k: v for x in dist_dict for k, v in x.items()}
+        dist_dict = Parallel(n_jobs=len(self.dist_functions))(
+            delayed(self.calc_dist)(y, dist, X_tr_norm, 'label')
+            for dist in self.dist_functions
+        )
+        self.dists_dict = {k: v for x in dist_dict for k, v in x.items()}
 
-        logger.info(f'calc_dist() took {timer.to_string()}')
         if self.verbose:
             logger.info(f"Reducing {int(self.features_to_reduce_prc * 100)}% features using 'features_reduction()' heuristic")
 
