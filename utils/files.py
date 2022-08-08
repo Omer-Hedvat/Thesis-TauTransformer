@@ -245,6 +245,17 @@ def print_separation_dots(message):
     logger.info('*' * 100)
 
 
+def return_ds_results_mask(filename, dataset, features_prc, dm_dim):
+    from datetime import datetime
+    df = pd.read_csv(filename)
+    today_date = datetime.now().strftime('%d-%m-%Y')
+    ds_results_mask = (
+            (df.dataset == dataset) & (df.features_prc == features_prc) &
+            (df.dm_dim == dm_dim) & (df.date == today_date)
+    )
+    return df, ds_results_mask, today_date
+
+
 def store_results(dataset, features_prc, dm_dim, metric, acc, f1, classes, workdir, timer_list=None):
     from datetime import datetime
     import os
@@ -252,12 +263,8 @@ def store_results(dataset, features_prc, dm_dim, metric, acc, f1, classes, workd
     from utils.machine_learning import calc_f1_score
 
     # General Results File
-    acc_results_df = pd.read_csv('results/all_datasets_results.csv')
-    today_date = datetime.now().strftime('%d-%m-%Y')
-    ds_results_mask = (
-            (acc_results_df.dataset == dataset) & (acc_results_df.features_prc == features_prc) &
-            (acc_results_df.dm_dim == dm_dim) & (acc_results_df.date == today_date)
-    )
+    filename = 'results/all_datasets_results.csv'
+    acc_results_df, ds_results_mask, today_date = return_ds_results_mask(filename, dataset, features_prc, dm_dim)
     if ds_results_mask.any():
         acc_results_df.loc[ds_results_mask, metric] = round(lists_avg(acc), 3)
     else:
@@ -286,17 +293,13 @@ def store_results(dataset, features_prc, dm_dim, metric, acc, f1, classes, workd
         f1_results_df.to_csv(f1_file, index=False)
 
     # Timer Results File
+    filename = 'results/timer_results.csv'
     if timer_list:
         timer_avg = round(lists_avg([t.to_int() for t in timer_list]), 3)
-        timer_df = pd.read_csv('results/timer_results.csv')
-        ds_results_mask = (
-                (timer_df.dataset == dataset) & (timer_df.features_prc == features_prc) &
-                (timer_df.dm_dim == dm_dim)
-        )
+        timer_df, ds_results_mask, today_date = return_ds_results_mask(filename, dataset, features_prc, dm_dim)
         if ds_results_mask.any():
             timer_df.loc[ds_results_mask, metric] = timer_avg
         else:
-            today_date = datetime.now().strftime('%d-%m-%Y')
             new_df = pd.DataFrame(columns=timer_df.columns)
             new_df.loc[len(new_df), ['date', 'dataset', 'features_prc', 'dm_dim', metric]] = \
                 [today_date, dataset, features_prc, dm_dim, timer_avg]
