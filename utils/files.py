@@ -253,14 +253,14 @@ def store_results(dataset, features_prc, dm_dim, metric, acc, f1, classes, workd
 
     # General Results File
     acc_results_df = pd.read_csv('results/all_datasets_results.csv')
+    today_date = datetime.now().strftime('%d-%m-%Y')
     ds_results_mask = (
             (acc_results_df.dataset == dataset) & (acc_results_df.features_prc == features_prc) &
-            (acc_results_df.dm_dim == dm_dim)
+            (acc_results_df.dm_dim == dm_dim) & (acc_results_df.date == today_date)
     )
     if ds_results_mask.any():
         acc_results_df.loc[ds_results_mask, metric] = round(lists_avg(acc), 3)
     else:
-        today_date = datetime.now().strftime('%d-%m-%Y')
         new_df = pd.DataFrame(columns=acc_results_df.columns)
         new_df.loc[len(new_df), ['date', 'dataset', 'features_prc', 'dm_dim', metric]] = \
             [today_date, dataset, features_prc, dm_dim, round(lists_avg(acc), 3)]
@@ -306,7 +306,7 @@ def store_results(dataset, features_prc, dm_dim, metric, acc, f1, classes, workd
 
 def all_results_colorful():
     data = pd.read_csv("results/all_datasets_results.csv")
-    dat = data['dataset'] + " " + data['features_prc'].apply(str) + " " + data['dm_dim'].apply(str)
+    dat = data['dataset'] + " " + data['features_prc'].apply(str) + " " + data['dm_dim'].apply(str) + " " + data['date'].apply(str)
     data['raw'] = dat
     data = data.set_index('raw')
     data = data.drop(columns=['date', 'dataset', 'features_prc', 'dm_dim'])

@@ -77,6 +77,7 @@ class TauTransformer:
         """
         Calculates distances of each feature w/ itself in different target classses
         for each DataFrame & distance functions
+        :param y: 'label' vector
         :param dist_func_name: Distance function name
         :param X_tr_norm: the normalized X DF
         :param label_col_name: label column name in the data
@@ -88,13 +89,15 @@ class TauTransformer:
         y.reset_index(drop=True, inplace=True)
         X_tr_norm[label_col_name] = y
         distances = []
+        classes = y.unique()
         for feature in features:
             class_dist = []
-            for cls_feature1 in y.unique():
+            for idx in range(len(classes)):
+                cls_feature1 = classes[idx]
                 class_row = [
                     self.execute_distance_func(X_tr_norm, dist_func_name, feature, cls_feature1, cls_feature2)
                     if cls_feature1 != cls_feature2 else 0
-                    for cls_feature2 in y.unique()
+                    for cls_feature2 in classes[idx + 1:]
                 ]
                 class_dist.append(class_row)
             distances.append(class_dist)
