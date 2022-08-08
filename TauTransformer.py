@@ -173,17 +173,20 @@ class TauTransformer:
 
         if self.verbose:
             logger.info(f"Calculating diffusion maps over the distance matrix")
-        for dist in self.dist_functions:
-            coordinates, ranking = diffusion_mapping(distances_dict[dist], self.alpha, self.eps_type, self.eps_factor, dim=self.dm_dim)
-            self.dm_dict[dist] = {'coordinates': coordinates, 'ranking': ranking}
+        dm_results = Parallel(n_jobs=len(self.dist_functions))(
+            delayed(diffusion_mapping)(distances_dict[dist], self.alpha, self.eps_type, self.eps_factor, dim=self.dm_dim)
+            for dist in self.dist_functions
+        )
+        self.dm_dict = {k: v for k, v in zip(self.dist_functions, dm_results)}
+
         if self.verbose:
             logger.info(
                 f"""Ranking the {int((1 - self.features_to_reduce_prc) * 100)}% remain features using a combined coordinate matrix ('agg_corrdinates'), 
                 inserting 'agg_corrdinates' into a 2nd diffusion map and storing the 2nd diffusion map results into 'final_coordinates'"""
             )
         agg_coordinates = np.concatenate([val['coordinates'] for val in self.dm_dict.values()]).T
-        final_coordinates, final_ranking = diffusion_mapping(agg_coordinates, self.alpha, self.eps_type, self.eps_factor, dim=self.dm_dim)
-        self.best_features_idx, labels, features_rank = self.return_best_features_by_kmeans(final_coordinates)
+        final_dm_results = diffusion_mapping(agg_coordinates, self.alpha, self.eps_type, self.eps_factor, dim=self.dm_dim)
+        self.best_features_idx, labels, features_rank = self.return_best_features_by_kmeans(final_dm_results['coordinates'])
         self.best_features = self.all_features[self.best_features_idx]
         if self.verbose:
             logger.info(f'Best features by KMeans are: {self.best_features}')
