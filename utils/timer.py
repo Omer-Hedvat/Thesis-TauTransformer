@@ -16,3 +16,11 @@ class Timer(object):
 
     def to_string(self):
         return str(timedelta(seconds=round(self.interval)))
+
+    def to_int(self):
+        return self.interval
+
+    def stop_timer(self):
+        self._end = time.time()
+        self.interval = self._end - self._start
+        return self.to_string()

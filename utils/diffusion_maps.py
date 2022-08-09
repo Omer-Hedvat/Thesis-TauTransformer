@@ -100,7 +100,7 @@ def diffusion_mapping(data_list, alpha, eps_type, epsilon_factor, **kwargs):
     diffusion_coordinates = singular_vectors[:, 1:kwargs['dim'] + 1].T * (singular_values[1:kwargs['dim'] + 1][:, None])
     ranking = singular_vectors[:, :1]
 
-    return diffusion_coordinates, ranking
+    return {'coordinates': diffusion_coordinates, 'ranking': ranking}
 
 
 def main():
