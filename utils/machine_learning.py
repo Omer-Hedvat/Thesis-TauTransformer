@@ -12,27 +12,27 @@ from utils.general import arrange_data_features
 logger = logging.getLogger(__name__)
 
 
-def min_max_scaler(df1, features, df2=None, return_as_df=True):
+def min_max_scaler(arr1, features, arr2=None, return_as_df=False):
     """
     activates min_max_scaler over a df and returns the normalized DataFrame
-    :param df1: pandas DataFrame which we want to fit_transfomr on
+    :param arr1: pandas DataFrame which we want to fit_transfomr on
     :param features: a list of columns which are the features
-    :param df2: pandas DataFrame - an optional dataframe which we transform only
+    :param arr2: pandas DataFrame - an optional dataframe which we transform only
     :param return_as_df: a boolean flag which determines if we want Numpy array or Pandas DataFrame
     :return: normalized dataframe/s (features only)
     """
     from sklearn.preprocessing import MinMaxScaler
 
     scaler = MinMaxScaler()
-    df1_norm = scaler.fit_transform(df1[features])
+    arr1_norm = scaler.fit_transform(arr1)
     if return_as_df:
-        df1_norm = pd.DataFrame(df1_norm, columns=features)
-    if df2 is not None:
-        df2_norm = scaler.transform(df2[features])
+        arr1_norm = pd.DataFrame(arr1_norm, columns=features)
+    if arr2 is not None:
+        arr2_norm = scaler.transform(arr2)
         if return_as_df:
-            df2_norm = pd.DataFrame(df2_norm, columns=features)
-        return df1_norm, df2_norm
-    return df1_norm
+            arr2_norm = pd.DataFrame(arr2_norm, columns=features)
+        return arr1_norm, arr2_norm
+    return arr1_norm
 
 
 def export_heatmaps(df, features, dist_type1, dist_type2, to_norm=False):
@@ -208,6 +208,7 @@ def mrmr_predict(train_set, val_set, k, all_features, mrmr_acc_agg, mrmr_f1_agg)
 
 def return_best_features_by_kmeans(coordinates, k):
     from sklearn.cluster import KMeans
+
     features_rank = np.argsort(coordinates[0])
     kmeans = KMeans(n_clusters=k, random_state=0)
     labels = kmeans.fit(coordinates.T).labels_

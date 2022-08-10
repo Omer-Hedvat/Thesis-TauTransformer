@@ -110,21 +110,21 @@ def build_jm(labels, data, y):
 
     return new_jm, jm_mean
 
-def find_features_kmedoids(train,jm_mean,coor_jm,factor):
+def find_features_kmedoids(train, jm_mean, coor_jm, factor):
 
     n_features =np.shape(train)[1]
     n_clusters=int(n_features/factor)
-    coor_jm=coor_jm[(np.where(jm_mean>np.quantile(jm_mean,q=0.2))[1])]
+    coor_jm = coor_jm[(np.where(jm_mean > np.quantile(jm_mean, q=0.2))[1])]
     kmedoids = KMedoids(n_clusters=n_clusters, random_state=0).fit(coor_jm)
     inx=[]
-    for i in range(0,n_clusters):
-        cluster_val=np.where([kmedoids.labels_==i])[1]
-        if len(cluster_val)>1:
-            max_jm_mean=0
+    for i in range(n_clusters):
+        cluster_val = np.where([kmedoids.labels_ == i])[1]
+        if len(cluster_val) > 1:
+            max_jm_mean = 0
             for j in range(0, len(cluster_val)):
-                if jm_mean[0][cluster_val[j]]>max_jm_mean:
-                    max_jm_mean=jm_mean[0][cluster_val[j]]
-                    index=cluster_val[j]
+                if jm_mean[0][cluster_val[j]] > max_jm_mean:
+                    max_jm_mean = jm_mean[0][cluster_val[j]]
+                    index = cluster_val[j]
             inx.append(index)
         else:
             inx.append(cluster_val[0])
@@ -147,11 +147,11 @@ def plot_clusters_by_jm_mean(coor_jm, jm_mean):
 
 def eliminate_features_kmedoids(labels, train):
     jm, jm_mean = build_jm(labels, train[:, :np.shape(train)[1] - 1], train[:, np.shape(train)[1] - 1:])
-    coor_jm =diffusion_mapping(jm, 1,"maxmin",epsilon_factor=200,dim=3)
+    coor_jm = diffusion_mapping(jm, 1, "maxmin", epsilon_factor=200, dim=3)
     #coor_jm = diffusion_mapping(jm, 1, "mean", epsilon_factor=2, dim=2)
     coor_jm=coor_jm.T
     plot_clusters_by_jm_mean(coor_jm, jm_mean)
-    ind_selected = find_features_kmedoids(train,jm_mean,coor_jm,25 )
+    ind_selected = find_features_kmedoids(train, jm_mean, coor_jm, 25)
     print(ind_selected)
     return ind_selected, jm, coor_jm, jm_mean
 
