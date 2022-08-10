@@ -73,16 +73,16 @@ class TauTransformer:
     def percentage_calculator(features, prc):
         return int(len(features) * prc)
 
-    def calc_dist(self, dist_func_name, X_tr_norm):
+    def calc_dist(self, dist_func_name):
         """
         Calculates distances of each feature w/ itself in different target classses
         for each DataFrame & distance functions
         :param dist_func_name: Distance function name
-        :param X_tr_norm: the normalized X DF
         return: df_dists, dist_dict
         df_dists - a flattened df of all features (each feature is a row)
         dist_dict - a dictionary of feature names & dataframes (e.g. {'feature_1': feature_1_df, ...}
         """
+        X_tr_norm = min_max_scaler(self.X, self.all_features)
         distances = []
         classes = np.unique(self.y)
         for feature_idx in range(len(self.all_features)):
@@ -149,11 +149,10 @@ class TauTransformer:
         self.X = np.asarray(X)
         self.y = np.asarray(y)
 
-        X_tr_norm = min_max_scaler(self.X, self.all_features)
         if self.verbose:
             logger.info(f"Calculating distances for {', '.join(self.dist_functions)}")
         dist_dict = Parallel(n_jobs=len(self.dist_functions))(
-            delayed(self.calc_dist)(dist, X_tr_norm)
+            delayed(self.calc_dist)(dist)
             for dist in self.dist_functions
         )
         self.dists_dict = {k: v for x in dist_dict for k, v in x.items()}
