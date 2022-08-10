@@ -29,24 +29,24 @@ def hellinger(p, q):
     return sosq / sqrt(2)
 
 
-def wasserstein_dist(df, feature, label1, label2):
+def wasserstein_dist(X_arr, y_arr, feature_idx, cls_feature1, cls_feature2):
     from scipy.stats import wasserstein_distance
-    dist = wasserstein_distance(df.loc[df['label'] == label1, feature], df.loc[df['label'] == label2, feature])
+    dist = wasserstein_distance(X_arr[y_arr == cls_feature1, feature_idx], X_arr[y_arr == cls_feature2, feature_idx])
     return dist
 
 
-def bhattacharyya_dist(df, feature, label1, label2):
-    dist = bhattacharyya_distance(df.loc[df['label'] == label1, feature], df.loc[df['label'] == label2, feature])
+def bhattacharyya_dist(X_arr, y_arr, feature_idx, cls_feature1, cls_feature2):
+    dist = bhattacharyya_distance(X_arr[y_arr == cls_feature1, feature_idx], X_arr[y_arr == cls_feature2, feature_idx])
     return dist
 
 
-def hellinger_dist(df, feature, label1, label2):
-    dist = hellinger(df.loc[df['label'] == label1, feature], df.loc[df['label'] == label2, feature])
+def hellinger_dist(X_arr, y_arr, feature_idx, cls_feature1, cls_feature2):
+    dist = hellinger(X_arr[y_arr == cls_feature1, feature_idx], X_arr[y_arr == cls_feature2, feature_idx])
     return dist
 
 
-def jm_dist(df, feature, label1, label2):
-    dist = jm_distance(df.loc[df['label'] == label1, feature], df.loc[df['label'] == label2, feature])
+def jm_dist(X_arr, y_arr, feature_idx, cls_feature1, cls_feature2):
+    dist = jm_distance(X_arr[y_arr == cls_feature1, feature_idx], X_arr[y_arr == cls_feature2, feature_idx])
     return dist
 
 
@@ -107,7 +107,7 @@ def calc_dist(dist_func_name, X_tr, classes, label_column):
         class_dist = []
         for cls_feature1 in classes.unique():
             class_row = [
-                execute_distance_func(df, dist_func_name, feature, cls_feature1, cls_feature2)
+                execute_distance_func(X_tr, dist_func_name, feature, cls_feature1, cls_feature2)
                 if cls_feature1 != cls_feature2 else 0
                 for cls_feature2 in classes.unique()
             ]

@@ -53,13 +53,13 @@ def flatten(t):
     return [item for sublist in t for item in sublist]
 
 
-def calc_mean_std(df):
+def calc_mean_std(arr):
     """
     Calculates matrix's mean & std (of entire matrix)
     :return: mean, std
     """
-    mean = df.mean().mean()
-    var = sum([((x - mean) ** 2) for x in flatten(df.values)]) / len(flatten(df.values))
+    mean = arr.mean().mean()
+    var = sum([((x - mean) ** 2) for x in flatten(arr.values)]) / len(flatten(arr.values))
     std = var ** 0.5
     return mean, std
 
