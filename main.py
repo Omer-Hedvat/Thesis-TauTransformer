@@ -25,7 +25,7 @@ def run_experiments(config, api_params):
     dataset_dir = f"data/{config['dataset_name']}.csv"
 
     logger.info(f'{dataset_dir=}')
-    data = read_from_csv(dataset_dir, config)
+    data, config['dataset_name'] = read_from_csv(dataset_dir, config)
     all_features = data.columns.drop('label')
     classes = list(data['label'].unique())
     logger.info(f"DATA STATS:\ndata shape of {data.shape}\nLabel distributes:\n{data['label'].value_counts().sort_index()}\n")
@@ -170,7 +170,7 @@ def main():
         'kfolds': 5,
         'features_percentage': [0.02, 0.05, 0.1, 0.2, 0.3, 0.5],
         'dist_functions': ['wasserstein', 'jm', 'hellinger'],
-        'nrows': 1000,
+        'nrows': 10000,
         'features_to_reduce_prc': [0.0, 0.2, 0.35, 0.5],
         'dm_dim': [2],
         'alpha': 1,
@@ -178,7 +178,7 @@ def main():
         'eps_factor': 25,
         'verbose': False,
         'random_state': 0,
-        'add_features_up_to': 1000
+        'add_features_up_to':100
     }
 
     api_params = {

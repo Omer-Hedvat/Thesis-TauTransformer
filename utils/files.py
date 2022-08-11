@@ -246,8 +246,9 @@ def read_from_csv(filepath, config):
         dummy_feature_names = [f'dummy_feature_{i}' for i in range(additional_columns)]
         dummy_features = pd.concat(dummy_features_list, axis=1).set_axis(dummy_feature_names, axis=1)
         data = pd.concat([data, dummy_features], axis=1)
+        config['dataset_name'] = f"{config['dataset_name']}_w_dummy_features_{config['add_features_up_to']}"
 
-    return data
+    return data, config['dataset_name']
 
 
 def generate_columns(data):
@@ -255,6 +256,8 @@ def generate_columns(data):
     mean = data.describe().iloc[[1], random_feature].values[0]
     std = data.describe().iloc[[2], random_feature].values[0]
     col = pd.DataFrame(np.random.normal(loc=mean, scale=std, size=data.shape[0]))
+    if data.dtypes[random_feature] == 'int64':
+        col = col.astype(int)
     return col
 
 
