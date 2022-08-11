@@ -39,7 +39,7 @@ def create_work_dir(path, append_timestamp=False, on_exists='ask'):
 
     if append_timestamp:
         resolved_path = os.path.normpath(resolved_path)
-        ts = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        ts = f"{datetime.now().strftime('%d%m%Y')}"
         resolved_path = f"{resolved_path}_{ts}"
 
     os.makedirs(resolved_path, exist_ok=True)
@@ -337,3 +337,27 @@ def all_results_colorful():
     data = data.set_index('raw')
     data = data.drop(columns=['date', 'dataset', 'features_prc', 'dm_dim'])
     data.style.background_gradient(cmap='RdYlGn', axis=1).to_excel("results/all_results_colors.xlsx")
+
+
+def generate_and_save_scatter_plots(dm_dict, feature_percentage, workdir=None):
+    import matplotlib.pyplot as plt
+    import os
+
+    for dist_func, corr_dict in dm_dict.items():
+        title = f"{dist_func}_{feature_percentage}_DM1_scatter"
+        data = corr_dict['coordinates']
+
+        plt.scatter(data.T[:, 0], data.T[:, 1])
+        plt.title(title)
+        plt.xlabel("X")
+        plt.ylabel("Y")
+
+        if workdir:
+            path = os.path.join(workdir, 'scatter_plots')
+            path = create_work_dir(path, append_timestamp=True, on_exists='ignore')
+            filename = f'{title}.png'
+            file_path = os.path.join(path, filename)
+            file_path = file_path.replace('.', '')
+            plt.savefig(file_path)
+
+        plt.show()

@@ -63,7 +63,7 @@ def calculate_distance(p1, p2):
     return dist
 
 
-def execute_distance_func(df, function_name, feature, label1, label2):
+def execute_distance_func(X_arr, y_arr, dist_func_name, feature_idx, cls_feature1, cls_feature2):
     """
     Executes various distance functions by 'function_name' argument.
     The function calculates the distance between 2 vectors (df column), the vectors are values from the same column but w. different label values.
@@ -75,49 +75,83 @@ def execute_distance_func(df, function_name, feature, label1, label2):
     :param label2: value of label # 2
     :return: distance value between the vectors
     """
-    assert function_name in ['wasserstein', 'bhattacharyya', 'jm', 'hellinger']
+    assert dist_func_name in ['wasserstein', 'bhattacharyya', 'jm', 'hellinger']
     return {
-        'wasserstein': lambda: wasserstein_dist(df, feature, label1, label2),
-        'bhattacharyya': lambda: bhattacharyya_dist(df, feature, label1, label2),
-        'hellinger': lambda: hellinger_dist(df, feature, label1, label2),
-        'jm': lambda: jm_dist(df, feature, label1, label2)
-    }[function_name]()
+        'wasserstein': lambda: wasserstein_dist(X_arr, y_arr, feature_idx, cls_feature1, cls_feature2),
+        'bhattacharyya': lambda: bhattacharyya_dist(X_arr, y_arr, feature_idx, cls_feature1, cls_feature2),
+        'hellinger': lambda: hellinger_dist(X_arr, y_arr, feature_idx, cls_feature1, cls_feature2),
+        'jm': lambda: jm_dist(X_arr, y_arr, feature_idx, cls_feature1, cls_feature2)
+    }[dist_func_name]()
 
 
-def calc_dist(dist_func_name, X_tr, classes, label_column):
+# def calc_dist(dist_func_name, X_tr, classes, label_column):
+#     """
+#     Calculates distances of each feature w/ itself in different target classses
+#     for each DataFrame & distance functions
+#     :param dist_func_name: Distance function name
+#     :param X_tr:
+#     :param classes: y_train
+#     return: df_dists, dist_dict
+#     df_dists - a flatten df of all features (each feature is a row)
+#     dist_dict - a dictionary of feature names & dataframes (e.g. {'feature_1': feature_1_df, ...}
+#     """
+#     import pandas as pd
+#     from utils.general import flatten
+#
+#     features = X_tr.columns
+#     df = X_tr
+#     classes.reset_index(drop=True, inplace=True)
+#     df[label_column] = classes
+#     distances = []
+#     for feature in features:
+#         class_dist = []
+#         for cls_feature1 in classes.unique():
+#             class_row = [
+#                 execute_distance_func(X_tr, dist_func_name, feature, cls_feature1, cls_feature2)
+#                 if cls_feature1 != cls_feature2 else 0
+#                 for cls_feature2 in classes.unique()
+#             ]
+#             class_dist.append(class_row)
+#         distances.append(class_dist)
+#
+#     two_d_mat = [flatten(distances[idx]) for idx in range(len(distances))]
+#     df_dists = pd.DataFrame(two_d_mat)
+#     dist_dict = {f'feature_{idx + 1}': pd.DataFrame(mat) for idx, mat in enumerate(distances)}
+#     return df_dists, dist_dict
+
+def calc_dist(X, y, all_features, dist_func_name):
+    import numpy as np
+    from utils.general import flatten
+    from utils.machine_learning import min_max_scaler
     """
     Calculates distances of each feature w/ itself in different target classses
     for each DataFrame & distance functions
     :param dist_func_name: Distance function name
-    :param X_tr:
-    :param classes: y_train
     return: df_dists, dist_dict
-    df_dists - a flatten df of all features (each feature is a row)
+    df_dists - a flattened df of all features (each feature is a row)
     dist_dict - a dictionary of feature names & dataframes (e.g. {'feature_1': feature_1_df, ...}
     """
-    import pandas as pd
-    from utils.general import flatten
-
-    features = X_tr.columns
-    df = X_tr
-    classes.reset_index(drop=True, inplace=True)
-    df[label_column] = classes
+    X_tr_norm = min_max_scaler(X, all_features)
     distances = []
-    for feature in features:
+    classes = np.unique(y)
+    for feature_idx in range(len(all_features)):
         class_dist = []
-        for cls_feature1 in classes.unique():
+        for idx in range(len(classes)):
+            cls_feature1 = classes[idx]
             class_row = [
-                execute_distance_func(X_tr, dist_func_name, feature, cls_feature1, cls_feature2)
+                execute_distance_func(X_tr_norm, y, dist_func_name, feature_idx, cls_feature1, cls_feature2)
                 if cls_feature1 != cls_feature2 else 0
-                for cls_feature2 in classes.unique()
+                for cls_feature2 in classes[idx + 1:]
             ]
             class_dist.append(class_row)
         distances.append(class_dist)
 
-    two_d_mat = [flatten(distances[idx]) for idx in range(len(distances))]
-    df_dists = pd.DataFrame(two_d_mat)
-    dist_dict = {f'feature_{idx + 1}': pd.DataFrame(mat) for idx, mat in enumerate(distances)}
-    return df_dists, dist_dict
+    dists_dict = dict()
+    two_dim_matrix = [flatten(distances[idx]) for idx in range(len(distances))]
+    dists_arr = np.array([np.array(row) for row in two_dim_matrix])
+    # dist_dict = {f'feature_{idx + 1}': pd.DataFrame(mat) for idx, mat in enumerate(distances)}
+    dists_dict[dist_func_name] = dists_arr
+    return dists_dict
 
 
 def features_reduction(all_features, dists_dict, features_to_reduce_prc):

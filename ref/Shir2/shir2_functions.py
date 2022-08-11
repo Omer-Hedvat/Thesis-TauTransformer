@@ -137,12 +137,8 @@ def plot_clusters_by_jm_mean(coor_jm, jm_mean):
     vmax = np.max(jm_mean)
     vmin = np.min(jm_mean)
 
-    b = ax1.scatter(coor_jm[:, 0], coor_jm[:, 1], c=np.transpose(jm_mean)[:, 0], vmin=vmin, vmax=vmax,
-                        cmap='plasma')
-
-
+    b = ax1.scatter(coor_jm[:, 0], coor_jm[:, 1], c=np.transpose(jm_mean)[:, 0], vmin=vmin, vmax=vmax, cmap='plasma')
     plt.colorbar(b)
-
     plt.show()
 
 def eliminate_features_kmedoids(labels, train):
