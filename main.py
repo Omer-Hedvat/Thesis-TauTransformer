@@ -54,7 +54,6 @@ def run_experiments(config, api_params):
         relief_acc_agg, relief_f1_agg, timer_relief = [], [], []
         chi2_acc_agg, chi2_f1_agg, timer_chi2 = [], [], []
         mrmr_acc_agg, mrmr_f1_agg, timer_mrmr = [], [], []
-        jm_kmeans_acc_agg, jm_kmeans_f1_agg, timer_jm = [], [], []
         for kfold_iter in range(1, config['kfolds'] + 1):
             final_kf_iter = kfold_iter == config['kfolds']
             train_set, val_set = kfolds_split(data, kfold_iter, n_splits=config['kfolds'], random_state=config['random_state'])
@@ -124,14 +123,14 @@ def run_experiments(config, api_params):
 
                 with Timer() as timer:
                     tt = TauTransformer(feature_percentage, features_to_reduce_prc, config['dist_functions'], **api_params)
-                    X_tr = tt.fit_transform(X_train, y_train, workdir)
+                    X_tr = tt.fit_transform(X_train, y_train)
                     X_tst = tt.transform(X_test)
                     kmeans_acc, kmeans_f1 = predict(X_tr, y_train, X_tst, y_test)
 
                 kmeans_acc_agg.append(kmeans_acc)
                 kmeans_f1_agg.append(kmeans_f1)
                 timer_tau_trans.append(timer)
-                generate_and_save_scatter_plots(tt.dm_dict, tt.feature_percentage, workdir)
+                generate_and_save_scatter_plots(tt.dm_dict, workdir)
                 if final_kf_iter:
                     acc_result = round(lists_avg(kmeans_acc_agg) * 100, 2)
                     logger.info(f"kmeans accuracy result w/ {int(features_to_reduce_prc*100)}% huristic: {acc_result}%")

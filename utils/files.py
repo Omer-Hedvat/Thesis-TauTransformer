@@ -339,12 +339,12 @@ def all_results_colorful():
     data.style.background_gradient(cmap='RdYlGn', axis=1).to_excel("results/all_results_colors.xlsx")
 
 
-def generate_and_save_scatter_plots(dm_dict, feature_percentage, workdir=None):
+def generate_and_save_scatter_plots(dm_dict, workdir=None):
     import matplotlib.pyplot as plt
     import os
 
     for dist_func, corr_dict in dm_dict.items():
-        title = f"{dist_func}_{feature_percentage}_DM1_scatter"
+        title = f"{dist_func}_DM1_scatter"
         data = corr_dict['coordinates']
 
         plt.scatter(data.T[:, 0], data.T[:, 1])
@@ -355,8 +355,8 @@ def generate_and_save_scatter_plots(dm_dict, feature_percentage, workdir=None):
         if workdir:
             path = os.path.join(workdir, 'scatter_plots')
             path = create_work_dir(path, append_timestamp=True, on_exists='ignore')
-            filename = f'{title}.png'
-            file_path = os.path.join(path, filename)
+            filename = f'{title}'
+            file_path = os.path.join(path, filename, '.png')
             file_path = file_path.replace('.', '')
             plt.savefig(file_path)
 
