@@ -1,5 +1,4 @@
 import csv
-from joblib import Parallel, delayed
 import logging
 import traceback
 
@@ -211,6 +210,8 @@ def update_json_file(filename, keys, value):
 
 
 def read_from_csv(filepath, config):
+    from joblib import Parallel, delayed
+
     with open(filepath, "r", encoding="utf-8") as f, Timer() as timer:
         reader = csv.reader(f, delimiter=",")
         data = list(reader)
@@ -355,9 +356,8 @@ def generate_and_save_scatter_plots(dm_dict, workdir=None):
         if workdir:
             path = os.path.join(workdir, 'scatter_plots')
             path = create_work_dir(path, append_timestamp=True, on_exists='ignore')
-            filename = f'{title}'
-            file_path = os.path.join(path, filename, '.png')
+            file_path = os.path.join(path, title)
             file_path = file_path.replace('.', '')
-            plt.savefig(file_path)
+            plt.savefig(f'{file_path}.png')
 
         plt.show()
