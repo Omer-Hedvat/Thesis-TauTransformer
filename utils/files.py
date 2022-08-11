@@ -1,9 +1,11 @@
 import csv
+from joblib import Parallel, delayed
 import logging
 import traceback
 
 import numpy as np
 import pandas as pd
+import random
 from sklearn import preprocessing
 
 from utils.timer import Timer
@@ -235,7 +237,25 @@ def read_from_csv(filepath, config):
     if config['label_column'] != 'label':
         data.rename(columns={config['label_column']: 'label'}, inplace=True)
 
+    if config.get('add_features_up_to', 0) > data.shape[1]:
+        additional_columns = config.get('add_features_up_to', 0) - data.shape[1]
+        dummy_features_list = Parallel(n_jobs=-1)(
+            delayed(generate_columns)(data)
+            for _ in range(additional_columns)
+        )
+        dummy_feature_names = [f'dummy_feature_{i}' for i in range(additional_columns)]
+        dummy_features = pd.concat(dummy_features_list, axis=1).set_axis(dummy_feature_names, axis=1)
+        data = pd.concat([data, dummy_features], axis=1)
+
     return data
+
+
+def generate_columns(data):
+    random_feature = random.randint(0, data.shape[1]-1)
+    mean = data.describe().iloc[[1], random_feature].values[0]
+    std = data.describe().iloc[[2], random_feature].values[0]
+    col = pd.DataFrame(np.random.normal(loc=mean, scale=std, size=data.shape[0]))
+    return col
 
 
 def print_separation_dots(message):

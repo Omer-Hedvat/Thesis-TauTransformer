@@ -177,7 +177,8 @@ def main():
         'eps_type': 'maxmin',
         'eps_factor': 25,
         'verbose': False,
-        'random_state': 0
+        'random_state': 0,
+        'add_features_up_to': 1000
     }
 
     api_params = {
