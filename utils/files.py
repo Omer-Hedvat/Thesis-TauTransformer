@@ -4,6 +4,7 @@ import traceback
 
 import numpy as np
 import pandas as pd
+import random
 from sklearn import preprocessing
 
 from utils.timer import Timer
@@ -37,7 +38,7 @@ def create_work_dir(path, append_timestamp=False, on_exists='ask'):
 
     if append_timestamp:
         resolved_path = os.path.normpath(resolved_path)
-        ts = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        ts = f"{datetime.now().strftime('%d%m%Y')}"
         resolved_path = f"{resolved_path}_{ts}"
 
     os.makedirs(resolved_path, exist_ok=True)
@@ -209,6 +210,8 @@ def update_json_file(filename, keys, value):
 
 
 def read_from_csv(filepath, config):
+    from joblib import Parallel, delayed
+
     with open(filepath, "r", encoding="utf-8") as f, Timer() as timer:
         reader = csv.reader(f, delimiter=",")
         data = list(reader)
@@ -235,7 +238,28 @@ def read_from_csv(filepath, config):
     if config['label_column'] != 'label':
         data.rename(columns={config['label_column']: 'label'}, inplace=True)
 
-    return data
+    if config.get('add_features_up_to', 0) > data.shape[1]:
+        additional_columns = config.get('add_features_up_to', 0) - data.shape[1]
+        dummy_features_list = Parallel(n_jobs=-1)(
+            delayed(generate_columns)(data)
+            for _ in range(additional_columns)
+        )
+        dummy_feature_names = [f'dummy_feature_{i}' for i in range(additional_columns)]
+        dummy_features = pd.concat(dummy_features_list, axis=1).set_axis(dummy_feature_names, axis=1)
+        data = pd.concat([data, dummy_features], axis=1)
+        config['dataset_name'] = f"{config['dataset_name']}_w_dummy_features_{config['add_features_up_to']}"
+
+    return data, config['dataset_name']
+
+
+def generate_columns(data):
+    random_feature = random.randint(0, data.shape[1]-1)
+    mean = data.describe().iloc[[1], random_feature].values[0]
+    std = data.describe().iloc[[2], random_feature].values[0]
+    col = pd.DataFrame(np.random.normal(loc=mean, scale=std, size=data.shape[0]))
+    if data.dtypes[random_feature] == 'int64':
+        col = col.astype(int)
+    return col
 
 
 def print_separation_dots(message):
@@ -314,3 +338,25 @@ def all_results_colorful():
     data = data.set_index('raw')
     data = data.drop(columns=['date', 'dataset', 'features_prc', 'dm_dim'])
     data.style.background_gradient(cmap='RdYlGn', axis=1).to_excel("results/all_results_colors.xlsx")
+
+
+def generate_and_save_scatter_plots(dm_dict, workdir=None):
+    import matplotlib.pyplot as plt
+    import os
+
+    for dist_func, corr_dict in dm_dict.items():
+        title = f"{dist_func}_DM1_scatter"
+        data = corr_dict['coordinates']
+
+        plt.scatter(data.T[:, 0], data.T[:, 1])
+        plt.title(title)
+        plt.xlabel("X")
+        plt.ylabel("Y")
+
+        if workdir:
+            path = os.path.join(workdir, 'scatter_plots')
+            path = create_work_dir(path, append_timestamp=True, on_exists='ignore')
+            file_path = os.path.join(path, title)
+            plt.savefig(f'{file_path}.png')
+
+        plt.show()

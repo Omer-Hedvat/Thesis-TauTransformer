@@ -4,14 +4,11 @@ import logging
 import os
 
 from TauTransformer import TauTransformer
-from utils.diffusion_maps import diffusion_mapping
-from utils.distances import calc_dist, features_reduction
-from utils.files import create_work_dir, read_from_csv, print_separation_dots, store_results, all_results_colorful
+from utils.files import create_work_dir, read_from_csv, print_separation_dots, store_results, all_results_colorful, generate_and_save_scatter_plots
 from utils.general import setup_logger, lists_avg, calc_k, arrange_data_features
-from utils.machine_learning import min_max_scaler, t_test, kfolds_split
+from utils.machine_learning import t_test, kfolds_split
 from utils.machine_learning import (
-    predict, random_features_predict, fisher_ranks_predict, relieff_predict, chi_square_predict, mrmr_predict, return_best_features_by_kmeans
-)
+    predict, random_features_predict, fisher_ranks_predict, relieff_predict, chi_square_predict, mrmr_predict)
 from utils.timer import Timer
 
 
@@ -25,7 +22,7 @@ def run_experiments(config, api_params):
     dataset_dir = f"data/{config['dataset_name']}.csv"
 
     logger.info(f'{dataset_dir=}')
-    data = read_from_csv(dataset_dir, config)
+    data, config['dataset_name'] = read_from_csv(dataset_dir, config)
     all_features = data.columns.drop('label')
     classes = list(data['label'].unique())
     logger.info(f"DATA STATS:\ndata shape of {data.shape}\nLabel distributes:\n{data['label'].value_counts().sort_index()}\n")
@@ -57,7 +54,6 @@ def run_experiments(config, api_params):
         relief_acc_agg, relief_f1_agg, timer_relief = [], [], []
         chi2_acc_agg, chi2_f1_agg, timer_chi2 = [], [], []
         mrmr_acc_agg, mrmr_f1_agg, timer_mrmr = [], [], []
-        jm_kmeans_acc_agg, jm_kmeans_f1_agg, timer_jm = [], [], []
         for kfold_iter in range(1, config['kfolds'] + 1):
             final_kf_iter = kfold_iter == config['kfolds']
             train_set, val_set = kfolds_split(data, kfold_iter, n_splits=config['kfolds'], random_state=config['random_state'])
@@ -113,29 +109,6 @@ def run_experiments(config, api_params):
                 logger.info(f"mRMR accuracy result: {acc_result}%")
                 store_results(config['dataset_name'], feature_percentage, dm_dim, 'mrmr', mrmr_acc_agg, mrmr_f1_agg, classes, workdir, timer_mrmr)
 
-            # Shir's Approach Features
-            with Timer() as timer:
-                jm_dict = {}
-                X_tr_norm = min_max_scaler(train_set, all_features)
-                jm_dists, _ = calc_dist('jm', X_tr_norm, y_tr, 'label')
-                jm_dict['jm'] = jm_dists
-                if feature_percentage + 0.5 < 1:
-                    jm_distances_dict, _ = features_reduction(all_features, jm_dict, 0.5)
-                else:
-                    jm_distances_dict = jm_dict.copy()
-                jm_coordinates, jm_ranking = diffusion_mapping(jm_distances_dict['jm'], config['alpha'], config['eps_type'], config['eps_factor'], dim=dm_dim)
-
-                jm_features, _, _ = return_best_features_by_kmeans(jm_coordinates, k)
-                X_tr, X_test = arrange_data_features(train_set, val_set, all_features, return_y=False)
-                jm_kmeans_acc, jm_kmeans_f1 = predict(X_tr.iloc[:, jm_features], y_tr, X_test.iloc[:, jm_features], y_test)
-            jm_kmeans_acc_agg.append(jm_kmeans_acc)
-            jm_kmeans_f1_agg.append(jm_kmeans_f1)
-            timer_jm.append(timer)
-            if final_kf_iter:
-                jm_acc_result = round(lists_avg(jm_kmeans_acc_agg) * 100, 2)
-                logger.info(f"Shir's algo kmeans accuracy result w/ {int(0.5 * 100)}% huristic: {jm_acc_result}%")
-                store_results(config['dataset_name'], feature_percentage, dm_dim, 'shirs_algo', jm_kmeans_acc_agg, jm_kmeans_f1_agg, classes, workdir, timer_jm)
-
         # TauTransformer Features
         for features_to_reduce_prc in config['features_to_reduce_prc']:
             if feature_percentage + features_to_reduce_prc >= 1:
@@ -157,6 +130,7 @@ def run_experiments(config, api_params):
                 kmeans_acc_agg.append(kmeans_acc)
                 kmeans_f1_agg.append(kmeans_f1)
                 timer_tau_trans.append(timer)
+                generate_and_save_scatter_plots(tt.dm_dict, workdir)
                 if final_kf_iter:
                     acc_result = round(lists_avg(kmeans_acc_agg) * 100, 2)
                     logger.info(f"kmeans accuracy result w/ {int(features_to_reduce_prc*100)}% huristic: {acc_result}%")
@@ -170,14 +144,15 @@ def main():
         'kfolds': 5,
         'features_percentage': [0.02, 0.05, 0.1, 0.2, 0.3, 0.5],
         'dist_functions': ['wasserstein', 'jm', 'hellinger'],
-        'nrows': 1000,
+        'nrows': 10000,
         'features_to_reduce_prc': [0.0, 0.2, 0.35, 0.5],
         'dm_dim': [2],
         'alpha': 1,
         'eps_type': 'maxmin',
         'eps_factor': 25,
         'verbose': False,
-        'random_state': 0
+        'random_state': 0,
+        'add_features_up_to':100
     }
 
     api_params = {
@@ -193,9 +168,9 @@ def main():
         ('adware_balanced', 'label'), ('ml_multiclass_classification_data', 'target'), ('digits', 'label'), ('isolet', 'label'),
         ('otto_balanced', 'target'), ('gene_data', 'label')
     ]
-    datasets = [('adware_balanced', 'label')]
-    config['features_percentage'] = [0.02, 0.05, 0.1, 0.2, 0.3]
-    config['features_to_reduce_prc'] = [0.0, 0.2, 0.35, 0.5]
+    datasets = [('isolet', 'label')]
+    # config['features_percentage'] = [0.02, 0.05, 0.1, 0.2, 0.3]
+    # config['features_to_reduce_prc'] = [0.0, 0.2, 0.35, 0.5]
 
     for dataset, label in datasets:
         config['dataset_name'] = dataset
