@@ -357,7 +357,6 @@ def generate_and_save_scatter_plots(dm_dict, workdir=None):
             path = os.path.join(workdir, 'scatter_plots')
             path = create_work_dir(path, append_timestamp=True, on_exists='ignore')
             file_path = os.path.join(path, title)
-            file_path = file_path.replace('.', '')
             plt.savefig(f'{file_path}.png')
 
         plt.show()
