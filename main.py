@@ -152,7 +152,7 @@ def main():
         'eps_factor': 25,
         'verbose': False,
         'random_state': 0,
-        'add_features_up_to':100
+        'add_features_up_to': 2000
     }
 
     api_params = {
