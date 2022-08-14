@@ -132,6 +132,29 @@ class TauTransformer:
         features_to_reduce_idx = list(set(range(len(self.all_features))).difference(features_to_keep_idx))
         return features_to_keep_idx, features_to_reduce_idx
 
+    @staticmethod
+    def row_variance(data):
+        means = [row.mean() for row in data]
+        squared_errors = [(row - mean) ** 2 for row, mean in zip(data, means)]
+        variances = [row.mean() for row in squared_errors]
+        return np.mean(variances)
+
+    def dist_func_weights_calculator_using_DM_var_average(self):
+        """
+        """
+        vars = {dist_func: self.row_variance(vals['coordinates']) for dist_func, vals in self.dm_dict.items()}
+        var_sum = np.sum(list(vars.values()))
+        weights = {dist_func: (var/var_sum) for dist_func, var in vars.items()}
+        return weights
+
+    def dist_func_weights_calculator_using_distance_var_average(self):
+        """
+        """
+        vars = {dist_func: self.row_variance(vals) for dist_func, vals in self.dists_dict.items()}
+        var_sum = np.sum(list(vars.values()))
+        weights = {dist_func: (var/var_sum) for dist_func, var in vars.items()}
+        return weights
+
     def return_best_features_by_kmeans(self, coordinates):
         features_rank = np.argsort(coordinates[0])
         kmeans = KMeans(n_clusters=self.k, random_state=self.random_state)
@@ -179,7 +202,14 @@ class TauTransformer:
                 f"""Ranking the {int((1 - self.features_to_reduce_prc) * 100)}% remain features using a combined coordinate matrix ('agg_corrdinates'), 
                 inserting 'agg_corrdinates' into a 2nd diffusion map and storing the 2nd diffusion map results into 'final_coordinates'"""
             )
-        agg_coordinates = np.concatenate([val['coordinates'] for val in self.dm_dict.values()]).T
+
+        dist_func_weights = self.dist_func_weights_calculator_using_distance_var_average()
+        # dist_func_weights = self.dist_func_weights_calculator_using_DM_var_average()
+        agg_coordinates = np.concatenate(
+            [val['coordinates'] * dist_func_weights[dist_func] for dist_func, val in self.dm_dict.items()]
+        ).T
+        # agg_coordinates = np.concatenate([val['coordinates'] for val in self.dm_dict.values()]).T
+
         final_dm_results = diffusion_mapping(agg_coordinates, self.alpha, self.eps_type, self.eps_factor, dim=self.dm_dim)
         self.best_features_idx, labels, features_rank = self.return_best_features_by_kmeans(final_dm_results['coordinates'])
         self.best_features = self.all_features[self.best_features_idx]
