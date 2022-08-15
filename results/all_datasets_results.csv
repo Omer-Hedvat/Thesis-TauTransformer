@@ -1,37 +1,10 @@
 date,dataset,features_prc,dm_dim,all_features,random_features,fisher,relief,chi_square,mrmr,shirs_algo,kmeans_0.0,kmeans_0.2,kmeans_0.35,kmeans_0.5
 27/05/2022,adware_balanced,0.02,2,0.344,0.164,0.201,0.217,0.181,0.209,0.178,0.164,0.197,0.197,0.215
-14-08-2022,adware_balanced,0.02,2,,,,,,0.209,,0.182,0.19,0.189,0.216
 27/05/2022,adware_balanced,0.05,2,0.344,0.247,0.222,0.251,0.204,0.255,0.186,0.247,0.258,0.236,0.263
-14-08-2022,adware_balanced,0.05,2,,,,,,0.255,,0.24,0.256,0.257,0.259
 27/05/2022,adware_balanced,0.1,2,0.344,0.306,0.258,0.271,0.254,0.295,0.19,0.292,0.291,0.294,0.298
-14-08-2022,adware_balanced,0.1,2,,,,,,0.295,,0.305,0.3,0.299,
 27/05/2022,adware_balanced,0.2,2,0.344,0.333,0.311,0.313,0.297,0.31,0.199,0.314,0.302,0.318,0.317
 27/05/2022,adware_balanced,0.3,2,0.344,0.335,0.314,0.323,0.314,0.324,0.197,0.327,0.311,0.326,0.318
 27/05/2022,adware_balanced,0.5,2,0.344,0.339,0.322,0.344,0.336,0.336,0.204,0.334,0.326,0.333,0.318
-12-08-2022,adware_balanced - baseline,0.02,2,,,,,,,,0.185,0.199,0.189,0.216
-12-08-2022,adware_balanced - baseline,0.05,2,,,,,,,,0.242,0.255,0.258,0.261
-12-08-2022,adware_balanced - baseline,0.1,2,,,,,,,,0.306,0.295,0.3,0.293
-12-08-2022,adware_balanced - baseline,0.2,2,,,,,,,,0.319,0.306,0.327,0.316
-12-08-2022,adware_balanced - baseline,0.3,2,,,,,,,,0.327,0.314,0.324,0.319
-12-08-2022,adware_balanced - baseline,0.5,2,,,,,,,,0.334,0.323,0.329,
-13-08-2022,adware_balanced - dist_func_weights_calculator_using_average,0.02,2,,,,,,,,0.182,0.19,0.189,0.216
-13-08-2022,adware_balanced - dist_func_weights_calculator_using_average,0.05,2,,,,,,,,0.24,0.256,0.257,0.259
-13-08-2022,adware_balanced - dist_func_weights_calculator_using_average,0.1,2,,,,,,,,0.305,0.299,0.299,0.294
-13-08-2022,adware_balanced - dist_func_weights_calculator_using_average,0.2,2,,,,,,,,0.321,0.311,0.324,0.319
-13-08-2022,adware_balanced - dist_func_weights_calculator_using_average,0.3,2,,,,,,,,0.328,0.315,0.323,0.321
-13-08-2022,adware_balanced - dist_func_weights_calculator_using_average,0.5,2,,,,,,,,0.338,0.326,0.33,
-12-08-2022,adware_balanced - dist_func_weights_calculator_using_dists_dict,0.02,2,,,,,,,,0.182,0.19,0.189,0.216
-12-08-2022,adware_balanced - dist_func_weights_calculator_using_dists_dict,0.05,2,,,,,,,,0.24,0.256,0.259,0.259
-12-08-2022,adware_balanced - dist_func_weights_calculator_using_dists_dict,0.1,2,,,,,,,,0.305,0.299,0.3,0.294
-12-08-2022,adware_balanced - dist_func_weights_calculator_using_dists_dict,0.2,2,,,,,,,,0.321,0.311,0.325,0.319
-12-08-2022,adware_balanced - dist_func_weights_calculator_using_dists_dict,0.3,2,,,,,,,,0.329,0.311,0.322,0.323
-12-08-2022,adware_balanced - dist_func_weights_calculator_using_dists_dict,0.5,2,,,,,,,,0.34,0.326,0.33,
-12-08-2022,adware_balanced - dist_func_weights_calculator_using_dm_dict,0.02,2,,,,,,,,0.182,0.19,0.189,0.216
-12-08-2022,adware_balanced - dist_func_weights_calculator_using_dm_dict,0.05,2,,,,,,,,0.24,0.256,0.257,0.259
-12-08-2022,adware_balanced - dist_func_weights_calculator_using_dm_dict,0.1,2,,,,,,,,0.305,0.299,0.299,0.293
-12-08-2022,adware_balanced - dist_func_weights_calculator_using_dm_dict,0.2,2,,,,,,,,0.321,0.31,0.323,0.318
-12-08-2022,adware_balanced - dist_func_weights_calculator_using_dm_dict,0.3,2,,,,,,,,0.329,0.314,0.322,0.32
-12-08-2022,adware_balanced - dist_func_weights_calculator_using_dm_dict,0.5,2,,,,,,,,0.331,0.325,0.327,
 27/05/2022,digits,0.02,2,0.987,0.792,0.843,0.836,0.76,0.964,0.251,0.84,0.826,0.865,0.847
 27/05/2022,digits,0.05,2,0.987,0.96,0.923,0.955,0.918,0.98,0.267,0.954,0.941,0.945,0.941
 27/05/2022,digits,0.1,2,0.987,0.972,0.942,0.974,0.955,0.984,0.273,0.972,0.967,0.972,0.968
@@ -50,32 +23,9 @@ date,dataset,features_prc,dm_dim,all_features,random_features,fisher,relief,chi_
 29/05/2022,isolet,0.2,2,0.942,0.912,0.913,0.857,0.886,0.92,0.161,0.907,0.894,0.86,0.674
 29/05/2022,isolet,0.3,2,0.942,0.93,0.921,0.901,0.909,0.93,0.158,0.923,0.911,0.887,0.683
 29/05/2022,isolet,0.5,2,0.942,0.936,0.938,0.931,0.934,0.939,0.218,0.934,0.93,0.905,0.682873637
-13-08-2022,isolet - baseline,0.02,2,,,,,,,,0.38,0.457,0.477,0.443
-13-08-2022,isolet - baseline,0.05,2,,,,,,,,0.598,0.609,0.694,0.551
-13-08-2022,isolet - baseline,0.1,2,,,,,,,,0.729,0.775,0.794,0.632
-13-08-2022,isolet - baseline,0.2,2,,,,,,,,0.878,0.878,0.868,0.669
-13-08-2022,isolet - baseline,0.3,2,,,,,,,,0.92,0.899,0.881,0.682
-13-08-2022,isolet - baseline,0.5,2,,,,,,,,0.935,0.926,0.909,
-13-08-2022,isolet - dist_func_weights_calculator_using_dists_dict,0.02,2,,,,,,,,0.287,0.339,0.371,0.3
-13-08-2022,isolet - dist_func_weights_calculator_using_dists_dict,0.05,2,,,,,,,,0.407,0.581,0.561,0.537
-13-08-2022,isolet - dist_func_weights_calculator_using_dists_dict,0.1,2,,,,,,,,0.479,0.708,0.764,0.626
-13-08-2022,isolet - dist_func_weights_calculator_using_dists_dict,0.2,2,,,,,,,,0.601,0.843,0.87,0.666
-13-08-2022,isolet - dist_func_weights_calculator_using_dists_dict,0.3,2,,,,,,,,0.757,0.894,0.89,0.684
-13-08-2022,isolet - dist_func_weights_calculator_using_dists_dict,0.5,2,,,,,,,,0.926,0.92,0.906,
-13-08-2022,isolet - dist_func_weights_calculator_using_dm_dict,0.02,2,,,,,,,,0.379,0.42,0.485,0.433
-13-08-2022,isolet - dist_func_weights_calculator_using_dm_dict,0.05,2,,,,,,,,0.568,0.631,0.675,0.549
-13-08-2022,isolet - dist_func_weights_calculator_using_dm_dict,0.1,2,,,,,,,,0.739,0.781,0.798,0.616
-13-08-2022,isolet - dist_func_weights_calculator_using_dm_dict,0.2,2,,,,,,,,0.865,0.885,0.868,0.674
-13-08-2022,isolet - dist_func_weights_calculator_using_dm_dict,0.3,2,,,,,,,,0.914,0.898,0.886,0.68
-13-08-2022,isolet - dist_func_weights_calculator_using_dm_dict,0.5,2,,,,,,,,0.931,0.92,0.903,
 11-08-2022,isolet_w_dummy_features_1000,0.02,2,0.939,0.569,0.602,0.309,0.391,0.71,,0.645,0.655,0.677,0.542
 11-08-2022,isolet_w_dummy_features_1000,0.05,2,0.939,0.775,0.793,0.428,0.891,0.828,,0.853,0.852,0.847,0.75
 11-08-2022,isolet_w_dummy_features_1000,0.1,2,0.939,0.856,0.907,0.769,0.981,0.912,,0.908,0.907,0.904,0.858
-12-08-2022,isolet_w_dummy_features_1000,0.2,2,0.939,0.896,0.925,0.91,0.979,0.931,,0.929,0.928,0.932,0.914
-12-08-2022,isolet_w_dummy_features_1000,0.3,2,0.939,0.914,0.934,0.935,0.978,0.937,,0.937,0.936,0.938,0.926
-12-08-2022,isolet_w_dummy_features_1000,0.5,2,0.939,0.926,0.942,0.94,0.975,0.943,,0.943,0.942,0.945,
-12-08-2022,isolet_w_dummy_features_2000,0.02,2,0.933,0.377,0.779,0.748,0.506,0.815,,0.814,0.823,0.819,0.813
-12-08-2022,isolet_w_dummy_features_2000,0.05,2,0.933,0.733,0.907,0.896,0.981,0.912,,0.899,,,
 27/05/2022,ml_multiclass_classification_data,0.05,2,0.555,0.142,0.157,0.163,0.173,0.16,0.147,0.162,0.167,0.167,0.162
 27/05/2022,ml_multiclass_classification_data,0.1,2,0.555,0.167,0.188,0.199,0.205,0.216,0.146,0.191,0.183,0.183,0.191
 27/05/2022,ml_multiclass_classification_data,0.2,2,0.555,0.265,0.269,0.309,0.247,0.262,0.165,0.292,0.301,0.283,0.285
@@ -87,21 +37,3 @@ date,dataset,features_prc,dm_dim,all_features,random_features,fisher,relief,chi_
 29/05/2022,otto_balanced,0.2,2,0.764,0.477,0.411,0.34,0.562,0.628,0.197,0.459,0.483,0.496,0.459
 29/05/2022,otto_balanced,0.3,2,0.764,0.569,0.518,0.446,0.667,0.688,0.21,0.553,0.569,0.586,0.55
 29/05/2022,otto_balanced,0.5,2,0.764,0.675,0.672,0.611,0.726,0.74,0.225,0.657,0.682,0.685,0.5499
-13-08-2022,otto_balanced - baseline,0.02,2,,,,,,,,0.155,0.14,0.146,0.15
-13-08-2022,otto_balanced - baseline,0.05,2,,,,,,,,0.249,0.244,0.26,0.219
-13-08-2022,otto_balanced - baseline,0.1,2,,,,,,,,0.353,0.334,0.348,0.34
-13-08-2022,otto_balanced - baseline,0.2,2,,,,,,,,0.427,0.487,0.465,0.475
-13-08-2022,otto_balanced - baseline,0.3,2,,,,,,,,0.502,0.574,0.567,0.565
-13-08-2022,otto_balanced - baseline,0.5,2,,,,,,,,0.609,0.679,0.676,
-13-08-2022,otto_balanced - dist_func_weights_calculator_using_dists_dict,0.02,2,,,,,,,,0.16,0.14,0.141,0.16
-13-08-2022,otto_balanced - dist_func_weights_calculator_using_dists_dict,0.05,2,,,,,,,,0.257,0.247,0.271,0.265
-13-08-2022,otto_balanced - dist_func_weights_calculator_using_dists_dict,0.1,2,,,,,,,,0.352,0.338,0.361,0.312
-13-08-2022,otto_balanced - dist_func_weights_calculator_using_dists_dict,0.2,2,,,,,,,,0.428,0.481,0.483,0.467
-13-08-2022,otto_balanced - dist_func_weights_calculator_using_dists_dict,0.3,2,,,,,,,,0.51,0.575,0.562,0.577
-13-08-2022,otto_balanced - dist_func_weights_calculator_using_dists_dict,0.5,2,,,,,,,,0.599,0.674,0.671,
-13-08-2022,otto_balanced - dist_func_weights_calculator_using_dm_dict,0.02,2,,,,,,,,0.16,0.14,0.141,0.16
-13-08-2022,otto_balanced - dist_func_weights_calculator_using_dm_dict,0.05,2,,,,,,,,0.257,0.247,0.271,0.265
-13-08-2022,otto_balanced - dist_func_weights_calculator_using_dm_dict,0.1,2,,,,,,,,0.352,0.336,0.361,0.312
-13-08-2022,otto_balanced - dist_func_weights_calculator_using_dm_dict,0.2,2,,,,,,,,0.425,0.478,0.488,0.467
-13-08-2022,otto_balanced - dist_func_weights_calculator_using_dm_dict,0.3,2,,,,,,,,0.501,0.573,0.56,0.577
-13-08-2022,otto_balanced - dist_func_weights_calculator_using_dm_dict,0.5,2,,,,,,,,0.595,0.673,0.67,
