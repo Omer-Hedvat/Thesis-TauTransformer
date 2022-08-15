@@ -91,17 +91,15 @@ class TauTransformer:
                 cls_feature1 = classes[idx]
                 class_row = [
                     self.execute_distance_func(X_tr_norm, self.y, dist_func_name, feature_idx, cls_feature1, cls_feature2)
-                    if cls_feature1 != cls_feature2 else 0
                     for cls_feature2 in classes[idx + 1:]
                 ]
                 class_dist.append(class_row)
             distances.append(class_dist)
 
-        dists_dict = dict()
-        two_dim_matrix = [self.flatten(distances[idx]) for idx in range(len(distances))]
+        two_dim_matrix = [self.flatten(dist_mat) for dist_mat in distances]
         dists_arr = np.array([np.array(row) for row in two_dim_matrix])
+        dists_dict = {dist_func_name: dists_arr}
         # dist_dict = {f'feature_{idx + 1}': pd.DataFrame(mat) for idx, mat in enumerate(distances)}
-        dists_dict[dist_func_name] = dists_arr
         return dists_dict
 
     def features_reduction(self):
@@ -179,6 +177,7 @@ class TauTransformer:
                 f"""Ranking the {int((1 - self.features_to_reduce_prc) * 100)}% remain features using a combined coordinate matrix ('agg_corrdinates'), 
                 inserting 'agg_corrdinates' into a 2nd diffusion map and storing the 2nd diffusion map results into 'final_coordinates'"""
             )
+
         agg_coordinates = np.concatenate([val['coordinates'] for val in self.dm_dict.values()]).T
         final_dm_results = diffusion_mapping(agg_coordinates, self.alpha, self.eps_type, self.eps_factor, dim=self.dm_dim)
         self.best_features_idx, labels, features_rank = self.return_best_features_by_kmeans(final_dm_results['coordinates'])

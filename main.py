@@ -100,7 +100,7 @@ def run_experiments(config, api_params):
                 logger.info(f"chi_square accuracy result: {acc_result}%")
                 store_results(config['dataset_name'], feature_percentage, dm_dim, 'chi_square', chi2_acc_agg, chi2_f1_agg, classes, workdir, timer_chi2)
 
-            # mRMR Features
+            mRMR Features
             with Timer() as timer:
                 mrmr_acc_agg, mrmr_f1_agg = mrmr_predict(train_set, val_set, k, all_features, mrmr_acc_agg, mrmr_f1_agg)
             timer_mrmr.append(timer)
@@ -152,7 +152,7 @@ def main():
         'eps_factor': 25,
         'verbose': False,
         'random_state': 0,
-        'add_features_up_to': 2000
+        'add_features_up_to': 0
     }
 
     api_params = {
@@ -165,12 +165,12 @@ def main():
 
     # tuples of datasets names and target column name
     datasets = [
-        ('adware_balanced', 'label'), ('ml_multiclass_classification_data', 'target'), ('digits', 'label'), ('isolet', 'label'),
-        ('otto_balanced', 'target'), ('gene_data', 'label')
+        ('adware_balanced', 'label'), ('ml_multiclass_classification_data', 'target'), ('digits', 'label'),
+        ('isolet', 'label'), ('otto_balanced', 'target'), ('gene_data', 'label')
     ]
-    datasets = [('isolet', 'label')]
-    # config['features_percentage'] = [0.02, 0.05, 0.1, 0.2, 0.3]
-    # config['features_to_reduce_prc'] = [0.0, 0.2, 0.35, 0.5]
+    datasets = [('adware_balanced', 'label')]
+    config['features_percentage'] = [0.02, 0.05, 0.1, 0.2, 0.3]
+    config['features_to_reduce_prc'] = [0.0, 0.2, 0.35, 0.5]
 
     for dataset, label in datasets:
         config['dataset_name'] = dataset
