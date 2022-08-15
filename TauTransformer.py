@@ -91,17 +91,15 @@ class TauTransformer:
                 cls_feature1 = classes[idx]
                 class_row = [
                     self.execute_distance_func(X_tr_norm, self.y, dist_func_name, feature_idx, cls_feature1, cls_feature2)
-                    if cls_feature1 != cls_feature2 else 0
                     for cls_feature2 in classes[idx + 1:]
                 ]
                 class_dist.append(class_row)
             distances.append(class_dist)
 
-        dists_dict = dict()
-        two_dim_matrix = [self.flatten(distances[idx]) for idx in range(len(distances))]
+        two_dim_matrix = [self.flatten(dist_mat) for dist_mat in distances]
         dists_arr = np.array([np.array(row) for row in two_dim_matrix])
+        dists_dict = {dist_func_name: dists_arr}
         # dist_dict = {f'feature_{idx + 1}': pd.DataFrame(mat) for idx, mat in enumerate(distances)}
-        dists_dict[dist_func_name] = dists_arr
         return dists_dict
 
     def features_reduction(self):
@@ -131,29 +129,6 @@ class TauTransformer:
         features_to_keep_idx = np.sort(np.argsort(arr_avg)[num_features_to_reduce:])
         features_to_reduce_idx = list(set(range(len(self.all_features))).difference(features_to_keep_idx))
         return features_to_keep_idx, features_to_reduce_idx
-
-    @staticmethod
-    def row_variance(data):
-        means = [row.mean() for row in data]
-        squared_errors = [(row - mean) ** 2 for row, mean in zip(data, means)]
-        variances = [row.mean() for row in squared_errors]
-        return np.mean(variances)
-
-    def dist_func_weights_calculator_using_DM_var_average(self):
-        """
-        """
-        vars = {dist_func: self.row_variance(vals['coordinates']) for dist_func, vals in self.dm_dict.items()}
-        var_sum = np.sum(list(vars.values()))
-        weights = {dist_func: (var/var_sum) for dist_func, var in vars.items()}
-        return weights
-
-    def dist_func_weights_calculator_using_distance_var_average(self):
-        """
-        """
-        vars = {dist_func: self.row_variance(vals) for dist_func, vals in self.dists_dict.items()}
-        var_sum = np.sum(list(vars.values()))
-        weights = {dist_func: (var/var_sum) for dist_func, var in vars.items()}
-        return weights
 
     def return_best_features_by_kmeans(self, coordinates):
         features_rank = np.argsort(coordinates[0])
@@ -203,13 +178,7 @@ class TauTransformer:
                 inserting 'agg_corrdinates' into a 2nd diffusion map and storing the 2nd diffusion map results into 'final_coordinates'"""
             )
 
-        dist_func_weights = self.dist_func_weights_calculator_using_distance_var_average()
-        # dist_func_weights = self.dist_func_weights_calculator_using_DM_var_average()
-        agg_coordinates = np.concatenate(
-            [val['coordinates'] * dist_func_weights[dist_func] for dist_func, val in self.dm_dict.items()]
-        ).T
-        # agg_coordinates = np.concatenate([val['coordinates'] for val in self.dm_dict.values()]).T
-
+        agg_coordinates = np.concatenate([val['coordinates'] for val in self.dm_dict.values()]).T
         final_dm_results = diffusion_mapping(agg_coordinates, self.alpha, self.eps_type, self.eps_factor, dim=self.dm_dim)
         self.best_features_idx, labels, features_rank = self.return_best_features_by_kmeans(final_dm_results['coordinates'])
         self.best_features = self.all_features[self.best_features_idx]
