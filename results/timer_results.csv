@@ -1,20 +1,38 @@
 date,dataset,features_prc,dm_dim,all_features,random_features,fisher,relief,chi_square,mrmr,shirs_algo,kmeans_0.0,kmeans_0.2,kmeans_0.35,kmeans_0.5
 10-08-2022,adware_balanced,0.02,2,,,,,,,,5.885,6.144,6.187,6.123
 12-08-2022,adware_balanced,0.02,2,,,,,,,,7.113,8.39,8.05,8.535
+11-09-2022,adware_balanced - wasserstein dist only,0.02,2,,,,,,,,1.51,0.97,3.059,1.98
 10-08-2022,adware_balanced,0.05,2,,,,,,,,6.237,6.17,6.246,6.185
 12-08-2022,adware_balanced,0.05,2,,,,,,,,8.995,12.531,12.596,9.616
+11-09-2022,adware_balanced - wasserstein dist only,0.05,2,,,,,,,,1.88,1.962,2.7,1.914
 10-08-2022,adware_balanced,0.1,2,,,,,,,,6.367,6.244,6.203,6.29
 12-08-2022,adware_balanced,0.1,2,,,,,,,,10.418,11.337,9.957,10.195
+11-09-2022,adware_balanced - wasserstein dist only,0.1,2,,,,,,,,2.27,2.864,2.949,2.552
 10-08-2022,adware_balanced,0.2,2,,,,,,,,6.279,6.338,6.389,6.355
 12-08-2022,adware_balanced,0.2,2,,,,,,,,10.36,10.753,12.061,14.895
+11-09-2022,adware_balanced - wasserstein dist only,0.2,2,,,,,,,,2.968,3.324,3.341,3.654
 10-08-2022,adware_balanced,0.3,2,,,,,,,,6.34,6.551,6.388,6.461
 12-08-2022,adware_balanced,0.3,2,,,,,,,,10.879,10.947,11.534,11.405
+11-09-2022,adware_balanced - wasserstein dist only,0.3,2,,,,,,,,3.893,4.063,4.098,4.338
 12-08-2022,adware_balanced,0.5,2,,,,,,,,12.335,12.178,13.094,
+11-09-2022,adware_balanced - wasserstein dist only,0.5,2,,,,,,,,5.279,5.422,5.209,
 08-08-2022,adware_balanced - dm parallel,0.02,2,,,,,,,,6.987,7.678,8.023,7.733
 08-08-2022,adware_balanced - dm parallel,0.05,2,,,,,,,,9.013,9.288,8.898,8.085
 08-08-2022,adware_balanced - dm parallel,0.1,2,,,,,,,,8.173,8.086,7.742,7.758
 08-08-2022,adware_balanced - dm parallel,0.2,2,,,,,,,,7.733,7.659,7.756,7.915
 08-08-2022,adware_balanced - dm parallel,0.3,2,,,,,,,,7.957,7.933,,12.495
+11-09-2022,adware_balanced - hellinger dist only,0.02,2,,,,,,,,2.227,1.543,2.249,1.936
+11-09-2022,adware_balanced - hellinger dist only,0.05,2,,,,,,,,2.191,3.514,3.394,2.682
+11-09-2022,adware_balanced - hellinger dist only,0.1,2,,,,,,,,4.29,4.094,3.706,3.535
+11-09-2022,adware_balanced - hellinger dist only,0.2,2,,,,,,,,4.136,5.126,4.478,4.41
+11-09-2022,adware_balanced - hellinger dist only,0.3,2,,,,,,,,4.571,4.679,5.081,5.352
+11-09-2022,adware_balanced - hellinger dist only,0.5,2,,,,,,,,8.196,11.102,8.149,
+11-09-2022,adware_balanced - jm dist only,0.02,2,,,,,,,,1.917,0.702,1.378,1.859
+11-09-2022,adware_balanced - jm dist only,0.05,2,,,,,,,,2.096,1.987,1.948,2.181
+11-09-2022,adware_balanced - jm dist only,0.1,2,,,,,,,,3.069,2.596,3.088,2.973
+11-09-2022,adware_balanced - jm dist only,0.2,2,,,,,,,,3.587,3.656,3.614,5.596
+11-09-2022,adware_balanced - jm dist only,0.3,2,,,,,,,,7.536,4.972,9.159,6.347
+11-09-2022,adware_balanced - jm dist only,0.5,2,,,,,,,,5.477,5.062,5.843,
 07/08/2022,adware_balanced - n^2,0.02,2,4.51,0.441,6.783,3.722,0.484,0.703,3.655,12.139,18.043,14.733,10.789
 07/08/2022,adware_balanced - n^2,0.05,2,4.51,1.755,8.536,4.734,1.055,2.794,5.046,13.834,15.168,13.142,16.396
 07/08/2022,adware_balanced - n^2,0.1,2,4.51,2.221,7.717,4.831,1.912,2.981,5.608,12.025,11.997,12.197,12.031
@@ -25,6 +43,43 @@ date,dataset,features_prc,dm_dim,all_features,random_features,fisher,relief,chi_
 07-08-2022,adware_balanced - nlogn,0.1,2,4.526,2.199,7.527,4.733,1.937,2.855,5.255,9.946,10.176,10.432,10.179
 07-08-2022,adware_balanced - nlogn,0.2,2,4.526,3.004,8.177,5.133,3.003,3.727,5.816,10.634,10.815,10.638,10.921
 07-08-2022,adware_balanced - nlogn,0.3,2,4.526,3.307,8.84,5.672,3.787,4.43,6.898,11.172,11.116,11.256,11.485
+11-09-2022,digits - wasserstein dist only,0.02,2,,,,,,,,3.762,3.809,3.589,3.501
+11-09-2022,digits - wasserstein dist only,0.05,2,,,,,,,,3.91,3.827,3.806,3.797
+11-09-2022,digits - wasserstein dist only,0.1,2,,,,,,,,4.167,4.153,4.392,4.221
+11-09-2022,digits - wasserstein dist only,0.2,2,,,,,,,,4.729,4.833,4.961,4.906
+11-09-2022,digits - wasserstein dist only,0.3,2,,,,,,,,5.084,5.275,5.454,5.454
+11-09-2022,digits - wasserstein dist only,0.5,2,,,,,,,,6.07,6.262,6.512,
+11-09-2022,digits - hellinger dist only,0.02,2,,,,,,,,6.249,5.146,5.04,5.696
+11-09-2022,digits - hellinger dist only,0.05,2,,,,,,,,6.267,6.528,5.983,6.511
+11-09-2022,digits - hellinger dist only,0.1,2,,,,,,,,6.106,5.117,5.74,6.578
+11-09-2022,digits - hellinger dist only,0.2,2,,,,,,,,6.675,5.974,6.163,6.644
+11-09-2022,digits - hellinger dist only,0.3,2,,,,,,,,7.632,6.011,9.565,8.409
+11-09-2022,digits - hellinger dist only,0.5,2,,,,,,,,8.278,14.933,15.569,
+11-09-2022,digits - jm dist only,0.02,2,,,,,,,,7.162,6.429,6.535,6.778
+11-09-2022,digits - jm dist only,0.05,2,,,,,,,,5.818,6.094,6.193,6.08
+11-09-2022,digits - jm dist only,0.1,2,,,,,,,,6.138,6.329,6.76,7.487
+11-09-2022,digits - jm dist only,0.2,2,,,,,,,,7.578,8.738,9.449,8.238
+11-09-2022,digits - jm dist only,0.3,2,,,,,,,,7.525,7.033,8.796,7.024
+11-09-2022,digits - jm dist only,0.5,2,,,,,,,,8.683,9.274,9.668,
+11-09-2022,isolet - wasserstein dist only,0.02,2,,,,,,,,31.452,32.039,32.639,33.391
+11-09-2022,isolet - wasserstein dist only,0.05,2,,,,,,,,33.506,34.321,34.687,35.681
+11-09-2022,isolet - wasserstein dist only,0.1,2,,,,,,,,36.286,37.497,37.152,39.272
+11-09-2022,isolet - wasserstein dist only,0.2,2,,,,,,,,40.698,43.008,43.217,45.959
+11-09-2022,isolet - wasserstein dist only,0.3,2,,,,,,,,44.152,46.296,47.493,49.66
+11-09-2022,isolet - wasserstein dist only,0.5,2,,,,,,,,51.395,,,
+12-09-2022,isolet - wasserstein dist only,0.5,2,,,,,,,,,52.742,53.638,
+11-09-2022,isolet - hellinger dist only,0.02,2,,,,,,,,37.369,37.409,35.873,35.722
+11-09-2022,isolet - hellinger dist only,0.05,2,,,,,,,,41.174,37.619,37.678,39.52
+11-09-2022,isolet - hellinger dist only,0.1,2,,,,,,,,45.1,42.269,41.514,43.598
+11-09-2022,isolet - hellinger dist only,0.2,2,,,,,,,,54.324,45.75,47.235,49.371
+11-09-2022,isolet - hellinger dist only,0.3,2,,,,,,,,57.238,50.123,50.708,53.614
+11-09-2022,isolet - hellinger dist only,0.5,2,,,,,,,,59.82,56.678,59.387,
+11-09-2022,isolet - jm dist only,0.02,2,,,,,,,,36.806,41.233,49.639,47.129
+11-09-2022,isolet - jm dist only,0.05,2,,,,,,,,44.884,52.614,54.753,51.93
+11-09-2022,isolet - jm dist only,0.1,2,,,,,,,,43.688,52.696,47.907,66.664
+11-09-2022,isolet - jm dist only,0.2,2,,,,,,,,44.811,46.323,52.144,51.884
+11-09-2022,isolet - jm dist only,0.3,2,,,,,,,,46.791,49.294,53.409,55.94
+11-09-2022,isolet - jm dist only,0.5,2,,,,,,,,54.779,55.771,57.895,
 11-08-2022,isolet_w_dummy_features_1000,0.02,2,65.079,9.995,15.033,63.679,5.126,14.873,,98.946,97.988,98.341,100.725
 11-08-2022,isolet_w_dummy_features_1000,0.05,2,65.079,15.994,19.335,65.893,5.79,29.851,,101.837,98.981,101.317,105.773
 11-08-2022,isolet_w_dummy_features_1000,0.1,2,65.079,20.036,21.761,67.53,10.078,51.491,,105.69,107.517,103.775,108.956
@@ -33,4 +88,37 @@ date,dataset,features_prc,dm_dim,all_features,random_features,fisher,relief,chi_
 12-08-2022,isolet_w_dummy_features_1000,0.5,2,65.079,46.252,43.455,94.013,33.593,208.207,,130.234,128.804,128.969,
 12-08-2022,isolet_w_dummy_features_2000,0.02,2,116.616,21.036,19.528,140.472,6.457,35.916,,186.352,174.779,171.785,169.122
 12-08-2022,isolet_w_dummy_features_2000,0.05,2,116.616,26.413,24.736,159.521,12.006,85.786,,265.397,,,
+11-09-2022,ml_multiclass_classification_data - wasserstein dist only,0.05,2,,,,,,,,0.578,0.538,0.564,0.538
+11-09-2022,ml_multiclass_classification_data - wasserstein dist only,0.1,2,,,,,,,,0.531,0.601,0.521,0.519
+11-09-2022,ml_multiclass_classification_data - wasserstein dist only,0.2,2,,,,,,,,0.597,0.596,0.567,0.571
+11-09-2022,ml_multiclass_classification_data - wasserstein dist only,0.3,2,,,,,,,,0.577,0.575,0.57,0.57
+11-09-2022,ml_multiclass_classification_data - wasserstein dist only,0.5,2,,,,,,,,0.64,0.627,0.626,
+11-09-2022,ml_multiclass_classification_data - hellinger dist only,0.05,2,,,,,,,,0.778,0.584,0.546,0.606
+11-09-2022,ml_multiclass_classification_data - hellinger dist only,0.1,2,,,,,,,,0.73,0.551,0.538,0.549
+11-09-2022,ml_multiclass_classification_data - hellinger dist only,0.2,2,,,,,,,,0.6,0.712,0.63,0.673
+11-09-2022,ml_multiclass_classification_data - hellinger dist only,0.3,2,,,,,,,,0.967,0.698,0.861,0.988
+11-09-2022,ml_multiclass_classification_data - hellinger dist only,0.5,2,,,,,,,,0.657,0.684,0.673,
+11-09-2022,ml_multiclass_classification_data - jm dist only,0.05,2,,,,,,,,1.26,0.567,0.648,0.885
+11-09-2022,ml_multiclass_classification_data - jm dist only,0.1,2,,,,,,,,0.849,0.94,0.673,0.668
+11-09-2022,ml_multiclass_classification_data - jm dist only,0.2,2,,,,,,,,0.65,0.785,1.11,0.835
+11-09-2022,ml_multiclass_classification_data - jm dist only,0.3,2,,,,,,,,0.917,0.753,0.667,0.683
+11-09-2022,ml_multiclass_classification_data - jm dist only,0.5,2,,,,,,,,0.805,0.695,0.719,
+12-09-2022,otto_balanced - wasserstein dist only,0.02,2,,,,,,,,1.59,1.628,1.582,1.605
+12-09-2022,otto_balanced - wasserstein dist only,0.05,2,,,,,,,,2.035,1.958,1.994,1.904
 05/08/2022,otto_balanced,0.1,2,1.814,0.664,0.711,0.795,0.637,1.094,6.858,14.511,16.592,14.73,14.614
+12-09-2022,otto_balanced - wasserstein dist only,0.1,2,,,,,,,,2.783,2.805,2.665,2.58
+12-09-2022,otto_balanced - wasserstein dist only,0.2,2,,,,,,,,3.476,3.576,3.513,3.459
+12-09-2022,otto_balanced - wasserstein dist only,0.3,2,,,,,,,,3.795,3.947,3.876,3.926
+12-09-2022,otto_balanced - wasserstein dist only,0.5,2,,,,,,,,4.06,4.212,4.022,
+11-09-2022,otto_balanced - hellinger dist only,0.02,2,,,,,,,,2.008,2.073,2.062,2.011
+11-09-2022,otto_balanced - hellinger dist only,0.05,2,,,,,,,,2.722,4.833,4.94,2.79
+11-09-2022,otto_balanced - hellinger dist only,0.1,2,,,,,,,,6.864,4.065,3.273,3.214
+11-09-2022,otto_balanced - hellinger dist only,0.2,2,,,,,,,,3.834,4.07,3.969,3.956
+11-09-2022,otto_balanced - hellinger dist only,0.3,2,,,,,,,,4.62,4.271,4.782,5.031
+11-09-2022,otto_balanced - hellinger dist only,0.5,2,,,,,,,,4.855,4.654,4.779,
+11-09-2022,otto_balanced - jm dist only,0.02,2,,,,,,,,1.308,1.358,1.358,1.363
+11-09-2022,otto_balanced - jm dist only,0.05,2,,,,,,,,1.66,1.693,1.711,1.745
+11-09-2022,otto_balanced - jm dist only,0.1,2,,,,,,,,2.163,2.558,2.281,2.986
+11-09-2022,otto_balanced - jm dist only,0.2,2,,,,,,,,3.158,3.278,3.199,3.191
+11-09-2022,otto_balanced - jm dist only,0.3,2,,,,,,,,3.56,3.63,3.506,3.657
+11-09-2022,otto_balanced - jm dist only,0.5,2,,,,,,,,3.962,4.091,3.978,
