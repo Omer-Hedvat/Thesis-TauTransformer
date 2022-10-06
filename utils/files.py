@@ -225,7 +225,7 @@ def read_from_csv(filepath, config):
     else:
         data = pd.read_csv(filepath)
 
-    # Encode label column if needed
+    # Encode target column if needed
     if data[config['label_column']].dtype == 'object':
         le = preprocessing.LabelEncoder()
         data[config['label_column']] = le.fit_transform(data[config['label_column']])
@@ -235,9 +235,11 @@ def read_from_csv(filepath, config):
     elif data[config['label_column']].dtype == 'float':
         data[config['label_column']] = data[config['label_column']].astype('int')
 
+    # Change target column to 'label'
     if config['label_column'] != 'label':
         data.rename(columns={config['label_column']: 'label'}, inplace=True)
 
+    # Add features if needed
     if config.get('add_features_up_to', 0) > data.shape[1]:
         additional_columns = config.get('add_features_up_to', 0) - data.shape[1]
         dummy_features_list = Parallel(n_jobs=-1)(
