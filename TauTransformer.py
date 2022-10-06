@@ -7,7 +7,6 @@ from sklearn.cluster import KMeans
 
 from utils.diffusion_maps import diffusion_mapping
 from utils.distances import wasserstein_dist, bhattacharyya_dist, hellinger_dist, jm_dist
-from utils.machine_learning import min_max_scaler
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +81,6 @@ class TauTransformer:
         df_dists - a flattened df of all features (each feature is a row)
         dist_dict - a dictionary of feature names & dataframes (e.g. {'feature_1': feature_1_df, ...}
         """
-        X_tr_norm = min_max_scaler(self.X, self.all_features)
         distances = []
         classes = np.unique(self.y)
         for feature_idx in range(len(self.all_features)):
@@ -90,7 +88,7 @@ class TauTransformer:
             for idx in range(len(classes)):
                 cls_feature1 = classes[idx]
                 class_row = [
-                    self.execute_distance_func(X_tr_norm, self.y, dist_func_name, feature_idx, cls_feature1, cls_feature2)
+                    self.execute_distance_func(self.X, self.y, dist_func_name, feature_idx, cls_feature1, cls_feature2)
                     for cls_feature2 in classes[idx + 1:]
                 ]
                 class_dist.append(class_row)
@@ -179,7 +177,7 @@ class TauTransformer:
             )
 
         agg_coordinates = np.concatenate([val['coordinates'] for val in self.dm_dict.values()]).T
-        final_dm_results = diffusion_mapping(agg_coordinates, self.alpha, self.eps_type, self.eps_factor, dim=self.dm_dim)
+        final_dm_results = diffusion_mapping(agg_coordinates, self.alpha, self.eps_type, self.eps_factor, dim=self.dm_dim) if len(self.dist_functions) > 1 else agg_coordinates
         self.best_features_idx, labels, features_rank = self.return_best_features_by_kmeans(final_dm_results['coordinates'])
         self.best_features = self.all_features[self.best_features_idx]
         if self.verbose:
