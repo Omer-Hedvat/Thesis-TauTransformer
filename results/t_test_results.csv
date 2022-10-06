@@ -1,4 +1,12 @@
 dataset,random_features_vs_kmeans_0.0,random_features_vs_kmeans_0.2,random_features_vs_kmeans_0.35,random_features_vs_kmeans_0.5,fisher_vs_kmeans_0.0,fisher_vs_kmeans_0.2,fisher_vs_kmeans_0.35,fisher_vs_kmeans_0.5,relief_vs_kmeans_0.0,relief_vs_kmeans_0.2,relief_vs_kmeans_0.35,relief_vs_kmeans_0.5,chi_square_vs_kmeans_0.0,chi_square_vs_kmeans_0.2,chi_square_vs_kmeans_0.35,chi_square_vs_kmeans_0.5,mrmr_vs_kmeans_0.0,mrmr_vs_kmeans_0.2,mrmr_vs_kmeans_0.35,mrmr_vs_kmeans_0.5,shirs_algo_vs_kmeans_0.0,shirs_algo_vs_kmeans_0.2,shirs_algo_vs_kmeans_0.35,shirs_algo_vs_kmeans_0.5
+otto_balanced,0.7371577282745889,0.9799693555975083,0.9560164596898799,,0.006386134443061008,9.953496144418312e-05,0.00018801046596936323,,8.389370930275107e-05,1.402123309030449e-06,2.182886687079915e-06,,0.9994163513667249,0.9989950116757786,0.9987230471168514,,,,,,,,,
+otto,0.0013809020451274,0.1759849657730985,0.0050197864709958,,0.0660656753438563,0.9839172008547004,0.6797086113471692,,0.0011620234374462,0.0003685050647837,0.0003300368596678,,0.9995554992089144,0.9997277108088832,0.9996571061219396,,,,,,,,,
+adware,0.1159020828366514,0.3197047680689727,0.4726078223147471,,0.0813453963898248,0.4429880368804174,0.6809948411189163,,0.3004120607777606,0.8640311362759303,0.9857090947403496,,0.999999916334824,0.9999999903603116,0.9999999023822804,,,,,,,,,
+otto_balanced,,,,,,,,,,,,,,,,,,,,,,,,
+isolet,,,,,,,,,,,,,,,,,,,,,,,,
+digits,,,,,,,,,,,,,,,,,,,,,,,,
+ml_multiclass_classification_data,,,,,,,,,,,,,,,,,,,,,,,,
+adware_balanced,,,,,,,,,,,,,,,,,,,,,,,,
 otto_balanced,,,,,,,,,,,,,,,,,,,,,,,,
 isolet,,,,,,,,,,,,,,,,,,,,,,,,
 digits,,,,,,,,,,,,,,,,,,,,,,,,
