@@ -85,11 +85,11 @@ class TauTransformer:
         classes = np.unique(self.y)
         for feature_idx in range(len(self.all_features)):
             class_dist = []
-            for idx in range(len(classes)):
-                cls_feature1 = classes[idx]
+            for class_idx in range(len(classes)):
+                cls_feature1 = classes[class_idx]
                 class_row = [
                     self.execute_distance_func(self.X, self.y, dist_func_name, feature_idx, cls_feature1, cls_feature2)
-                    for cls_feature2 in classes[idx + 1:]
+                    for cls_feature2 in classes[class_idx + 1:]
                 ]
                 class_dist.append(class_row)
             distances.append(class_dist)
@@ -97,7 +97,7 @@ class TauTransformer:
         two_dim_matrix = [self.flatten(dist_mat) for dist_mat in distances]
         dists_arr = np.array([np.array(row) for row in two_dim_matrix])
         dists_dict = {dist_func_name: dists_arr}
-        # dist_dict = {f'feature_{idx + 1}': pd.DataFrame(mat) for idx, mat in enumerate(distances)}
+        # dist_dict = {f'feature_{class_idx + 1}': pd.DataFrame(mat) for class_idx, mat in enumerate(distances)}
         return dists_dict
 
     def features_reduction(self):
