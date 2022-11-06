@@ -13,16 +13,18 @@ logger = logging.getLogger(__name__)
 
 class TauTransformer:
     def __init__(
-            self, feature_percentage, features_to_reduce_prc, dist_functions, dm_dim=2, alpha=1, eps_type='maxmin', eps_factor=25,
-            random_state=0, verbose=False
+            self, feature_percentage, features_to_reduce_prc, dist_functions, dm_dim=2, min_feature_std=0, alpha=1,
+            eps_type='maxmin', eps_factor=25, random_state=0, verbose=False
     ):
         self.X = None
         self.y = None
+        self.low_std_features = None
         self.feature_percentage = feature_percentage
         self.features_to_reduce_prc = features_to_reduce_prc
         self.dist_functions = dist_functions
 
         self.dm_dim = dm_dim
+        self.min_feature_std = min_feature_std
         self.alpha = alpha
         self.eps_type = eps_type
         self.eps_factor = eps_factor
@@ -71,6 +73,13 @@ class TauTransformer:
     @staticmethod
     def percentage_calculator(features, prc):
         return int(len(features) * prc)
+
+    def drop_low_std_features(self):
+        stds = self.X.std(axis=0)
+        low_std_feature_indexes = np.where(stds <= self.min_feature_std)[0].tolist()
+        self.low_std_features = self.all_features[low_std_feature_indexes]
+        self.all_features = self.all_features.delete(low_std_feature_indexes)
+        self.X = np.delete(self.X, low_std_feature_indexes, axis=1)
 
     def calc_dist(self, dist_func_name):
         """
@@ -129,6 +138,13 @@ class TauTransformer:
         return features_to_keep_idx, features_to_reduce_idx
 
     def return_best_features_by_kmeans(self, coordinates):
+        """
+        runs K-means algorithm over the coordinates and returns the best features.
+        In each centroid we pick the feature with the smallest value in the X axis (the first axis in coordinates)
+        :param coordinates: a 2-dim array with the coordinates from the diffusion maps
+        :return: 3 lists. 'best_features_idx' - best features indexes list, 'labels' - the K-means labels
+        & 'features_rank' - the features ranked by the smallest value of coordinates first axis
+        """
         features_rank = np.argsort(coordinates[0])
         kmeans = KMeans(n_clusters=self.k, random_state=self.random_state)
         labels = kmeans.fit(coordinates.T).labels_
@@ -144,6 +160,8 @@ class TauTransformer:
         self.all_features = X.columns
         self.X = np.asarray(X)
         self.y = np.asarray(y)
+
+        self.drop_low_std_features()
 
         if self.verbose:
             logger.info(f"Calculating distances for {', '.join(self.dist_functions)}")
