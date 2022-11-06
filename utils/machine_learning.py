@@ -24,9 +24,10 @@ def min_max_scaler(arr1, features, arr2=None, return_as_df=False):
     from sklearn.preprocessing import MinMaxScaler
 
     scaler = MinMaxScaler()
-    arr1_norm = scaler.fit_transform(arr1)
+    arr1_norm = scaler.fit_transform(arr1[features])
     if return_as_df:
         arr1_norm = pd.DataFrame(arr1_norm, columns=features)
+        arr1_norm['label'] = arr1['label']
     if arr2 is not None:
         arr2_norm = scaler.transform(arr2)
         if return_as_df:

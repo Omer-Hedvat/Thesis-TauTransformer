@@ -6,7 +6,7 @@ import os
 from TauTransformer import TauTransformer
 from utils.files import create_work_dir, read_from_csv, print_separation_dots, store_results, all_results_colorful, generate_and_save_scatter_plots
 from utils.general import setup_logger, lists_avg, calc_k, arrange_data_features
-from utils.machine_learning import t_test, kfolds_split
+from utils.machine_learning import t_test, kfolds_split, min_max_scaler
 from utils.machine_learning import (
     predict, random_features_predict, fisher_ranks_predict, relieff_predict, chi_square_predict, mrmr_predict)
 from utils.timer import Timer
@@ -115,10 +115,11 @@ def run_experiments(config, api_params):
                 continue
             print_separation_dots(f'features to reduce heuristic of {int(features_to_reduce_prc*100)}%')
 
+            data_norm = min_max_scaler(data, all_features, return_as_df=True)
             kmeans_acc_agg, kmeans_f1_agg, timer_tau_trans = [], [], []
             for kfold_iter in range(1, config['kfolds'] + 1):
                 final_kf_iter = kfold_iter == config['kfolds']
-                train_set, val_set = kfolds_split(data, kfold_iter, n_splits=config['kfolds'], random_state=0)
+                train_set, val_set = kfolds_split(data_norm, kfold_iter, n_splits=config['kfolds'], random_state=0)
                 X_train, y_train, X_test, y_test = arrange_data_features(train_set, val_set, all_features)
 
                 with Timer() as timer:
