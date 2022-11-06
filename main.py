@@ -100,7 +100,7 @@ def run_experiments(config, api_params):
                 logger.info(f"chi_square accuracy result: {acc_result}%")
                 store_results(config['dataset_name'], feature_percentage, dm_dim, 'chi_square', chi2_acc_agg, chi2_f1_agg, classes, workdir, timer_chi2)
 
-            mRMR Features
+            # mRMR Features
             with Timer() as timer:
                 mrmr_acc_agg, mrmr_f1_agg = mrmr_predict(train_set, val_set, k, all_features, mrmr_acc_agg, mrmr_f1_agg)
             timer_mrmr.append(timer)
