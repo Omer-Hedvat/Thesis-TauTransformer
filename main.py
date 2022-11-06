@@ -48,66 +48,66 @@ def run_experiments(config, api_params):
                     )
 
         # Init results lists
-        print_separation_dots(f'Starting baseline heuristics using: random features, Fisher score, ReliefF selection, Chi-square Test selection &  & mRMR for {k} features out of {len(all_features)}')
-        random_acc_agg, random_f1_agg, timer_random = [], [], []
-        fisher_acc_agg, fisher_f1_agg, timer_fisher = [], [], []
-        relief_acc_agg, relief_f1_agg, timer_relief = [], [], []
-        chi2_acc_agg, chi2_f1_agg, timer_chi2 = [], [], []
-        mrmr_acc_agg, mrmr_f1_agg, timer_mrmr = [], [], []
-        for kfold_iter in range(1, config['kfolds'] + 1):
-            final_kf_iter = kfold_iter == config['kfolds']
-            train_set, val_set = kfolds_split(data, kfold_iter, n_splits=config['kfolds'], random_state=config['random_state'])
-
-            # Storing the results we've calculated earlier for all_features
-            if final_kf_iter:
-                acc_result = round(lists_avg(all_features_acc_agg)*100, 2)
-                logger.info(f"all_features accuracy result: {acc_result}%")
-                store_results(config['dataset_name'], feature_percentage, dm_dim, 'all_features', all_features_acc_agg, all_features_f1_agg, classes, workdir, timer_all_features)
-
-            # Random Features
-            with Timer() as timer:
-                random_acc_agg, random_f1_agg = random_features_predict(train_set, val_set, k, all_features, random_acc_agg, random_f1_agg, config['random_state'])
-            timer_random.append(timer)
-            if final_kf_iter:
-                acc_result = round(lists_avg(random_acc_agg) * 100, 2)
-                logger.info(f"random_features accuracy result: {acc_result}%")
-                store_results(config['dataset_name'], feature_percentage, dm_dim, 'random_features', random_acc_agg, random_f1_agg, classes, workdir, timer_random)
-
-            # Fisher Score Features
-            with Timer() as timer:
-                fisher_acc_agg, fisher_f1_agg = fisher_ranks_predict(train_set, val_set, k, all_features, fisher_acc_agg, fisher_f1_agg)
-            timer_fisher.append(timer)
-            if final_kf_iter:
-                acc_result = round(lists_avg(fisher_acc_agg) * 100, 2)
-                logger.info(f"fisher_score accuracy result: {acc_result}%")
-                store_results(config['dataset_name'], feature_percentage, dm_dim, 'fisher', fisher_acc_agg, fisher_f1_agg, classes, workdir, timer_fisher)
-
-            # ReliefF Features
-            with Timer() as timer:
-                relief_acc_agg, relief_f1_agg = relieff_predict(train_set, val_set, k, all_features, relief_acc_agg, relief_f1_agg)
-            timer_relief.append(timer)
-            if final_kf_iter:
-                acc_result = round(lists_avg(relief_acc_agg) * 100, 2)
-                logger.info(f"Relief accuracy result: {acc_result}%")
-                store_results(config['dataset_name'], feature_percentage, dm_dim, 'relief', relief_acc_agg, relief_f1_agg, classes, workdir, timer_relief)
-
-            # Chi Square Features
-            with Timer() as timer:
-                chi2_acc_agg, chi2_f1_agg = chi_square_predict(train_set, val_set, k, all_features, chi2_acc_agg, chi2_f1_agg)
-            timer_chi2.append(timer)
-            if final_kf_iter:
-                acc_result = round(lists_avg(chi2_acc_agg) * 100, 2)
-                logger.info(f"chi_square accuracy result: {acc_result}%")
-                store_results(config['dataset_name'], feature_percentage, dm_dim, 'chi_square', chi2_acc_agg, chi2_f1_agg, classes, workdir, timer_chi2)
-
-            # mRMR Features
-            with Timer() as timer:
-                mrmr_acc_agg, mrmr_f1_agg = mrmr_predict(train_set, val_set, k, all_features, mrmr_acc_agg, mrmr_f1_agg)
-            timer_mrmr.append(timer)
-            if final_kf_iter:
-                acc_result = round(lists_avg(mrmr_acc_agg) * 100, 2)
-                logger.info(f"mRMR accuracy result: {acc_result}%")
-                store_results(config['dataset_name'], feature_percentage, dm_dim, 'mrmr', mrmr_acc_agg, mrmr_f1_agg, classes, workdir, timer_mrmr)
+        # print_separation_dots(f'Starting baseline heuristics using: random features, Fisher score, ReliefF selection, Chi-square Test selection &  & mRMR for {k} features out of {len(all_features)}')
+        # random_acc_agg, random_f1_agg, timer_random = [], [], []
+        # fisher_acc_agg, fisher_f1_agg, timer_fisher = [], [], []
+        # relief_acc_agg, relief_f1_agg, timer_relief = [], [], []
+        # chi2_acc_agg, chi2_f1_agg, timer_chi2 = [], [], []
+        # mrmr_acc_agg, mrmr_f1_agg, timer_mrmr = [], [], []
+        # for kfold_iter in range(1, config['kfolds'] + 1):
+        #     final_kf_iter = kfold_iter == config['kfolds']
+        #     train_set, val_set = kfolds_split(data, kfold_iter, n_splits=config['kfolds'], random_state=config['random_state'])
+        #
+        #     # Storing the results we've calculated earlier for all_features
+        #     if final_kf_iter:
+        #         acc_result = round(lists_avg(all_features_acc_agg)*100, 2)
+        #         logger.info(f"all_features accuracy result: {acc_result}%")
+        #         store_results(config['dataset_name'], feature_percentage, dm_dim, 'all_features', all_features_acc_agg, all_features_f1_agg, classes, workdir, timer_all_features)
+        #
+        #     # Random Features
+        #     with Timer() as timer:
+        #         random_acc_agg, random_f1_agg = random_features_predict(train_set, val_set, k, all_features, random_acc_agg, random_f1_agg, config['random_state'])
+        #     timer_random.append(timer)
+        #     if final_kf_iter:
+        #         acc_result = round(lists_avg(random_acc_agg) * 100, 2)
+        #         logger.info(f"random_features accuracy result: {acc_result}%")
+        #         store_results(config['dataset_name'], feature_percentage, dm_dim, 'random_features', random_acc_agg, random_f1_agg, classes, workdir, timer_random)
+        #
+        #     # Fisher Score Features
+        #     with Timer() as timer:
+        #         fisher_acc_agg, fisher_f1_agg = fisher_ranks_predict(train_set, val_set, k, all_features, fisher_acc_agg, fisher_f1_agg)
+        #     timer_fisher.append(timer)
+        #     if final_kf_iter:
+        #         acc_result = round(lists_avg(fisher_acc_agg) * 100, 2)
+        #         logger.info(f"fisher_score accuracy result: {acc_result}%")
+        #         store_results(config['dataset_name'], feature_percentage, dm_dim, 'fisher', fisher_acc_agg, fisher_f1_agg, classes, workdir, timer_fisher)
+        #
+        #     # ReliefF Features
+        #     with Timer() as timer:
+        #         relief_acc_agg, relief_f1_agg = relieff_predict(train_set, val_set, k, all_features, relief_acc_agg, relief_f1_agg)
+        #     timer_relief.append(timer)
+        #     if final_kf_iter:
+        #         acc_result = round(lists_avg(relief_acc_agg) * 100, 2)
+        #         logger.info(f"Relief accuracy result: {acc_result}%")
+        #         store_results(config['dataset_name'], feature_percentage, dm_dim, 'relief', relief_acc_agg, relief_f1_agg, classes, workdir, timer_relief)
+        #
+        #     # Chi Square Features
+        #     with Timer() as timer:
+        #         chi2_acc_agg, chi2_f1_agg = chi_square_predict(train_set, val_set, k, all_features, chi2_acc_agg, chi2_f1_agg)
+        #     timer_chi2.append(timer)
+        #     if final_kf_iter:
+        #         acc_result = round(lists_avg(chi2_acc_agg) * 100, 2)
+        #         logger.info(f"chi_square accuracy result: {acc_result}%")
+        #         store_results(config['dataset_name'], feature_percentage, dm_dim, 'chi_square', chi2_acc_agg, chi2_f1_agg, classes, workdir, timer_chi2)
+        #
+        #     # mRMR Features
+        #     with Timer() as timer:
+        #         mrmr_acc_agg, mrmr_f1_agg = mrmr_predict(train_set, val_set, k, all_features, mrmr_acc_agg, mrmr_f1_agg)
+        #     timer_mrmr.append(timer)
+        #     if final_kf_iter:
+        #         acc_result = round(lists_avg(mrmr_acc_agg) * 100, 2)
+        #         logger.info(f"mRMR accuracy result: {acc_result}%")
+        #         store_results(config['dataset_name'], feature_percentage, dm_dim, 'mrmr', mrmr_acc_agg, mrmr_f1_agg, classes, workdir, timer_mrmr)
 
         # TauTransformer Features
         for features_to_reduce_prc in config['features_to_reduce_prc']:
