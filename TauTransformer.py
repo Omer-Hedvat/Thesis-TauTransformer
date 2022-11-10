@@ -71,8 +71,8 @@ class TauTransformer:
         return [item for sublist in t for item in sublist]
 
     @staticmethod
-    def percentage_calculator(features, prc):
-        return int(len(features) * prc)
+    def percentage_calculator(array, prc):
+        return int(len(array) * prc)
 
     def drop_low_std_features(self):
         stds = self.X.std(axis=0)
@@ -110,6 +110,12 @@ class TauTransformer:
         return dists_dict
 
     def features_reduction(self):
+        """
+        A heuristic function for feature reduction.
+        the function calls dist_features_reduction() for each distance function which calculates the mean value
+        for each feature and returns the feature indexes to reduce.
+        After all results comes back from for each distance function() we combine the results and reduce the selected features
+        """
         features_to_reduce_df = pd.DataFrame(
             {'features': [*range(0, len(self.all_features), 1)], 'count': len(self.all_features) * [0]}
         )
@@ -131,8 +137,12 @@ class TauTransformer:
         return final_dists_dict, final_features_to_keep_idx
 
     def dist_features_reduction(self, dist_arr):
+        """
+        Calculates the mean value for every row(feature distances) and returns the best X features to reduce
+        :param dist_arr: a distance matrix MXC^2
+        """
         arr_avg = dist_arr.mean(axis=1)
-        num_features_to_reduce = int(len(dist_arr) * self.features_to_reduce_prc)
+        num_features_to_reduce = self.percentage_calculator(dist_arr, self.features_to_reduce_prc)
         features_to_keep_idx = np.sort(np.argsort(arr_avg)[num_features_to_reduce:])
         features_to_reduce_idx = list(set(range(len(self.all_features))).difference(features_to_keep_idx))
         return features_to_keep_idx, features_to_reduce_idx
