@@ -18,7 +18,7 @@ class TauTransformer:
     ):
         self.X = None
         self.y = None
-        self.low_std_features = None
+        self.low_std_features = list()
         self.feature_percentage = feature_percentage
         self.features_to_reduce_prc = features_to_reduce_prc
         self.dist_functions = dist_functions
@@ -77,7 +77,7 @@ class TauTransformer:
     def drop_low_std_features(self):
         stds = self.X.std(axis=0)
         low_std_feature_indexes = np.where(stds <= self.min_feature_std)[0].tolist()
-        self.low_std_features = self.all_features[low_std_feature_indexes]
+        self.low_std_features += self.all_features[low_std_feature_indexes]
         self.all_features = self.all_features.delete(low_std_feature_indexes)
         self.X = np.delete(self.X, low_std_feature_indexes, axis=1)
 
