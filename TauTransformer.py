@@ -13,14 +13,14 @@ logger = logging.getLogger(__name__)
 
 class TauTransformer:
     def __init__(
-            self, feature_percentage, features_to_reduce_prc, dist_functions, dm_dim=2, min_feature_std=0, alpha=1,
+            self, feature_percentage, features_to_eliminate_prc, dist_functions, dm_dim=2, min_feature_std=0, alpha=1,
             eps_type='maxmin', eps_factor=[100, 25], random_state=0, verbose=False
     ):
         self.X = None
         self.y = None
         self.low_std_features = list()
         self.feature_percentage = feature_percentage
-        self.features_to_reduce_prc = features_to_reduce_prc
+        self.features_to_eliminate_prc = features_to_eliminate_prc
         self.dist_functions = dist_functions
 
         self.dm_dim = dm_dim
@@ -109,43 +109,43 @@ class TauTransformer:
         # dist_dict = {f'feature_{class_idx + 1}': pd.DataFrame(mat) for class_idx, mat in enumerate(distances)}
         return dists_dict
 
-    def features_reduction(self):
+    def features_elimination(self):
         """
-        A heuristic function for feature reduction.
-        the function calls dist_features_reduction() for each distance function which calculates the mean value
-        for each feature and returns the feature indexes to reduce.
-        After all results comes back from for each distance function() we combine the results and reduce the selected features
+        A heuristic function for feature elimination.
+        the function calls dist_features_elimination() for each distance function which calculates the mean value
+        for each feature and returns the feature indexes to eliminate.
+        After all results comes back from for each distance function() we combine the results and eliminate the selected features
         """
-        features_to_reduce_df = pd.DataFrame(
+        features_to_eliminate_df = pd.DataFrame(
             {'features': [*range(0, len(self.all_features), 1)], 'count': len(self.all_features) * [0]}
         )
         for dist, dist_arr in self.dists_dict.items():
-            features_to_keep_idx, features_to_reduce_idx = self.dist_features_reduction(dist_arr)
-            for feature in features_to_reduce_idx:
-                features_to_reduce_df.at[feature, 'count'] += 1
+            features_to_keep_idx, features_to_eliminate_idx = self.dist_features_elimination(dist_arr)
+            for feature in features_to_eliminate_idx:
+                features_to_eliminate_df.at[feature, 'count'] += 1
 
-        number_to_reduce = self.percentage_calculator(self.all_features, self.features_to_reduce_prc)
-        features_to_reduce_df.sort_values(by='count', ascending=False, inplace=True)
-        final_features_to_reduce_idx = set(features_to_reduce_df.iloc[:number_to_reduce]['features'].tolist())
-        final_features_to_keep_idx = list(set(range(len(self.all_features))).difference(final_features_to_reduce_idx))
+        number_to_eliminate = self.percentage_calculator(self.all_features, self.features_to_eliminate_prc)
+        features_to_eliminate_df.sort_values(by='count', ascending=False, inplace=True)
+        final_features_to_eliminate_idx = set(features_to_eliminate_df.iloc[:number_to_eliminate]['features'].tolist())
+        final_features_to_keep_idx = list(set(range(len(self.all_features))).difference(final_features_to_eliminate_idx))
         final_dists_dict = {key: value[final_features_to_keep_idx] for key, value in self.dists_dict.items()}
 
         if self.verbose:
             logger.info(
-                f"""features_reduction() -  By a majority of votes, a {self.features_to_reduce_prc*100}% of the features has been reduced. 
-                The reduced features are:\n{self.all_features[list(final_features_to_reduce_idx)]}""")
+                f"""features_elimination() -  By a majority of votes, a {self.features_to_eliminate_prc * 100}% of the features has been eliminated. 
+                The eliminated features are:\n{self.all_features[list(final_features_to_eliminate_idx)]}""")
         return final_dists_dict, final_features_to_keep_idx
 
-    def dist_features_reduction(self, dist_arr):
+    def dist_features_elimination(self, dist_arr):
         """
-        Calculates the mean value for every row(feature distances) and returns the best X features to reduce
+        Calculates the mean value for every row(feature distances) and returns the best X features to eliminate
         :param dist_arr: a distance matrix MXC^2
         """
         arr_avg = dist_arr.mean(axis=1)
-        num_features_to_reduce = self.percentage_calculator(dist_arr, self.features_to_reduce_prc)
-        features_to_keep_idx = np.sort(np.argsort(arr_avg)[num_features_to_reduce:])
-        features_to_reduce_idx = list(set(range(len(self.all_features))).difference(features_to_keep_idx))
-        return features_to_keep_idx, features_to_reduce_idx
+        num_features_to_eliminate = self.percentage_calculator(dist_arr, self.features_to_eliminate_prc)
+        features_to_keep_idx = np.sort(np.argsort(arr_avg)[num_features_to_eliminate:])
+        features_to_eliminate_idx = list(set(range(len(self.all_features))).difference(features_to_keep_idx))
+        return features_to_keep_idx, features_to_eliminate_idx
 
     def return_best_features_by_kmeans(self, coordinates):
         """
@@ -182,11 +182,11 @@ class TauTransformer:
         self.dists_dict = {k: v for x in dist_dict for k, v in x.items()}
 
         if self.verbose:
-            logger.info(f"Reducing {int(self.features_to_reduce_prc * 100)}% features using 'features_reduction()' heuristic")
+            logger.info(f"Eliminating {int(self.features_to_eliminate_prc * 100)}% features using 'features_elimination()' heuristic")
 
         self.k = self.percentage_calculator(self.all_features, self.feature_percentage)
-        if self.features_to_reduce_prc > 0:
-            distances_dict, features_to_keep_idx = self.features_reduction()
+        if self.features_to_eliminate_prc > 0:
+            distances_dict, features_to_keep_idx = self.features_elimination()
         else:
             distances_dict = self.dists_dict.copy()
 
@@ -200,7 +200,7 @@ class TauTransformer:
 
         if self.verbose:
             logger.info(
-                f"""Ranking the {int((1 - self.features_to_reduce_prc) * 100)}% remain features using a combined coordinate matrix ('agg_corrdinates'), 
+                f"""Ranking the {int((1 - self.features_to_eliminate_prc) * 100)}% remain features using a combined coordinate matrix ('agg_corrdinates'), 
                 inserting 'agg_corrdinates' into a 2nd diffusion map and storing the 2nd diffusion map results into 'final_coordinates'"""
             )
 
