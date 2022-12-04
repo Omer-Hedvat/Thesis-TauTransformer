@@ -32,13 +32,13 @@ class TauTransformer:
         self.random_state = random_state
         self.verbose = verbose
 
-        self.all_features = list()
+        self.all_features = np.array([])
         self.dm_dict = dict()
         self.dists_dict = dict()
 
-        self.k = None
-        self.best_features_idx = None
-        self.best_features = None
+        self.k = int()
+        self.best_features_idx = list()
+        self.best_features = np.array([])
 
     @staticmethod
     def execute_distance_func(X_arr, y_arr, dist_func_name, feature_idx, cls_feature1, cls_feature2):
@@ -77,8 +77,8 @@ class TauTransformer:
     def drop_low_std_features(self):
         stds = self.X.std(axis=0)
         low_std_feature_indexes = np.where(stds <= self.min_feature_std)[0].tolist()
-        self.low_std_features += self.all_features[low_std_feature_indexes]
-        self.all_features = self.all_features.delete(low_std_feature_indexes)
+        self.low_std_features += list(self.all_features[low_std_feature_indexes])
+        self.all_features = np.delete(self.all_features, low_std_feature_indexes)
         self.X = np.delete(self.X, low_std_feature_indexes, axis=1)
 
     def calc_dist(self, dist_func_name):
@@ -167,7 +167,7 @@ class TauTransformer:
         return best_features_idx, labels, features_rank
 
     def fit(self, X, y):
-        self.all_features += X.columns
+        self.all_features = np.append(self.all_features, X.columns)
         self.X = np.asarray(X)
         self.y = np.asarray(y)
 
@@ -207,7 +207,7 @@ class TauTransformer:
         agg_coordinates = np.concatenate([val['coordinates'] for val in self.dm_dict.values()]).T
         final_dm_results = diffusion_mapping(agg_coordinates, self.alpha, self.eps_type, self.eps_factor[1], dim=self.dm_dim) if len(self.dist_functions) > 1 else agg_coordinates
         self.best_features_idx, labels, features_rank = self.return_best_features_by_kmeans(final_dm_results['coordinates'])
-        self.best_features = self.all_features[self.best_features_idx]
+        self.best_features = np.append(self.best_features, self.all_features)
         if self.verbose:
             logger.info(f'Best features by KMeans are: {self.best_features}')
             logger.info(f"Using KMeans algorithm in order to rank the features who are in final_coordinates")
