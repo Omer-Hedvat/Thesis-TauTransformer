@@ -39,6 +39,7 @@ class TauTransformer:
         self.k = int()
         self.best_features_idx = list()
         self.best_features = np.array([])
+        self.tausformer_results = dict()
 
     @staticmethod
     def execute_distance_func(X_arr, y_arr, dist_func_name, feature_idx, cls_feature1, cls_feature2):
@@ -80,6 +81,7 @@ class TauTransformer:
         self.low_std_features += list(self.all_features[low_std_feature_indexes])
         self.all_features = np.delete(self.all_features, low_std_feature_indexes)
         self.X = np.delete(self.X, low_std_feature_indexes, axis=1)
+        self.tausformer_results['low_std_features'] = self.low_std_features
 
     def calc_dist(self, dist_func_name):
         """
@@ -129,6 +131,7 @@ class TauTransformer:
         final_features_to_eliminate_idx = set(features_to_eliminate_df.iloc[:number_to_eliminate]['features'].tolist())
         final_features_to_keep_idx = list(set(range(len(self.all_features))).difference(final_features_to_eliminate_idx))
         final_dists_dict = {key: value[final_features_to_keep_idx] for key, value in self.dists_dict.items()}
+        self.tausformer_results['eliminated_features'] = self.all_features[list(final_features_to_eliminate_idx)]
 
         if self.verbose:
             logger.info(
