@@ -32,7 +32,7 @@ class TauTransformer:
         self.random_state = random_state
         self.verbose = verbose
 
-        self.all_features = None
+        self.all_features = list()
         self.dm_dict = dict()
         self.dists_dict = dict()
 
@@ -167,7 +167,7 @@ class TauTransformer:
         return best_features_idx, labels, features_rank
 
     def fit(self, X, y):
-        self.all_features = X.columns
+        self.all_features += X.columns
         self.X = np.asarray(X)
         self.y = np.asarray(y)
 
