@@ -7,7 +7,7 @@ from sklearn_extra.cluster import KMedoids
 
 from utils.diffusion_maps import diffusion_mapping
 from utils.distances import wasserstein_dist, bhattacharyya_dist, hellinger_dist, jm_dist
-from utils.general import ndarray_to_df_w_indexes
+from utils.general import ndarray_to_df_w_index_names
 
 logger = logging.getLogger(__name__)
 
@@ -188,7 +188,7 @@ class TauTransformer:
             for dist in self.dist_functions
         )
         self.dists_dict = {k: v for x in dist_dict for k, v in x.items()}
-        self.tausformer_results['distance_matrix'] = {k: ndarray_to_df_w_indexes(v, self.all_features) for k, v in self.dists_dict.items()}
+        self.tausformer_results['distance_matrix'] = {k: ndarray_to_df_w_index_names(v, self.all_features) for k, v in self.dists_dict.items()}
 
         if self.verbose:
             logger.info(f"Eliminating {int(self.features_to_eliminate_prc * 100)}% features using 'features_elimination()' heuristic")
@@ -208,7 +208,7 @@ class TauTransformer:
         )
         self.dm_dict = {k: v for k, v in zip(self.dist_functions, dm_results)}
 
-        self.tausformer_results['dm1'] = {k: ndarray_to_df_w_indexes(v['coordinates'].T, self.all_features) for k, v in self.dm_dict.items()}
+        self.tausformer_results['dm1'] = {k: ndarray_to_df_w_index_names(v['coordinates'].T, self.all_features) for k, v in self.dm_dict.items()}
 
         if self.verbose:
             logger.info(
@@ -218,7 +218,7 @@ class TauTransformer:
 
         agg_coordinates = np.concatenate([val['coordinates'] for val in self.dm_dict.values()]).T
         final_dm_results = diffusion_mapping(agg_coordinates, self.alpha, self.eps_type, self.eps_factor[1], dim=self.dm_dim) if len(self.dist_functions) > 1 else agg_coordinates
-        self.tausformer_results['dm2'] = ndarray_to_df_w_indexes(final_dm_results['coordinates'].T, self.all_features)
+        self.tausformer_results['dm2'] = ndarray_to_df_w_index_names(final_dm_results['coordinates'].T, self.all_features)
 
         self.best_features_idx, labels = self.return_best_features_by_kmediods(final_dm_results['coordinates'])
         self.best_features = np.append(self.best_features, self.all_features)

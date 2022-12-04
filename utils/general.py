@@ -96,6 +96,6 @@ def arrange_data_features(train_set, val_set, feature, return_y=True):
         return train_set[feature].copy(), val_set[feature].copy()
 
 
-def ndarray_to_df_w_indexes(array, index_names):
+def ndarray_to_df_w_index_names(array, index_names):
     import pandas as pd
     return pd.DataFrame(array, index=index_names)
