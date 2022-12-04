@@ -209,8 +209,8 @@ class TauTransformer:
         self.best_features_idx, labels, features_rank = self.return_best_features_by_kmediods(final_dm_results['coordinates'])
         self.best_features = np.append(self.best_features, self.all_features)
         if self.verbose:
-            logger.info(f'Best features by KMeans are: {self.best_features}')
-            logger.info(f"Using KMeans algorithm in order to rank the features who are in final_coordinates")
+            logger.info(f'Best features by KMedoids are: {self.best_features}')
+            logger.info(f"Using KMedoids algorithm in order to rank the features who are in final_coordinates")
 
     def transform(self, X):
         self.X = X
