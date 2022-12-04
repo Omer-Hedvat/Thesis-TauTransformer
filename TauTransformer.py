@@ -7,6 +7,7 @@ from sklearn_extra.cluster import KMedoids
 
 from utils.diffusion_maps import diffusion_mapping
 from utils.distances import wasserstein_dist, bhattacharyya_dist, hellinger_dist, jm_dist
+from utils.general import ndarray_to_df_w_indexes
 
 logger = logging.getLogger(__name__)
 
@@ -188,6 +189,7 @@ class TauTransformer:
             logger.info(f"Eliminating {int(self.features_to_eliminate_prc * 100)}% features using 'features_elimination()' heuristic")
 
         self.k = self.percentage_calculator(self.all_features, self.feature_percentage)
+        self.tausformer_results['k'] = self.k
         if self.features_to_eliminate_prc > 0:
             distances_dict, features_to_keep_idx = self.features_elimination()
         else:
@@ -200,6 +202,8 @@ class TauTransformer:
             for dist in self.dist_functions
         )
         self.dm_dict = {k: v for k, v in zip(self.dist_functions, dm_results)}
+
+        self.tausformer_results['dm1'] = {k: ndarray_to_df_w_indexes(v['coordinates'].T, self.all_features) for k, v in self.dm_dict.items()}
 
         if self.verbose:
             logger.info(
