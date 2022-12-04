@@ -3,7 +3,7 @@ import logging
 import numpy as np
 import pandas as pd
 
-from sklearn.cluster import KMeans
+from sklearn_extra.cluster import KMedoids
 
 from utils.diffusion_maps import diffusion_mapping
 from utils.distances import wasserstein_dist, bhattacharyya_dist, hellinger_dist, jm_dist
@@ -147,7 +147,7 @@ class TauTransformer:
         features_to_eliminate_idx = list(set(range(len(self.all_features))).difference(features_to_keep_idx))
         return features_to_keep_idx, features_to_eliminate_idx
 
-    def return_best_features_by_kmeans(self, coordinates):
+    def return_best_features_by_kmediods(self, coordinates):
         """
         runs K-means algorithm over the coordinates and returns the best features.
         In each centroid we pick the feature with the smallest value in the X axis (the first axis in coordinates)
@@ -156,8 +156,8 @@ class TauTransformer:
         & 'features_rank' - the features ranked by the smallest value of coordinates first axis
         """
         features_rank = np.argsort(coordinates[0])
-        kmeans = KMeans(n_clusters=self.k, random_state=self.random_state)
-        labels = kmeans.fit(coordinates.T).labels_
+        kmediods = KMedoids(n_clusters=self.k, random_state=self.random_state)
+        labels = kmediods.fit(coordinates.T).labels_
         best_features_idx = []
         selected_cetroids = []
         for idx in features_rank:
@@ -206,7 +206,7 @@ class TauTransformer:
 
         agg_coordinates = np.concatenate([val['coordinates'] for val in self.dm_dict.values()]).T
         final_dm_results = diffusion_mapping(agg_coordinates, self.alpha, self.eps_type, self.eps_factor[1], dim=self.dm_dim) if len(self.dist_functions) > 1 else agg_coordinates
-        self.best_features_idx, labels, features_rank = self.return_best_features_by_kmeans(final_dm_results['coordinates'])
+        self.best_features_idx, labels, features_rank = self.return_best_features_by_kmediods(final_dm_results['coordinates'])
         self.best_features = np.append(self.best_features, self.all_features)
         if self.verbose:
             logger.info(f'Best features by KMeans are: {self.best_features}')
