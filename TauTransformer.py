@@ -188,6 +188,7 @@ class TauTransformer:
             for dist in self.dist_functions
         )
         self.dists_dict = {k: v for x in dist_dict for k, v in x.items()}
+        self.tausformer_results['distance_matrix'] = {k: ndarray_to_df_w_indexes(v, self.all_features) for k, v in self.dists_dict.items()}
 
         if self.verbose:
             logger.info(f"Eliminating {int(self.features_to_eliminate_prc * 100)}% features using 'features_elimination()' heuristic")
