@@ -150,7 +150,7 @@ def main():
         'dm_dim': [2],
         'alpha': 1,
         'eps_type': 'maxmin',
-        'eps_factor': 25,
+        'eps_factor': [10, 100],
         'verbose': False,
         'random_state': 0,
         'add_features_up_to': 0
