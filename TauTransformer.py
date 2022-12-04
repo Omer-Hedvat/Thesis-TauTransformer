@@ -23,6 +23,7 @@ class TauTransformer:
         self.feature_percentage = feature_percentage
         self.features_to_eliminate_prc = features_to_eliminate_prc
         self.dist_functions = dist_functions
+        self.features_rank_indexes = list()
 
         self.dm_dim = dm_dim
         self.min_feature_std = min_feature_std
@@ -112,44 +113,46 @@ class TauTransformer:
         # dist_dict = {f'feature_{class_idx + 1}': pd.DataFrame(mat) for class_idx, mat in enumerate(distances)}
         return dists_dict
 
+    def consolidate_features_ranks(self):
+        """
+        The method consolidates all the results from rank_features_by_dist_mean() function and stores them into
+        self.features_rank_indexes
+        """
+        rank_lists = [self.rank_features_by_dist_mean(dist_arr) for dist_arr in self.dists_dict.values()]
+        consolidated_feature_ranks = []
+        for i in range(len(self.all_features)):
+            consolidated_feature_ranks.append(sum([np.where(rank_list == i)[0][0] for rank_list in rank_lists]))
+        self.features_rank_indexes = np.argsort(consolidated_feature_ranks)
+
+    @staticmethod
+    def rank_features_by_dist_mean(dist_arr):
+        """
+        Calculates the mean value of every row
+        :param dist_arr: distances array
+        :return: the sorted indexes on descending order of the mean values
+        """
+        arr_avg = dist_arr.mean(axis=1)
+        sorted_indexes_by_mean_arr = np.argsort(arr_avg)[::-1]
+        return sorted_indexes_by_mean_arr
+
     def features_elimination(self):
         """
         A heuristic function for feature elimination.
-        the function calls dist_features_elimination() for each distance function which calculates the mean value
-        for each feature and returns the feature indexes to eliminate.
-        After all results comes back from for each distance function() we combine the results and eliminate the selected features
+        the method relies on the self.consolidate_features_ranks() method rankings.
+        The method drops the weakest features from the ranking
         """
-        features_to_eliminate_df = pd.DataFrame(
-            {'features': [*range(0, len(self.all_features), 1)], 'count': len(self.all_features) * [0]}
-        )
-        for dist, dist_arr in self.dists_dict.items():
-            features_to_keep_idx, features_to_eliminate_idx = self.dist_features_elimination(dist_arr)
-            for feature in features_to_eliminate_idx:
-                features_to_eliminate_df.at[feature, 'count'] += 1
-
         number_to_eliminate = self.percentage_calculator(self.all_features, self.features_to_eliminate_prc)
-        features_to_eliminate_df.sort_values(by='count', ascending=False, inplace=True)
-        final_features_to_eliminate_idx = set(features_to_eliminate_df.iloc[:number_to_eliminate]['features'].tolist())
+        final_features_to_eliminate_idx = self.features_rank_indexes[-number_to_eliminate:]
         final_features_to_keep_idx = list(set(range(len(self.all_features))).difference(final_features_to_eliminate_idx))
         final_dists_dict = {key: value[final_features_to_keep_idx] for key, value in self.dists_dict.items()}
         self.tausformer_results['eliminated_features'] = self.all_features[list(final_features_to_eliminate_idx)]
+        self.all_features = self.all_features[list(final_features_to_keep_idx)]
 
         if self.verbose:
             logger.info(
                 f"""features_elimination() -  By a majority of votes, a {self.features_to_eliminate_prc * 100}% of the features has been eliminated. 
                 The eliminated features are:\n{self.all_features[list(final_features_to_eliminate_idx)]}""")
         return final_dists_dict, final_features_to_keep_idx
-
-    def dist_features_elimination(self, dist_arr):
-        """
-        Calculates the mean value for every row(feature distances) and returns the best X features to eliminate
-        :param dist_arr: a distance matrix MXC^2
-        """
-        arr_avg = dist_arr.mean(axis=1)
-        num_features_to_eliminate = self.percentage_calculator(dist_arr, self.features_to_eliminate_prc)
-        features_to_keep_idx = np.sort(np.argsort(arr_avg)[num_features_to_eliminate:])
-        features_to_eliminate_idx = list(set(range(len(self.all_features))).difference(features_to_keep_idx))
-        return features_to_keep_idx, features_to_eliminate_idx
 
     def return_best_features_by_kmediods(self, coordinates):
         """
@@ -189,6 +192,8 @@ class TauTransformer:
         )
         self.dists_dict = {k: v for x in dist_dict for k, v in x.items()}
         self.tausformer_results['distance_matrix'] = {k: ndarray_to_df_w_index_names(v, self.all_features) for k, v in self.dists_dict.items()}
+
+        self.consolidate_features_ranks()
 
         if self.verbose:
             logger.info(f"Eliminating {int(self.features_to_eliminate_prc * 100)}% features using 'features_elimination()' heuristic")
