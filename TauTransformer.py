@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class TauTransformer:
     def __init__(
             self, feature_percentage, features_to_reduce_prc, dist_functions, dm_dim=2, min_feature_std=0, alpha=1,
-            eps_type='maxmin', eps_factor=25, random_state=0, verbose=False
+            eps_type='maxmin', eps_factor=[100, 25], random_state=0, verbose=False
     ):
         self.X = None
         self.y = None
@@ -193,7 +193,7 @@ class TauTransformer:
         if self.verbose:
             logger.info(f"Calculating diffusion maps over the distance matrix")
         dm_results = Parallel(n_jobs=len(self.dist_functions))(
-            delayed(diffusion_mapping)(distances_dict[dist], self.alpha, self.eps_type, self.eps_factor, dim=self.dm_dim)
+            delayed(diffusion_mapping)(distances_dict[dist], self.alpha, self.eps_type, self.eps_factor[0], dim=self.dm_dim)
             for dist in self.dist_functions
         )
         self.dm_dict = {k: v for k, v in zip(self.dist_functions, dm_results)}
@@ -205,7 +205,7 @@ class TauTransformer:
             )
 
         agg_coordinates = np.concatenate([val['coordinates'] for val in self.dm_dict.values()]).T
-        final_dm_results = diffusion_mapping(agg_coordinates, self.alpha, self.eps_type, self.eps_factor, dim=self.dm_dim) if len(self.dist_functions) > 1 else agg_coordinates
+        final_dm_results = diffusion_mapping(agg_coordinates, self.alpha, self.eps_type, self.eps_factor[1], dim=self.dm_dim) if len(self.dist_functions) > 1 else agg_coordinates
         self.best_features_idx, labels, features_rank = self.return_best_features_by_kmeans(final_dm_results['coordinates'])
         self.best_features = self.all_features[self.best_features_idx]
         if self.verbose:
