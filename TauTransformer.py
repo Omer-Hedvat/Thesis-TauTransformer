@@ -7,6 +7,7 @@ from sklearn_extra.cluster import KMedoids
 
 from utils.diffusion_maps import diffusion_mapping
 from utils.distances import wasserstein_dist, bhattacharyya_dist, hellinger_dist, jm_dist
+from utils.general import ndarray_to_df_w_index_names
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +40,7 @@ class TauTransformer:
         self.k = int()
         self.best_features_idx = list()
         self.best_features = np.array([])
+        self.tausformer_results = dict()
 
     @staticmethod
     def execute_distance_func(X_arr, y_arr, dist_func_name, feature_idx, cls_feature1, cls_feature2):
@@ -80,6 +82,7 @@ class TauTransformer:
         self.low_std_features += list(self.all_features[low_std_feature_indexes])
         self.all_features = np.delete(self.all_features, low_std_feature_indexes)
         self.X = np.delete(self.X, low_std_feature_indexes, axis=1)
+        self.tausformer_results['low_std_features'] = self.low_std_features
 
     def calc_dist(self, dist_func_name):
         """
@@ -129,6 +132,7 @@ class TauTransformer:
         final_features_to_eliminate_idx = set(features_to_eliminate_df.iloc[:number_to_eliminate]['features'].tolist())
         final_features_to_keep_idx = list(set(range(len(self.all_features))).difference(final_features_to_eliminate_idx))
         final_dists_dict = {key: value[final_features_to_keep_idx] for key, value in self.dists_dict.items()}
+        self.tausformer_results['eliminated_features'] = self.all_features[list(final_features_to_eliminate_idx)]
 
         if self.verbose:
             logger.info(
@@ -149,22 +153,26 @@ class TauTransformer:
 
     def return_best_features_by_kmediods(self, coordinates):
         """
-        runs K-means algorithm over the coordinates and returns the best features.
-        In each centroid we pick the feature with the smallest value in the X axis (the first axis in coordinates)
+        runs K-Medoids algorithm over the coordinates and returns the best features.
+        In each centroid we pick the feature in the middle of the centroid
         :param coordinates: a 2-dim array with the coordinates from the diffusion maps
         :return: 3 lists. 'best_features_idx' - best features indexes list, 'labels' - the K-means labels
         & 'features_rank' - the features ranked by the smallest value of coordinates first axis
         """
-        features_rank = np.argsort(coordinates[0])
-        kmediods = KMedoids(n_clusters=self.k, random_state=self.random_state)
-        labels = kmediods.fit(coordinates.T).labels_
-        best_features_idx = []
-        selected_cetroids = []
-        for idx in features_rank:
-            if labels[idx] not in selected_cetroids:
-                selected_cetroids.append(labels[idx])
-                best_features_idx.append(idx)
-        return best_features_idx, labels, features_rank
+        kmedoids = KMedoids(n_clusters=self.k, random_state=self.random_state)
+        labels = kmedoids.fit(coordinates.T).labels_
+        best_features_idx = list(kmedoids.medoid_indices_)
+
+        # KMedoids results into tausformer_results
+        feature_index_by_clusters = [[] for _ in range(self.k)]
+        feature_names_by_clusters = [[] for _ in range(self.k)]
+        for i, centroid in enumerate(labels):
+            feature_index_by_clusters[centroid].append(i)
+            feature_names_by_clusters[centroid].append(self.all_features[i])
+        self.tausformer_results['feature_index_by_clusters'] = feature_index_by_clusters
+        self.tausformer_results['feature_names_by_clusters'] = feature_names_by_clusters
+
+        return best_features_idx, labels
 
     def fit(self, X, y):
         self.all_features = np.append(self.all_features, X.columns)
@@ -180,11 +188,13 @@ class TauTransformer:
             for dist in self.dist_functions
         )
         self.dists_dict = {k: v for x in dist_dict for k, v in x.items()}
+        self.tausformer_results['distance_matrix'] = {k: ndarray_to_df_w_index_names(v, self.all_features) for k, v in self.dists_dict.items()}
 
         if self.verbose:
             logger.info(f"Eliminating {int(self.features_to_eliminate_prc * 100)}% features using 'features_elimination()' heuristic")
 
         self.k = self.percentage_calculator(self.all_features, self.feature_percentage)
+        self.tausformer_results['k'] = self.k
         if self.features_to_eliminate_prc > 0:
             distances_dict, features_to_keep_idx = self.features_elimination()
         else:
@@ -198,6 +208,8 @@ class TauTransformer:
         )
         self.dm_dict = {k: v for k, v in zip(self.dist_functions, dm_results)}
 
+        self.tausformer_results['dm1'] = {k: ndarray_to_df_w_index_names(v['coordinates'].T, self.all_features) for k, v in self.dm_dict.items()}
+
         if self.verbose:
             logger.info(
                 f"""Ranking the {int((1 - self.features_to_eliminate_prc) * 100)}% remain features using a combined coordinate matrix ('agg_corrdinates'), 
@@ -206,7 +218,9 @@ class TauTransformer:
 
         agg_coordinates = np.concatenate([val['coordinates'] for val in self.dm_dict.values()]).T
         final_dm_results = diffusion_mapping(agg_coordinates, self.alpha, self.eps_type, self.eps_factor[1], dim=self.dm_dim) if len(self.dist_functions) > 1 else agg_coordinates
-        self.best_features_idx, labels, features_rank = self.return_best_features_by_kmediods(final_dm_results['coordinates'])
+        self.tausformer_results['dm2'] = ndarray_to_df_w_index_names(final_dm_results['coordinates'].T, self.all_features)
+
+        self.best_features_idx, labels = self.return_best_features_by_kmediods(final_dm_results['coordinates'])
         self.best_features = np.append(self.best_features, self.all_features)
         if self.verbose:
             logger.info(f'Best features by KMedoids are: {self.best_features}')
