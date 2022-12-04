@@ -153,7 +153,6 @@ def main():
         'eps_factor': [10, 100],
         'verbose': False,
         'random_state': 0,
-        'add_features_up_to': 0
     }
 
     api_params = {

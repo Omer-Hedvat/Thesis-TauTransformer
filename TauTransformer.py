@@ -153,22 +153,26 @@ class TauTransformer:
 
     def return_best_features_by_kmediods(self, coordinates):
         """
-        runs K-means algorithm over the coordinates and returns the best features.
-        In each centroid we pick the feature with the smallest value in the X axis (the first axis in coordinates)
+        runs K-Medoids algorithm over the coordinates and returns the best features.
+        In each centroid we pick the feature in the middle of the centroid
         :param coordinates: a 2-dim array with the coordinates from the diffusion maps
         :return: 3 lists. 'best_features_idx' - best features indexes list, 'labels' - the K-means labels
         & 'features_rank' - the features ranked by the smallest value of coordinates first axis
         """
-        features_rank = np.argsort(coordinates[0])
-        kmediods = KMedoids(n_clusters=self.k, random_state=self.random_state)
-        labels = kmediods.fit(coordinates.T).labels_
-        best_features_idx = []
-        selected_cetroids = []
-        for idx in features_rank:
-            if labels[idx] not in selected_cetroids:
-                selected_cetroids.append(labels[idx])
-                best_features_idx.append(idx)
-        return best_features_idx, labels, features_rank
+        kmedoids = KMedoids(n_clusters=self.k, random_state=self.random_state)
+        labels = kmedoids.fit(coordinates.T).labels_
+        best_features_idx = list(kmedoids.medoid_indices_)
+
+        # KMedoids results into tausformer_results
+        feature_index_by_clusters = [[] for _ in range(self.k)]
+        feature_names_by_clusters = [[] for _ in range(self.k)]
+        for i, centroid in enumerate(labels):
+            feature_index_by_clusters[centroid].append(i)
+            feature_names_by_clusters[centroid].append(self.all_features[i])
+        self.tausformer_results['feature_index_by_clusters'] = feature_index_by_clusters
+        self.tausformer_results['feature_names_by_clusters'] = feature_names_by_clusters
+
+        return best_features_idx, labels
 
     def fit(self, X, y):
         self.all_features = np.append(self.all_features, X.columns)
@@ -213,7 +217,9 @@ class TauTransformer:
 
         agg_coordinates = np.concatenate([val['coordinates'] for val in self.dm_dict.values()]).T
         final_dm_results = diffusion_mapping(agg_coordinates, self.alpha, self.eps_type, self.eps_factor[1], dim=self.dm_dim) if len(self.dist_functions) > 1 else agg_coordinates
-        self.best_features_idx, labels, features_rank = self.return_best_features_by_kmediods(final_dm_results['coordinates'])
+        self.tausformer_results['dm2'] = ndarray_to_df_w_indexes(final_dm_results['coordinates'].T, self.all_features)
+
+        self.best_features_idx, labels = self.return_best_features_by_kmediods(final_dm_results['coordinates'])
         self.best_features = np.append(self.best_features, self.all_features)
         if self.verbose:
             logger.info(f'Best features by KMedoids are: {self.best_features}')
