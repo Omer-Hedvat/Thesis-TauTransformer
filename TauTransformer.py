@@ -215,13 +215,13 @@ class TauTransformer:
 
         self.consolidate_features_ranks()
 
-        if self.verbose:
-            logger.info(f"Eliminating {int(self.features_to_eliminate_prc * 100)}% features using 'features_elimination()' heuristic")
-
         self.k = self.percentage_calculator(self.all_features, self.feature_percentage)
         self.results_dict['k'] = self.k
         if self.features_to_eliminate_prc > 0:
             distances_dict, features_to_keep_idx = self.features_elimination()
+            if self.verbose:
+                logger.info(
+                    f"Eliminating {int(self.features_to_eliminate_prc * 100)}% features using 'features_elimination()' heuristic")
         else:
             distances_dict = self.dists_dict.copy()
 
