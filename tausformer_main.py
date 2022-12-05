@@ -70,7 +70,7 @@ def main():
         'kfolds': 5,
         'features_percentage': [0.02, 0.05, 0.1, 0.2, 0.3, 0.5],
         'dist_functions': ['wasserstein', 'jm', 'hellinger'],
-        'nrows': 100,
+        'nrows': 10000,
         'features_to_eliminate_prc': [0.0, 0.2, 0.35, 0.5],
         'dm_dim': [2],
         'alpha': 1,
