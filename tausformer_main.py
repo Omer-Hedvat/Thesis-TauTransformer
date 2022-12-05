@@ -70,16 +70,15 @@ def run_experiments(config, api_params):
                 generate_and_save_scatter_plots(tt.dm_dict, workdir)
         if final_kf_iter:
             acc_result = {k: round(lists_avg(v) * 100, 2) for k, v in kmeans_acc_agg.items()}
-            f1_result = {k: round(lists_avg(v) * 100, 2) for k, v in kmeans_f1_agg.items()}
-            timer_result = {k: round(lists_avg(v) * 100, 2) for k, v in timer_tau_trans.items()}
-            for feature_percentage in acc_result.keys():
-                logger.info(f"kmeans accuracy result w/ {int(features_to_eliminate_prc*100)}% huristic: {acc_result}%")
+            # f1_result = {k: round(lists_avg(v) * 100, 2) for k, v in kmeans_f1_agg.items()}
+            # timer_result = {k: round(lists_avg(v) * 100, 2) for k, v in timer_tau_trans.items()}
+            for feature_prc in kmeans_acc_agg.keys():
+                logger.info(f"kmeans accuracy result w/ {int(features_to_eliminate_prc*100)}% huristic: {acc_result[feature_prc]}%")
                 store_results(
-                    config['dataset_name'], feature_percentage, dm_dim, f'kmeans_{features_to_eliminate_prc}',
-                    acc_result['feature_percentage'], f1_result['feature_percentage'], classes, workdir,
-                    timer_result['feature_percentage']
+                    config['dataset_name'], feature_prc, dm_dim, f'kmeans_{features_to_eliminate_prc}',
+                    kmeans_acc_agg[feature_prc], kmeans_f1_agg[feature_prc], classes, workdir,
+                    timer_tau_trans[feature_prc]
                 )
-
     t_test(config['dataset_name'])
 
 
