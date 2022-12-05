@@ -1,6 +1,7 @@
 from datetime import datetime
 import itertools
 import logging
+import numpy as np
 import os
 
 from TauTransformer import TauTransformer
@@ -35,32 +36,49 @@ def run_experiments(config, api_params):
         Running over features percentage of {feature_percentage}, which is {k} features out of {data.shape[1] - 1}, with diffusion mapping dimension of {dm_dim}"""
                     )
 
-        for features_to_eliminate_prc in config['features_to_eliminate_prc']:
-            if feature_percentage + features_to_eliminate_prc >= 1:
-                continue
-            print_separation_dots(f'features to eliminate heuristic of {int(features_to_eliminate_prc*100)}%')
+        data_norm = min_max_scaler(data, all_features, return_as_df=True)
+        kmeans_acc_agg = {prc: [] for prc in config['features_to_eliminate_prc']}
+        kmeans_f1_agg = {prc: [] for prc in config['features_to_eliminate_prc']}
+        timer_tau_trans = {prc: [] for prc in config['features_to_eliminate_prc']}
+        for kfold_iter in range(1, config['kfolds'] + 1):
+            final_kf_iter = kfold_iter == config['kfolds']
+            train_set, val_set = kfolds_split(data_norm, kfold_iter, n_splits=config['kfolds'], random_state=0)
+            X_train, y_train, X_test, y_test = arrange_data_features(train_set, val_set, all_features)
 
-            data_norm = min_max_scaler(data, all_features, return_as_df=True)
-            kmeans_acc_agg, kmeans_f1_agg, timer_tau_trans = [], [], []
-            for kfold_iter in range(1, config['kfolds'] + 1):
-                final_kf_iter = kfold_iter == config['kfolds']
-                train_set, val_set = kfolds_split(data_norm, kfold_iter, n_splits=config['kfolds'], random_state=0)
-                X_train, y_train, X_test, y_test = arrange_data_features(train_set, val_set, all_features)
-
+            tt = None
+            for features_to_eliminate_prc in config['features_to_eliminate_prc']:
+                if feature_percentage + features_to_eliminate_prc >= 1:
+                    continue
+                print_separation_dots(f'features to eliminate heuristic of {int(features_to_eliminate_prc * 100)}%')
                 with Timer() as timer:
-                    tt = TauTransformer(feature_percentage, features_to_eliminate_prc, config['dist_functions'], **api_params)
+                    if not tt:
+                        tt = TauTransformer(feature_percentage, features_to_eliminate_prc, config['dist_functions'], **api_params)
+                    else:
+                        tt.best_features_idx = list()
+                        tt.best_features = np.array([])
+                        tt.features_to_eliminate_prc = features_to_eliminate_prc
+                        keys_to_pop = ['eliminated_features', 'feature_index_by_clusters', 'feature_names_by_clusters', 'dm1', 'dm2']
+                        for pop_key in keys_to_pop:
+                            tt.results_dict.pop(pop_key, None)
                     X_tr = tt.fit_transform(X_train, y_train)
                     X_tst = tt.transform(X_test)
                     kmeans_acc, kmeans_f1 = predict(X_tr, y_train, X_tst, y_test)
 
-                kmeans_acc_agg.append(kmeans_acc)
-                kmeans_f1_agg.append(kmeans_f1)
-                timer_tau_trans.append(timer)
+                kmeans_acc_agg[features_to_eliminate_prc].append(kmeans_acc)
+                kmeans_f1_agg[features_to_eliminate_prc].append(kmeans_f1)
+                timer_tau_trans[features_to_eliminate_prc].append(timer)
                 generate_and_save_scatter_plots(tt.dm_dict, workdir)
-                if final_kf_iter:
-                    acc_result = round(lists_avg(kmeans_acc_agg) * 100, 2)
-                    logger.info(f"kmeans accuracy result w/ {int(features_to_eliminate_prc*100)}% huristic: {acc_result}%")
-                    store_results(config['dataset_name'], feature_percentage, dm_dim, f'kmeans_{features_to_eliminate_prc}', kmeans_acc_agg, kmeans_f1_agg, classes, workdir, timer_tau_trans)
+        if final_kf_iter:
+            acc_result = {k: round(lists_avg(v) * 100, 2) for k, v in kmeans_acc_agg.items()}
+            f1_result = {k: round(lists_avg(v) * 100, 2) for k, v in kmeans_f1_agg.items()}
+            timer_result = {k: round(lists_avg(v) * 100, 2) for k, v in timer_tau_trans.items()}
+            for feature_percentage in acc_result.keys():
+                logger.info(f"kmeans accuracy result w/ {int(features_to_eliminate_prc*100)}% huristic: {acc_result}%")
+                store_results(
+                    config['dataset_name'], feature_percentage, dm_dim, f'kmeans_{features_to_eliminate_prc}',
+                    acc_result['feature_percentage'], f1_result['feature_percentage'], classes, workdir,
+                    timer_result['feature_percentage']
+                )
 
     t_test(config['dataset_name'])
 
@@ -94,8 +112,8 @@ def main():
         ('isolet', 'label'), ('otto_balanced', 'target'), ('gene_data', 'label')
     ]
     datasets = [('adware_balanced', 'label')]
-    config['features_percentage'] = [0.02, 0.05, 0.1, 0.2, 0.3]
-    config['features_to_eliminate_prc'] = [0.0, 0.2, 0.35, 0.5]
+    config['features_percentage'] = [0.3, 0.02, 0.05, 0.1, 0.2]
+    config['features_to_eliminate_prc'] = [0, 0.2, 0.35, 0.5]
 
     for dataset, label in datasets:
         config['dataset_name'] = dataset

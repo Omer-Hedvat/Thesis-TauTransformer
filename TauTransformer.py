@@ -34,8 +34,10 @@ class TauTransformer:
         self.verbose = verbose
 
         self.all_features = np.array([])
+        self.current_features = np.array([])
         self.dm_dict = dict()
         self.dists_dict = dict()
+        self.is_dist_calc = True
 
         self.k = int()
         self.best_features_idx = list()
@@ -67,8 +69,6 @@ class TauTransformer:
     def flatten(t):
         """
         given a matrix, returns a flatten list
-        :param t:
-        :return:
         """
         return [item for sublist in t for item in sublist]
 
@@ -112,7 +112,7 @@ class TauTransformer:
         # dist_dict = {f'feature_{class_idx + 1}': pd.DataFrame(mat) for class_idx, mat in enumerate(distances)}
         return dists_dict
 
-    def consolidate_features_ranks(self):
+    def calculate_features_ranks(self):
         """
         The method consolidates all the results from rank_features_by_dist_mean() function and stores them into
         self.features_rank_indexes
@@ -134,33 +134,51 @@ class TauTransformer:
         sorted_indexes_by_mean_arr = np.argsort(arr_avg)[::-1]
         return sorted_indexes_by_mean_arr
 
+    def fit_distances(self, X, y):
+        self.all_features = np.append(self.all_features, X.columns)
+        self.k = self.percentage_calculator(self.all_features, self.feature_percentage)
+        self.results_dict['k'] = self.k
+
+        self.X = np.asarray(X)
+        self.y = np.asarray(y)
+
+        self.drop_low_std_features()
+
+        if self.verbose:
+            logger.info(f"Calculating distances for {', '.join(self.dist_functions)}")
+        dist_dict = Parallel(n_jobs=len(self.dist_functions))(
+            delayed(self.calc_dist)(dist)
+            for dist in self.dist_functions
+        )
+        self.dists_dict = {k: v for x in dist_dict for k, v in x.items()}
+        self.results_dict['distance_matrix'] = {k: ndarray_to_df_w_index_names(v, self.all_features) for k, v in
+                                                self.dists_dict.items()}
+
+        self.calculate_features_ranks()
+        self.is_dist_calc = False
+
     def features_elimination(self):
         """
         A heuristic function for feature elimination.
         the method relies on the self.consolidate_features_ranks() method rankings.
         The method drops the weakest features from the ranking
         """
+        if self.features_to_eliminate_prc == 0:
+            return self.dists_dict.copy()
+
         number_to_eliminate = self.percentage_calculator(self.all_features, self.features_to_eliminate_prc)
         final_features_to_eliminate_idx = self.features_rank_indexes[-number_to_eliminate:]
-        final_features_to_keep_idx = list(set(range(len(self.all_features))).difference(final_features_to_eliminate_idx))
+        final_features_to_keep_idx = list(set(range(len(self.current_features))).difference(final_features_to_eliminate_idx))
         final_dists_dict = {key: value[final_features_to_keep_idx] for key, value in self.dists_dict.items()}
-        self.results_dict['eliminated_features'] = self.all_features[list(final_features_to_eliminate_idx)]
-        self.all_features = self.all_features[list(final_features_to_keep_idx)]
+
+        self.results_dict['eliminated_features'] = self.current_features[list(final_features_to_eliminate_idx)]
+        self.current_features = self.current_features[list(final_features_to_keep_idx)]
 
         if self.verbose:
             logger.info(
                 f"""features_elimination() -  By a majority of votes, a {self.features_to_eliminate_prc * 100}% of the features has been eliminated. 
-                The eliminated features are:\n{self.all_features[list(final_features_to_eliminate_idx)]}""")
-        return final_dists_dict, final_features_to_keep_idx
-
-    def return_best_features_by_kmediods(self, coordinates):
-        """
-        runs K-Medoids algorithm over the coordinates and returns the best features.
-        In each centroid we pick the feature in the middle of the centroid
-        :param coordinates: a 2-dim array with the coordinates from the diffusion maps
-        :return: 3 lists. 'best_features_idx' - best features indexes list, 'labels' - the K-means labels
-        & 'features_rank' - the features ranked by the smallest value of coordinates first axis
-        """
+                The eliminated features are:\n{self.current_features[list(final_features_to_eliminate_idx)]}""")
+        return final_dists_dict
 
     def return_best_features_by_kmeans(self, coordinates):
         """
@@ -178,7 +196,7 @@ class TauTransformer:
         feature_names_by_clusters = [[] for _ in range(self.k)]
         for i, centroid in enumerate(labels):
             feature_index_by_clusters[centroid].append(i)
-            feature_names_by_clusters[centroid].append(self.all_features[i])
+            feature_names_by_clusters[centroid].append(self.current_features[i])
 
         # Order clusters by mean rank
         feature_index_by_clusters_ordered = [[] for _ in range(self.k)]
@@ -187,7 +205,7 @@ class TauTransformer:
             for item in self.features_rank_indexes:
                 if item in cluster_items:
                     feature_index_by_clusters_ordered[cluster_ind].append(item)
-                    feature_names_by_clusters_ordered[cluster_ind].append(self.all_features[item])
+                    feature_names_by_clusters_ordered[cluster_ind].append(self.current_features[item])
 
         # Store ordered clusters in results_dict
         self.results_dict['feature_index_by_clusters'] = feature_index_by_clusters_ordered
@@ -198,32 +216,14 @@ class TauTransformer:
         return best_features_idx, labels
 
     def fit(self, X, y):
-        self.all_features = np.append(self.all_features, X.columns)
-        self.X = np.asarray(X)
-        self.y = np.asarray(y)
+        if self.is_dist_calc:
+            self.fit_distances(X, y)
+        self.current_features = self.all_features.copy()
 
-        self.drop_low_std_features()
-
+        distances_dict = self.features_elimination()
         if self.verbose:
-            logger.info(f"Calculating distances for {', '.join(self.dist_functions)}")
-        dist_dict = Parallel(n_jobs=len(self.dist_functions))(
-            delayed(self.calc_dist)(dist)
-            for dist in self.dist_functions
-        )
-        self.dists_dict = {k: v for x in dist_dict for k, v in x.items()}
-        self.results_dict['distance_matrix'] = {k: ndarray_to_df_w_index_names(v, self.all_features) for k, v in self.dists_dict.items()}
-
-        self.consolidate_features_ranks()
-
-        self.k = self.percentage_calculator(self.all_features, self.feature_percentage)
-        self.results_dict['k'] = self.k
-        if self.features_to_eliminate_prc > 0:
-            distances_dict, features_to_keep_idx = self.features_elimination()
-            if self.verbose:
-                logger.info(
-                    f"Eliminating {int(self.features_to_eliminate_prc * 100)}% features using 'features_elimination()' heuristic")
-        else:
-            distances_dict = self.dists_dict.copy()
+            logger.info(
+                f"Eliminating {int(self.features_to_eliminate_prc * 100)}% features using 'features_elimination()' heuristic")
 
         if self.verbose:
             logger.info(f"Calculating diffusion maps over the distance matrix")
@@ -233,7 +233,7 @@ class TauTransformer:
         )
         self.dm_dict = {k: v for k, v in zip(self.dist_functions, dm_results)}
 
-        self.results_dict['dm1'] = {k: ndarray_to_df_w_index_names(v['coordinates'].T, self.all_features) for k, v in self.dm_dict.items()}
+        self.results_dict['dm1'] = {k: ndarray_to_df_w_index_names(v['coordinates'].T, self.current_features) for k, v in self.dm_dict.items()}
 
         if self.verbose:
             logger.info(
@@ -243,7 +243,7 @@ class TauTransformer:
 
         agg_coordinates = np.concatenate([val['coordinates'] for val in self.dm_dict.values()]).T
         final_dm_results = diffusion_mapping(agg_coordinates, self.alpha, self.eps_type, self.eps_factor[1], dim=self.dm_dim) if len(self.dist_functions) > 1 else agg_coordinates
-        self.results_dict['dm2'] = ndarray_to_df_w_index_names(final_dm_results['coordinates'].T, self.all_features)
+        self.results_dict['dm2'] = ndarray_to_df_w_index_names(final_dm_results['coordinates'].T, self.current_features)
 
         self.best_features_idx, labels = self.return_best_features_by_kmeans(final_dm_results['coordinates'])
         self.best_features = self.all_features[self.best_features_idx]
