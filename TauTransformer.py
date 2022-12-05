@@ -246,7 +246,7 @@ class TauTransformer:
         self.results_dict['dm2'] = ndarray_to_df_w_index_names(final_dm_results['coordinates'].T, self.all_features)
 
         self.best_features_idx, labels = self.return_best_features_by_kmeans(final_dm_results['coordinates'])
-        self.best_features = np.append(self.best_features, self.all_features)
+        self.best_features = self.all_features[self.best_features_idx]
         if self.verbose:
             logger.info(f'Best features by KMeans are: {self.best_features}')
             logger.info(f"Using KMeans algorithm in order to rank the features who are in final_coordinates")
