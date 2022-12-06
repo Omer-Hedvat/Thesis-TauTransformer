@@ -70,12 +70,12 @@ def run_experiments(config, api_params):
                 generate_and_save_scatter_plots(tt.dm_dict, workdir)
         if final_kf_iter:
             acc_result = {k: round(lists_avg(v) * 100, 2) for k, v in kmeans_acc_agg.items()}
-            for feature_prc in kmeans_acc_agg.keys():
-                logger.info(f"kmeans accuracy result w/ {int(features_to_eliminate_prc*100)}% huristic: {acc_result[feature_prc]}%")
+            for features_to_eliminate_prc in kmeans_acc_agg.keys():
+                logger.info(f"kmeans accuracy result w/ {int(features_to_eliminate_prc*100)}% huristic: {acc_result[features_to_eliminate_prc]}%")
                 store_results(
-                    config['dataset_name'], feature_prc, dm_dim, f'kmeans_{features_to_eliminate_prc}',
-                    kmeans_acc_agg[feature_prc], kmeans_f1_agg[feature_prc], classes, workdir,
-                    timer_tau_trans[feature_prc]
+                    config['dataset_name'], feature_percentage, dm_dim, f'kmeans_{features_to_eliminate_prc}',
+                    kmeans_acc_agg[features_to_eliminate_prc], kmeans_f1_agg[features_to_eliminate_prc], classes, workdir,
+                    timer_tau_trans[features_to_eliminate_prc]
                 )
 
 
@@ -108,8 +108,9 @@ def main():
         ('isolet', 'label'), ('otto_balanced', 'target'), ('gene_data', 'label')
     ]
     datasets = [('adware_balanced', 'label')]
-    config['features_percentage'] = [0.3, 0.02, 0.05, 0.1, 0.2]
-    config['features_to_eliminate_prc'] = [0, 0.2, 0.35, 0.5]
+    config['nrows'] = 10000
+    config['features_percentage'] = [0.02]
+    config['features_to_eliminate_prc'] = [0.0, 0.2, 0.35, 0.5]
 
     for dataset, label in datasets:
         config['dataset_name'] = dataset
