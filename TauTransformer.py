@@ -67,8 +67,6 @@ class TauTransformer:
     def flatten(t):
         """
         given a matrix, returns a flatten list
-        :param t:
-        :return:
         """
         return [item for sublist in t for item in sublist]
 
