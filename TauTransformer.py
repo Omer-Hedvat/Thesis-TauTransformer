@@ -110,9 +110,9 @@ class TauTransformer:
         # dist_dict = {f'feature_{class_idx + 1}': pd.DataFrame(mat) for class_idx, mat in enumerate(distances)}
         return dists_dict
 
-    def consolidate_features_ranks(self):
+    def calculate_features_ranks(self):
         """
-        The method consolidates all the results from rank_features_by_dist_mean() function and stores them into
+        The method calculates all the results from rank_features_by_dist_mean() function and stores them into
         self.features_rank_indexes
         """
         rank_lists = [self.rank_features_by_dist_mean(dist_arr) for dist_arr in self.dists_dict.values()]
@@ -211,7 +211,7 @@ class TauTransformer:
         self.dists_dict = {k: v for x in dist_dict for k, v in x.items()}
         self.results_dict['distance_matrix'] = {k: ndarray_to_df_w_index_names(v, self.all_features) for k, v in self.dists_dict.items()}
 
-        self.consolidate_features_ranks()
+        self.calculate_features_ranks()
 
         self.k = self.percentage_calculator(self.all_features, self.feature_percentage)
         self.results_dict['k'] = self.k
