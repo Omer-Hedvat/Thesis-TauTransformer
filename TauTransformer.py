@@ -211,7 +211,7 @@ class TauTransformer:
                 feature_names_by_clusters_ordered[cluster_ind].remove(self.all_features[feature])
             missing_clusters_ind = [[feature] for feature in ordered_new_feature_clusters]
             feature_index_by_clusters_ordered.extend(missing_clusters_ind)
-            feature_names_by_clusters_ordered.extend(self.all_features[missing_clusters_ind])
+            feature_names_by_clusters_ordered.extend(self.all_features[[missing_clusters_ind]])
 
         # Store ordered clusters in results_dict
         self.results_dict['feature_index_by_clusters'] = feature_index_by_clusters_ordered
