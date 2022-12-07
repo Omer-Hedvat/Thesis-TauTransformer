@@ -6,8 +6,7 @@ from sklearn.cluster import KMeans
 
 from utils.diffusion_maps import diffusion_mapping
 from utils.distances import wasserstein_dist, bhattacharyya_dist, hellinger_dist, jm_dist
-from utils.general import ndarray_to_df_w_index_names
-
+from utils.general import ndarray_to_df_w_index_names, percentage_calculator
 logger = logging.getLogger(__name__)
 
 
@@ -70,18 +69,6 @@ class TauTransformer:
         given a matrix, returns a flatten list
         """
         return [item for sublist in t for item in sublist]
-
-    @staticmethod
-    def percentage_calculator(prc, array=None, num=None):
-        """
-        Calculates the percentage number out of an array length or a number
-        :param prc: the requested percentage
-        :return: a rounded percentage number
-        """
-        assert array is not None or num is not None
-        if array:
-            num = len(array)
-        return int(num * prc)
 
     def drop_low_std_features(self):
         stds = self.X.std(axis=0)
@@ -154,7 +141,10 @@ class TauTransformer:
             logger.info(
                 f"Eliminating {int(self.features_to_eliminate_prc * 100)}% features using 'features_elimination()' heuristic")
 
-        number_to_eliminate = self.percentage_calculator(self.all_features, self.features_to_eliminate_prc)
+        number_to_eliminate = min(
+            percentage_calculator(self.features_to_eliminate_prc, num=self.init_num_of_features),
+            self.init_num_of_features - self.k - len(self.low_std_features)
+        )
         final_features_to_eliminate_idx = self.features_rank_indexes[-number_to_eliminate:]
         final_features_to_keep_idx = list(
             set(range(len(self.all_features))).difference(final_features_to_eliminate_idx))
@@ -187,22 +177,41 @@ class TauTransformer:
         """
         kmeans = KMeans(n_clusters=self.k, random_state=self.random_state)
         labels = kmeans.fit(coordinates.T).labels_
+        num_of_clusters = len(np.unique(labels))
 
         # Fetch clusters into lists
         feature_index_by_clusters = [[] for _ in range(self.k)]
-        feature_names_by_clusters = [[] for _ in range(self.k)]
         for i, centroid in enumerate(labels):
             feature_index_by_clusters[centroid].append(i)
-            feature_names_by_clusters[centroid].append(self.all_features[i])
+
+        feature_index_by_clusters = [x for x in feature_index_by_clusters if x]
 
         # Order clusters by mean rank
-        feature_index_by_clusters_ordered = [[] for _ in range(self.k)]
-        feature_names_by_clusters_ordered = [[] for _ in range(self.k)]
+        feature_index_by_clusters_ordered = [[] for _ in range(num_of_clusters)]
+        feature_names_by_clusters_ordered = [[] for _ in range(num_of_clusters)]
         for cluster_ind, cluster_items in enumerate(feature_index_by_clusters):
             for item in self.features_rank_indexes:
                 if item in cluster_items:
                     feature_index_by_clusters_ordered[cluster_ind].append(item)
                     feature_names_by_clusters_ordered[cluster_ind].append(self.all_features[item])
+
+        # A fix in case there aren't enough clusters returned from KMeans
+        if num_of_clusters < self.k:
+            num_of_missing_clusters = self.k - num_of_clusters
+            optional_features = {
+                elem: cluster_ind
+                for cluster_ind, cluster in enumerate(feature_index_by_clusters_ordered)
+                for elem in cluster[1:]
+                if len(cluster) > 1
+            }
+            ordered_new_feature_clusters = [feature for feature in self.features_rank_indexes if feature in optional_features.keys()][:num_of_missing_clusters]
+            for feature in ordered_new_feature_clusters:
+                cluster_ind = optional_features[feature]
+                feature_index_by_clusters_ordered[cluster_ind].remove(feature)
+                feature_names_by_clusters_ordered[cluster_ind].remove(self.all_features[feature])
+            missing_clusters_ind = [[feature] for feature in ordered_new_feature_clusters]
+            feature_index_by_clusters_ordered.extend(missing_clusters_ind)
+            feature_names_by_clusters_ordered.extend(self.all_features[missing_clusters_ind])
 
         # Store ordered clusters in results_dict
         self.results_dict['feature_index_by_clusters'] = feature_index_by_clusters_ordered
@@ -218,7 +227,7 @@ class TauTransformer:
         self.X = np.asarray(X)
         self.y = np.asarray(y)
 
-        self.k = self.percentage_calculator(self.init_num_of_features, self.feature_percentage)
+        self.k = percentage_calculator(self.feature_percentage, num=self.init_num_of_features)
         self.results_dict['k'] = self.k
 
         self.drop_low_std_features()
