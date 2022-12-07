@@ -158,15 +158,6 @@ class TauTransformer:
                 The eliminated features are:\n{self.all_features[list(final_features_to_eliminate_idx)]}""")
         return final_dists_dict
 
-    def return_best_features_by_kmediods(self, coordinates):
-        """
-        runs K-Medoids algorithm over the coordinates and returns the best features.
-        In each centroid we pick the feature in the middle of the centroid
-        :param coordinates: a 2-dim array with the coordinates from the diffusion maps
-        :return: 3 lists. 'best_features_idx' - best features indexes list, 'labels' - the K-means labels
-        & 'features_rank' - the features ranked by the smallest value of coordinates first axis
-        """
-
     def return_best_features_by_kmeans(self, coordinates):
         """
         runs K-means algorithm over the coordinates and returns the best features.

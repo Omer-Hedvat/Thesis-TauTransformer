@@ -206,17 +206,4 @@ def mrmr_predict(train_set, val_set, k, all_features, mrmr_acc_agg, mrmr_f1_agg)
     mrmr_f1_agg.append(mrmr_f1)
     return mrmr_acc_agg, mrmr_f1_agg
 
-
-def return_best_features_by_kmeans(coordinates, k):
-    from sklearn.cluster import KMeans
-
-    features_rank = np.argsort(coordinates[0])
-    kmeans = KMeans(n_clusters=k, random_state=0)
-    labels = kmeans.fit(coordinates.T).labels_
-    best_features = []
-    selected_cetroids = []
-    for idx in features_rank:
-        if labels[idx] not in selected_cetroids:
-            selected_cetroids.append(labels[idx])
-            best_features.append(idx)
-    return best_features, labels, features_rank
+k
