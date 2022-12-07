@@ -107,9 +107,9 @@ def main():
         ('isolet', 'label'), ('otto_balanced', 'target'), ('gene_data', 'label')
     ]
     datasets = [('adware_balanced', 'label')]
-    # config['nrows'] = 100
-    # config['features_percentage'] = [0.02]
-    # config['features_to_eliminate_prc'] = [0.0]
+    config['nrows'] = 100
+    config['features_percentage'] = [0.5]
+    config['features_to_eliminate_prc'] = [0.3, 0.5]
 
     for dataset, label in datasets:
         config['dataset_name'] = dataset
