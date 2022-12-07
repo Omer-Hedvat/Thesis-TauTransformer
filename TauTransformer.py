@@ -6,7 +6,7 @@ from sklearn.cluster import KMeans
 
 from utils.diffusion_maps import diffusion_mapping
 from utils.distances import wasserstein_dist, bhattacharyya_dist, hellinger_dist, jm_dist
-from utils.general import ndarray_to_df_w_index_names
+from utils.general import ndarray_to_df_w_index_names, percentage_calculator
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +34,7 @@ class TauTransformer:
         self.verbose = verbose
 
         self.all_features = np.array([])
+        self.init_num_of_features = int()
         self.current_features = np.array([])
         self.dm_dict = dict()
         self.dists_dict = dict()
@@ -71,10 +72,6 @@ class TauTransformer:
         given a matrix, returns a flatten list
         """
         return [item for sublist in t for item in sublist]
-
-    @staticmethod
-    def percentage_calculator(array, prc):
-        return int(len(array) * prc)
 
     def drop_low_std_features(self):
         stds = self.X.std(axis=0)
@@ -114,7 +111,7 @@ class TauTransformer:
 
     def calculate_features_ranks(self):
         """
-        The method consolidates all the results from rank_features_by_dist_mean() function and stores them into
+        The method calculates all the results from rank_features_by_dist_mean() function and stores them into
         self.features_rank_indexes
         """
         rank_lists = [self.rank_features_by_dist_mean(dist_arr) for dist_arr in self.dists_dict.values()]
@@ -136,7 +133,7 @@ class TauTransformer:
 
     def fit_distances(self, X, y):
         self.all_features = np.append(self.all_features, X.columns)
-        self.k = self.percentage_calculator(self.all_features, self.feature_percentage)
+        self.k = percentage_calculator(self.feature_percentage, array=self.all_features)
         self.results_dict['k'] = self.k
 
         self.X = np.asarray(X)
@@ -157,6 +154,29 @@ class TauTransformer:
         self.calculate_features_ranks()
         self.is_dist_calc = False
 
+    # def features_elimination(self):
+    #     """
+    #     A heuristic function for feature elimination.
+    #     the method relies on the self.consolidate_features_ranks() method rankings.
+    #     The method drops the weakest features from the ranking
+    #     """
+    #     if self.features_to_eliminate_prc == 0:
+    #         return self.dists_dict.copy()
+    #
+    #     number_to_eliminate = percentage_calculator(self.features_to_eliminate_prc, array=self.all_features)
+    #     final_features_to_eliminate_idx = self.features_rank_indexes[-number_to_eliminate:]
+    #     final_features_to_keep_idx = list(set(range(len(self.current_features))).difference(final_features_to_eliminate_idx))
+    #     final_dists_dict = {key: value[final_features_to_keep_idx] for key, value in self.dists_dict.items()}
+    #
+    #     self.results_dict['eliminated_features'] = self.current_features[list(final_features_to_eliminate_idx)]
+    #     self.current_features = self.current_features[list(final_features_to_keep_idx)]
+    #
+    #     if self.verbose:
+    #         logger.info(
+    #             f"""features_elimination() -  By a majority of votes, a {self.features_to_eliminate_prc * 100}% of the features has been eliminated.
+    #             The eliminated features are:\n{self.current_features[list(final_features_to_eliminate_idx)]}""")
+    #     return final_dists_dict
+    #
     def features_elimination(self):
         """
         A heuristic function for feature elimination.
@@ -166,18 +186,27 @@ class TauTransformer:
         if self.features_to_eliminate_prc == 0:
             return self.dists_dict.copy()
 
-        number_to_eliminate = self.percentage_calculator(self.all_features, self.features_to_eliminate_prc)
+        if self.verbose:
+            logger.info(
+                f"Eliminating {int(self.features_to_eliminate_prc * 100)}% features using 'features_elimination()' heuristic")
+
+        number_to_eliminate = min(
+            percentage_calculator(self.features_to_eliminate_prc, num=self.init_num_of_features),
+            self.init_num_of_features - self.k - len(self.low_std_features)
+        )
+
         final_features_to_eliminate_idx = self.features_rank_indexes[-number_to_eliminate:]
-        final_features_to_keep_idx = list(set(range(len(self.current_features))).difference(final_features_to_eliminate_idx))
+        final_features_to_keep_idx = list(
+            set(range(len(self.all_features))).difference(final_features_to_eliminate_idx)
+        )
         final_dists_dict = {key: value[final_features_to_keep_idx] for key, value in self.dists_dict.items()}
 
-        self.results_dict['eliminated_features'] = self.current_features[list(final_features_to_eliminate_idx)]
+        self.results_dict['eliminated_features'] = self.all_features[list(final_features_to_eliminate_idx)]
         self.current_features = self.current_features[list(final_features_to_keep_idx)]
-
         if self.verbose:
             logger.info(
                 f"""features_elimination() -  By a majority of votes, a {self.features_to_eliminate_prc * 100}% of the features has been eliminated. 
-                The eliminated features are:\n{self.current_features[list(final_features_to_eliminate_idx)]}""")
+                The eliminated features are:\n{self.all_features[list(final_features_to_eliminate_idx)]}""")
         return final_dists_dict
 
     def return_best_features_by_kmeans(self, coordinates):
@@ -190,22 +219,29 @@ class TauTransformer:
         """
         kmeans = KMeans(n_clusters=self.k, random_state=self.random_state)
         labels = kmeans.fit(coordinates.T).labels_
+        num_of_clusters = len(np.unique(labels))
 
         # Fetch clusters into lists
         feature_index_by_clusters = [[] for _ in range(self.k)]
-        feature_names_by_clusters = [[] for _ in range(self.k)]
         for i, centroid in enumerate(labels):
             feature_index_by_clusters[centroid].append(i)
-            feature_names_by_clusters[centroid].append(self.current_features[i])
+
+        feature_index_by_clusters = [x for x in feature_index_by_clusters if x]
 
         # Order clusters by mean rank
-        feature_index_by_clusters_ordered = [[] for _ in range(self.k)]
-        feature_names_by_clusters_ordered = [[] for _ in range(self.k)]
+        feature_index_by_clusters_ordered = [[] for _ in range(num_of_clusters)]
+        feature_names_by_clusters_ordered = [[] for _ in range(num_of_clusters)]
         for cluster_ind, cluster_items in enumerate(feature_index_by_clusters):
             for item in self.features_rank_indexes:
                 if item in cluster_items:
                     feature_index_by_clusters_ordered[cluster_ind].append(item)
-                    feature_names_by_clusters_ordered[cluster_ind].append(self.current_features[item])
+                    feature_names_by_clusters_ordered[cluster_ind].append(self.all_features[item])
+
+        # A fix in case there aren't enough clusters returned from KMeans
+        if num_of_clusters < self.k:
+            feature_index_by_clusters_ordered, feature_names_by_clusters_ordered = self.fix_clusters(
+                num_of_clusters, feature_index_by_clusters_ordered, feature_names_by_clusters_ordered
+            )
 
         # Store ordered clusters in results_dict
         self.results_dict['feature_index_by_clusters'] = feature_index_by_clusters_ordered
@@ -215,10 +251,45 @@ class TauTransformer:
         best_features_idx = [cluster[0] for cluster in feature_index_by_clusters_ordered]
         return best_features_idx, labels
 
+    def fix_clusters(self, num_of_clusters, feature_index_by_clusters_ordered, feature_names_by_clusters_ordered):
+        """
+        In case KMeans doesn't return enough clusters as we wanted. we take all the extra features from clusters who has
+        more than a single feature. we order them by 'mean rank' and create new clusters out of the best features.
+        :param num_of_clusters: The number of clusters returned from KMeans
+        :param feature_index_by_clusters_ordered: A list of lists. each list represents a cluster and the items are feature indexes
+        :param feature_names_by_clusters_ordered: A list of lists. each list represents a cluster and the items are feature names
+        :return: Fixed feature_index_by_clusters_ordered & feature_names_by_clusters_ordered
+        """
+        num_of_missing_clusters = self.k - num_of_clusters
+        optional_features = {
+            elem: cluster_ind
+            for cluster_ind, cluster in enumerate(feature_index_by_clusters_ordered)
+            for elem in cluster[1:]
+            if len(cluster) > 1
+        }
+
+        # Order all the 'optional_features' and take the best feature
+        ordered_new_feature_clusters = [feature for feature in self.features_rank_indexes if
+                                        feature in optional_features.keys()][:num_of_missing_clusters]
+
+        # Remove the feature from his old cluster
+        for feature in ordered_new_feature_clusters:
+            cluster_ind = optional_features[feature]
+            feature_index_by_clusters_ordered[cluster_ind].remove(feature)
+            feature_names_by_clusters_ordered[cluster_ind].remove(self.all_features[feature])
+
+        # Add the 'new' clusters to the clusters lists
+        missing_clusters_ind = [[feature] for feature in ordered_new_feature_clusters]
+        feature_index_by_clusters_ordered.extend(missing_clusters_ind)
+        feature_names_by_clusters_ordered.extend(self.all_features[[missing_clusters_ind]])
+
+        return feature_index_by_clusters_ordered, feature_names_by_clusters_ordered
+
     def fit(self, X, y):
         if self.is_dist_calc:
             self.fit_distances(X, y)
         self.current_features = self.all_features.copy()
+        self.init_num_of_features = len(self.all_features)
 
         distances_dict = self.features_elimination()
         if self.verbose:

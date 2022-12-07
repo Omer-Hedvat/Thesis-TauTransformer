@@ -82,6 +82,8 @@ def update_dict(tree, keys, value):
 
 
 def lists_avg(lst):
+    if len(lst) == 0:
+        return -1
     return sum(lst)/len(lst)
 
 
@@ -99,3 +101,15 @@ def arrange_data_features(train_set, val_set, feature, return_y=True):
 def ndarray_to_df_w_index_names(array, index_names):
     import pandas as pd
     return pd.DataFrame(array, index=index_names)
+
+
+def percentage_calculator(prc, array=None, num=None):
+    """
+    Calculates the percentage number out of an array length or a number
+    :param prc: the requested percentage
+    :return: a rounded percentage number
+    """
+    assert array is not None or num is not None
+    if array is not None:
+        num = len(array)
+    return int(num * prc)

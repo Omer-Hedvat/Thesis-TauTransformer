@@ -286,7 +286,6 @@ def store_results(dataset, features_prc, dm_dim, metric, acc, f1, classes, workd
     from datetime import datetime
     import os
     from utils.general import lists_avg
-    from utils.machine_learning import calc_f1_score
 
     # General Results File
     filename = 'results/all_datasets_results.csv'
@@ -302,7 +301,7 @@ def store_results(dataset, features_prc, dm_dim, metric, acc, f1, classes, workd
 
     # Dataset's F1 Results File
     columns = ['features_prc', 'dm_dim', *[f'{metric}_{class_name}' for class_name in classes]]
-    class_avg_f1 = calc_f1_score(f1)
+    class_avg_f1 = lists_avg(f1)
     values = [features_prc, dm_dim, *class_avg_f1]
     data_dict = dict(zip(columns, values))
     f1_file = os.path.join(workdir, f'f1_scores.csv')

@@ -49,7 +49,6 @@ def run_experiments(config, api_params):
             for features_to_eliminate_prc in config['features_to_eliminate_prc']:
                 if feature_percentage + features_to_eliminate_prc >= 1:
                     continue
-                print_separation_dots(f'features to eliminate heuristic of {int(features_to_eliminate_prc * 100)}%')
                 with Timer() as timer:
                     if not tt:
                         tt = TauTransformer(feature_percentage, features_to_eliminate_prc, config['dist_functions'], **api_params)
@@ -108,14 +107,18 @@ def main():
         ('isolet', 'label'), ('otto_balanced', 'target'), ('gene_data', 'label')
     ]
     datasets = [('adware_balanced', 'label')]
-    config['nrows'] = 10000
-    config['features_percentage'] = [0.02]
-    config['features_to_eliminate_prc'] = [0.0, 0.2, 0.35, 0.5]
+    # config['nrows'] = 100
+    # config['features_percentage'] = [0.02]
+    # config['features_to_eliminate_prc'] = [0.0]
 
     for dataset, label in datasets:
         config['dataset_name'] = dataset
         config['label_column'] = label
-        run_experiments(config, api_params)
+        with Timer() as timer:
+            run_experiments(config, api_params)
+        print(f"It took {timer.to_string()}")
+
+
 
     all_results_colorful()
 
