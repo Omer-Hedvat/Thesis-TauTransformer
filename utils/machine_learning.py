@@ -205,5 +205,3 @@ def mrmr_predict(train_set, val_set, k, all_features, mrmr_acc_agg, mrmr_f1_agg)
     mrmr_acc_agg.append(mrmr_acc)
     mrmr_f1_agg.append(mrmr_f1)
     return mrmr_acc_agg, mrmr_f1_agg
-
-k

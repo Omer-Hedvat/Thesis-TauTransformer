@@ -1,5 +1,4 @@
 from datetime import datetime
-import itertools
 import logging
 import os
 
@@ -26,13 +25,12 @@ def run_experiments(config, api_params):
     classes = list(data['label'].unique())
     logger.info(f"DATA STATS:\ndata shape of {data.shape}\nLabel distributes:\n{data['label'].value_counts().sort_index()}\n")
 
-    for feature_percentage, dm_dim in list(itertools.product(config['features_percentage'], config['dm_dim'])):
-        api_params['dm_dim'] = dm_dim
+    for feature_percentage in config['features_percentage']:
         k = calc_k(all_features, feature_percentage)
         if k < 1 or k == len(all_features):
             continue
         logger.info(f"""
-        Running over features percentage of {feature_percentage}, which is {k} features out of {data.shape[1] - 1}, with diffusion mapping dimension of {dm_dim}"""
+        Running over features percentage of {feature_percentage}, which is {k} features out of {data.shape[1] - 1}"""
                     )
 
         for features_to_eliminate_prc in config['features_to_eliminate_prc']:
@@ -60,7 +58,11 @@ def run_experiments(config, api_params):
                 if final_kf_iter:
                     acc_result = round(lists_avg(kmeans_acc_agg) * 100, 2)
                     logger.info(f"kmeans accuracy result w/ {int(features_to_eliminate_prc*100)}% huristic: {acc_result}%")
-                    store_results(config['dataset_name'], feature_percentage, dm_dim, f'kmeans_{features_to_eliminate_prc}', kmeans_acc_agg, kmeans_f1_agg, classes, workdir, timer_tau_trans)
+                    store_results(
+                        config['dataset_name'], feature_percentage, config['dm_dim'],
+                        f'kmeans_{features_to_eliminate_prc}', kmeans_acc_agg, kmeans_f1_agg, classes, workdir,
+                        timer_tau_trans
+                    )
 
     t_test(config['dataset_name'])
 
@@ -72,10 +74,10 @@ def main():
         'dist_functions': ['wasserstein', 'jm', 'hellinger'],
         'nrows': 10000,
         'features_to_eliminate_prc': [0.0, 0.2, 0.35, 0.5],
-        'dm_dim': [2],
+        'dm_dim': 2,
         'alpha': 1,
         'eps_type': 'maxmin',
-        'eps_factor': [10, 100],
+        'eps_factor': [50, 50],
         'verbose': False,
         'random_state': 0
     }
