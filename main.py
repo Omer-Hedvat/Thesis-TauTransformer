@@ -38,13 +38,12 @@ def run_experiments(config, dm_params, datasets):
         all_features_acc_agg.append(all_features_acc)
         all_features_f1_agg.append(all_features_f1)
         timer_all_features.append(timer)
-    for feature_percentage, dm_dim in list(itertools.product(config['features_percentage'], config['dm_dim'])):
-        api_params['dm_dim'] = dm_dim
+    for feature_percentage in config['features_percentage']:
         k = percentage_calculator(feature_percentage, array=all_features)
         if k < 1 or k == len(all_features):
             continue
         logger.info(f"""
-        Running over features percentage of {feature_percentage}, which is {k} features out of {data.shape[1] - 1}, with diffusion mapping dimension of {dm_dim}"""
+        Running over features percentage of {feature_percentage}, which is {k} features out of {data.shape[1] - 1}"""
                     )
 
         # Init results lists
@@ -62,7 +61,7 @@ def run_experiments(config, dm_params, datasets):
             if final_kf_iter:
                 acc_result = round(lists_avg(all_features_acc_agg)*100, 2)
                 logger.info(f"all_features accuracy result: {acc_result}%")
-                store_results(config['dataset_name'], feature_percentage, dm_dim, 'all_features', all_features_acc_agg, all_features_f1_agg, classes, workdir, timer_all_features)
+                store_results(config['dataset_name'], feature_percentage, 'all_features', all_features_acc_agg, all_features_f1_agg, classes, workdir, timer_all_features)
 
             # Random Features
             with Timer() as timer:
@@ -71,7 +70,7 @@ def run_experiments(config, dm_params, datasets):
             if final_kf_iter:
                 acc_result = round(lists_avg(random_acc_agg) * 100, 2)
                 logger.info(f"random_features accuracy result: {acc_result}%")
-                store_results(config['dataset_name'], feature_percentage, dm_dim, 'random_features', random_acc_agg, random_f1_agg, classes, workdir, timer_random)
+                store_results(config['dataset_name'], feature_percentage, 'random_features', random_acc_agg, random_f1_agg, classes, workdir, timer_random)
 
             # Fisher Score Features
             with Timer() as timer:
@@ -80,7 +79,7 @@ def run_experiments(config, dm_params, datasets):
             if final_kf_iter:
                 acc_result = round(lists_avg(fisher_acc_agg) * 100, 2)
                 logger.info(f"fisher_score accuracy result: {acc_result}%")
-                store_results(config['dataset_name'], feature_percentage, dm_dim, 'fisher', fisher_acc_agg, fisher_f1_agg, classes, workdir, timer_fisher)
+                store_results(config['dataset_name'], feature_percentage, 'fisher', fisher_acc_agg, fisher_f1_agg, classes, workdir, timer_fisher)
 
             # ReliefF Features
             with Timer() as timer:
@@ -89,7 +88,7 @@ def run_experiments(config, dm_params, datasets):
             if final_kf_iter:
                 acc_result = round(lists_avg(relief_acc_agg) * 100, 2)
                 logger.info(f"Relief accuracy result: {acc_result}%")
-                store_results(config['dataset_name'], feature_percentage, dm_dim, 'relief', relief_acc_agg, relief_f1_agg, classes, workdir, timer_relief)
+                store_results(config['dataset_name'], feature_percentage, 'relief', relief_acc_agg, relief_f1_agg, classes, workdir, timer_relief)
 
             # Chi Square Features
             with Timer() as timer:
@@ -98,7 +97,7 @@ def run_experiments(config, dm_params, datasets):
             if final_kf_iter:
                 acc_result = round(lists_avg(chi2_acc_agg) * 100, 2)
                 logger.info(f"chi_square accuracy result: {acc_result}%")
-                store_results(config['dataset_name'], feature_percentage, dm_dim, 'chi_square', chi2_acc_agg, chi2_f1_agg, classes, workdir, timer_chi2)
+                store_results(config['dataset_name'], feature_percentage, 'chi_square', chi2_acc_agg, chi2_f1_agg, classes, workdir, timer_chi2)
 
             # mRMR Features
             with Timer() as timer:
@@ -107,7 +106,7 @@ def run_experiments(config, dm_params, datasets):
             if final_kf_iter:
                 acc_result = round(lists_avg(mrmr_acc_agg) * 100, 2)
                 logger.info(f"mRMR accuracy result: {acc_result}%")
-                store_results(config['dataset_name'], feature_percentage, dm_dim, 'mrmr', mrmr_acc_agg, mrmr_f1_agg, classes, workdir, timer_mrmr)
+                store_results(config['dataset_name'], feature_percentage, 'mrmr', mrmr_acc_agg, mrmr_f1_agg, classes, workdir, timer_mrmr)
 
     # TauTransformer Features
     tausformer_main(config, dm_params, datasets)
@@ -120,7 +119,7 @@ def main():
         'kfolds': 5,
         'features_percentage': [0.02, 0.05, 0.1, 0.2, 0.3, 0.5],
         'dist_functions': ['wasserstein', 'jm', 'hellinger'],
-        'nrows': 100,
+        'nrows': 1000,
         'features_to_eliminate_prc': [0.0, 0.2, 0.35, 0.5],
         'verbose': False,
         'random_state': 0,
@@ -138,7 +137,7 @@ def main():
         ('adware_balanced', 'label'), ('ml_multiclass_classification_data', 'target'), ('digits', 'label'),
         ('isolet', 'label'), ('otto_balanced', 'target'), ('gene_data', 'label')
     ]
-    datasets = [('adware_balanced', 'label')]
+    datasets = [('digits', 'label')]
     config['features_percentage'] = [0.02, 0.05, 0.1, 0.2, 0.3]
     config['features_to_eliminate_prc'] = [0.0, 0.2, 0.35, 0.5]
 
