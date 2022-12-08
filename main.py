@@ -15,7 +15,7 @@ from utils.timer import Timer
 logger = logging.getLogger(__name__)
 
 
-def run_experiments(config, api_params, datasets):
+def run_experiments(config, dm_params, datasets):
     workdir = os.path.join(f'results', config['dataset_name'])
     create_work_dir(workdir, on_exists='ignore')
     setup_logger("config_files/logger_config.json", os.path.join(workdir, f"{config['dataset_name']}_log_{datetime.now().strftime('%d-%m-%Y')}.txt"))
@@ -110,7 +110,7 @@ def run_experiments(config, api_params, datasets):
                 store_results(config['dataset_name'], feature_percentage, dm_dim, 'mrmr', mrmr_acc_agg, mrmr_f1_agg, classes, workdir, timer_mrmr)
 
     # TauTransformer Features
-    tausformer_main(config, api_params, datasets)
+    tausformer_main(config, dm_params, datasets)
 
     t_test(config['dataset_name'])
 
@@ -122,20 +122,15 @@ def main():
         'dist_functions': ['wasserstein', 'jm', 'hellinger'],
         'nrows': 100,
         'features_to_eliminate_prc': [0.0, 0.2, 0.35, 0.5],
-        'dm_dim': [2],
-        'alpha': 1,
-        'eps_type': 'maxmin',
-        'eps_factor': [10, 100],
         'verbose': False,
         'random_state': 0,
     }
 
-    api_params = {
-        'alpha': config['alpha'],
-        'eps_type': config['eps_type'],
-        'eps_factor': config['eps_factor'],
-        'verbose': config['verbose'],
-        'random_state': config['random_state']
+    dm_params = {
+        'dim': 2,
+        'alpha': 1,
+        'eps_type': 'maxmin',
+        'epsilon_factor': [50, 50]
     }
 
     # tuples of datasets names and target column name
@@ -150,7 +145,7 @@ def main():
     for dataset, label in datasets:
         config['dataset_name'] = dataset
         config['label_column'] = label
-        run_experiments(config, api_params, datasets)
+        run_experiments(config, dm_params, datasets)
 
     all_results_colorful()
 

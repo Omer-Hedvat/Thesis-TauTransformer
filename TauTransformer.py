@@ -12,22 +12,21 @@ logger = logging.getLogger(__name__)
 
 class TauTransformer:
     def __init__(
-            self, feature_percentage, features_to_eliminate_prc, dist_functions, dm_dim=2, min_feature_std=0, alpha=1,
-            eps_type='maxmin', eps_factor=[100, 25], random_state=0, verbose=False
+        self, feature_percentage, features_to_eliminate_prc, dist_functions, dm_params, min_feature_std=0, random_state=0, verbose=False
     ):
         self.X = None
         self.y = None
+        self.min_feature_std = min_feature_std
         self.low_std_features = list()
         self.feature_percentage = feature_percentage
         self.features_to_eliminate_prc = features_to_eliminate_prc
         self.dist_functions = dist_functions
         self.features_rank_indexes = list()
 
-        self.dm_dim = dm_dim
-        self.min_feature_std = min_feature_std
-        self.alpha = alpha
-        self.eps_type = eps_type
-        self.eps_factor = eps_factor
+        self.dm1_params = dm_params.copy()
+        self.dm1_params['epsilon_factor'] = dm_params['epsilon_factor'][0]
+        self.dm2_params = dm_params.copy()
+        self.dm2_params['epsilon_factor'] = dm_params['epsilon_factor'][1]
 
         self.random_state = random_state
         self.verbose = verbose
@@ -240,9 +239,7 @@ class TauTransformer:
         if self.verbose:
             logger.info(f"Calculating diffusion maps over the distance matrix")
         dm_results = Parallel(n_jobs=len(self.dist_functions))(
-            delayed(diffusion_mapping)(distances_dict[dist], self.alpha, self.eps_type, self.eps_factor[0],
-                                       dim=self.dm_dim)
-            for dist in self.dist_functions
+            delayed(diffusion_mapping)(distances_dict[dist], **self.dm1_params) for dist in self.dist_functions
         )
         self.dm_dict = {k: v for k, v in zip(self.dist_functions, dm_results)}
 
@@ -256,8 +253,7 @@ class TauTransformer:
             )
 
         agg_coordinates = np.concatenate([val['coordinates'] for val in self.dm_dict.values()]).T
-        final_dm_results = diffusion_mapping(agg_coordinates, self.alpha, self.eps_type, self.eps_factor[1],
-                                             dim=self.dm_dim) if len(self.dist_functions) > 1 else agg_coordinates
+        final_dm_results = diffusion_mapping(agg_coordinates, **self.dm2_params) if len(self.dist_functions) > 1 else agg_coordinates
         self.results_dict['dm2'] = ndarray_to_df_w_index_names(final_dm_results['coordinates'].T, self.all_features)
 
         self.best_features_idx, labels = self.return_best_features_by_kmeans(final_dm_results['coordinates'])

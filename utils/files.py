@@ -94,7 +94,7 @@ def load_json(filename):
     return data
 
 
-def save_json(data, filename, indent=2, _jsonify=True):
+def save_json(data, workdir, filename, indent=2, _jsonify=True):
     """
     Saves json data.
     :param data: a json-valid data object
@@ -115,7 +115,7 @@ def save_json(data, filename, indent=2, _jsonify=True):
         data = jsonify(data)
 
     dump = partial(json5.dump, quote_keys=True, trailing_commas=False) if suffix == '.json5' else json.dump
-    with open(filename, 'wt', newline='\n') as F:
+    with open(workdir, 'wt', newline='\n') as F:
         dump(data, F, indent=indent)
 
 
@@ -160,9 +160,6 @@ def jsonify(data, fix_non_string_dict_keys=False, max_float_decimals=4):
     import datetime
     import json
     from collections import OrderedDict
-
-    import numpy as np
-    import pandas as pd
 
     if isinstance(data, dict):
         # Check for non-string keys
@@ -360,3 +357,21 @@ def generate_and_save_scatter_plots(dm_dict, workdir=None):
             path = create_work_dir(path, append_timestamp=True, on_exists='ignore')
             file_path = os.path.join(path, title)
             plt.savefig(f'{file_path}.png')
+
+
+def read_df_from_json(filename=None, json_data=None, attr=None):
+    """
+    takes a pandas dataframe as a string (from 'to_json()') back to a dataframe
+    :param filename: filename with path
+    :param json_data: json file
+    :param attr: the dictionary's attribute name
+    :return: a pd.DataFrame
+    """
+    import json
+
+    if filename:
+        with open(filename) as f_obj:
+            json_data = json.load(f_obj)
+
+    df = pd.read_json(json_data[attr]) if attr else pd.read_json(json_data)
+    return df

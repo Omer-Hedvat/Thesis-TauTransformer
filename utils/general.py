@@ -107,3 +107,9 @@ def percentage_calculator(prc, array=None, num=None):
     if array is not None:
         num = len(array)
     return int(num * prc)
+
+
+def merge_dicts(x, y):
+    z = x.copy()   # start with keys and values of x
+    z.update(y)    # modifies z with keys and values of y
+    return z
