@@ -29,7 +29,7 @@ def min_max_scaler(arr1, features, arr2=None, return_as_df=False):
         arr1_norm = pd.DataFrame(arr1_norm, columns=features)
         arr1_norm['label'] = arr1['label']
     if arr2 is not None:
-        arr2_norm = scaler.transform(arr2)
+        arr2_norm = scaler.transform(arr2[features])
         if return_as_df:
             arr2_norm = pd.DataFrame(arr2_norm, columns=features)
         return arr1_norm, arr2_norm

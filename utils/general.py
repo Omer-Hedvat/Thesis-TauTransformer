@@ -85,10 +85,6 @@ def lists_avg(lst):
     return sum(lst)/len(lst)
 
 
-def calc_k(features, prc):
-    return int(len(features) * prc)
-
-
 def arrange_data_features(train_set, val_set, feature, return_y=True):
     if return_y:
         return train_set[feature].copy(), train_set['label'].copy(), val_set[feature].copy(), val_set['label'].copy()
@@ -108,6 +104,6 @@ def percentage_calculator(prc, array=None, num=None):
     :return: a rounded percentage number
     """
     assert array is not None or num is not None
-    if array:
+    if array is not None:
         num = len(array)
     return int(num * prc)

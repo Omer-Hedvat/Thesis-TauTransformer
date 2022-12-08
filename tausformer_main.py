@@ -4,7 +4,7 @@ import os
 
 from TauTransformer import TauTransformer
 from utils.files import create_work_dir, read_from_csv, print_separation_dots, store_results, all_results_colorful, generate_and_save_scatter_plots
-from utils.general import setup_logger, lists_avg, calc_k, arrange_data_features
+from utils.general import setup_logger, lists_avg, percentage_calculator, arrange_data_features
 from utils.machine_learning import t_test, kfolds_split, min_max_scaler
 from utils.machine_learning import predict
 from utils.timer import Timer
@@ -26,7 +26,7 @@ def run_experiments(config, api_params):
     logger.info(f"DATA STATS:\ndata shape of {data.shape}\nLabel distributes:\n{data['label'].value_counts().sort_index()}\n")
 
     for feature_percentage in config['features_percentage']:
-        k = calc_k(all_features, feature_percentage)
+        k = percentage_calculator(feature_percentage, array=all_features)
         if k < 1 or k == len(all_features):
             continue
         logger.info(f"""
@@ -67,37 +67,40 @@ def run_experiments(config, api_params):
     t_test(config['dataset_name'])
 
 
-def main():
-    config = {
-        'kfolds': 5,
-        'features_percentage': [0.02, 0.05, 0.1, 0.2, 0.3, 0.5],
-        'dist_functions': ['wasserstein', 'jm', 'hellinger'],
-        'nrows': 10000,
-        'features_to_eliminate_prc': [0.0, 0.2, 0.35, 0.5],
-        'dm_dim': 2,
-        'alpha': 1,
-        'eps_type': 'maxmin',
-        'eps_factor': [50, 50],
-        'verbose': False,
-        'random_state': 0
-    }
+def main(config=None, api_params=None, datasets=None):
+    if config is None:
+        config = {
+            'kfolds': 5,
+            'features_percentage': [0.02, 0.05, 0.1, 0.2, 0.3, 0.5],
+            'dist_functions': ['wasserstein', 'jm', 'hellinger'],
+            'nrows': 10000,
+            'features_to_eliminate_prc': [0.0, 0.2, 0.35, 0.5],
+            'dm_dim': 2,
+            'alpha': 1,
+            'eps_type': 'maxmin',
+            'eps_factor': [50, 50],
+            'verbose': False,
+            'random_state': 0
+        }
 
-    api_params = {
-        'alpha': config['alpha'],
-        'eps_type': config['eps_type'],
-        'eps_factor': config['eps_factor'],
-        'verbose': config['verbose'],
-        'random_state': config['random_state']
-    }
+    if api_params is None:
+        api_params = {
+            'alpha': config['alpha'],
+            'eps_type': config['eps_type'],
+            'eps_factor': config['eps_factor'],
+            'verbose': config['verbose'],
+            'random_state': config['random_state']
+        }
+        # config['features_percentage'] = [0.02, 0.05, 0.1, 0.2, 0.3]
+        # config['features_to_eliminate_prc'] = [0.0, 0.2, 0.35, 0.5]
 
-    # tuples of datasets names and target column name
-    datasets = [
-        ('adware_balanced', 'label'), ('ml_multiclass_classification_data', 'target'), ('digits', 'label'),
-        ('isolet', 'label'), ('otto_balanced', 'target'), ('gene_data', 'label')
-    ]
-    datasets = [('adware_balanced', 'label')]
-    config['features_percentage'] = [0.02, 0.05, 0.1, 0.2, 0.3]
-    config['features_to_eliminate_prc'] = [0.0, 0.2, 0.35, 0.5]
+    if datasets is None:
+        # tuples of datasets names and target column name
+        datasets = [
+            ('adware_balanced', 'label'), ('ml_multiclass_classification_data', 'target'), ('digits', 'label'),
+            ('isolet', 'label'), ('otto_balanced', 'target'), ('gene_data', 'label')
+        ]
+        datasets = [('otto_balanced', 'target'), ('gene_data', 'label')]
 
     for dataset, label in datasets:
         config['dataset_name'] = dataset
