@@ -67,9 +67,9 @@ def run_experiments(config, dm_params):
                     )
 
                     # Save json
-                    additionl_workdir_string = f"{features_to_eliminate_prc}_dm1_{dm_params['epsilon_factor'][0]}_dm2_{dm_params['epsilon_factor'][1]}"
-                    workdir_json = os.path.join(workdir, f"{feature_percentage}", additionl_workdir_string)
-                    create_work_dir(workdir_json, True, on_exists='ignore')
+                    additional_workdir_string = f"elm_prc_{features_to_eliminate_prc}_dm1_{dm_params['epsilon_factor'][0]}_dm2_{dm_params['epsilon_factor'][1]}_results.json"
+                    workdir_json = os.path.join(workdir, f"{feature_percentage}")
+                    resolved_workdir_json = create_work_dir(workdir_json, True, on_exists='ignore')
 
                     attrs_list = [
                         'feature_percentage', 'features_to_eliminate_prc', 'dm1_params', 'dm2_params'
@@ -79,7 +79,7 @@ def run_experiments(config, dm_params):
                     final_dict['distance_matrix'] = {k: v.to_json() for k, v in final_dict['distance_matrix'].items()}
                     final_dict['dm1'] = {k: v.to_json() for k, v in final_dict['dm1'].items()}
                     final_dict['dm2'] = final_dict['dm2'].to_json()
-                    save_json(final_dict, workdir_json, 'results.json')
+                    save_json(final_dict, resolved_workdir_json, additional_workdir_string)
 
     t_test(config['dataset_name'])
 

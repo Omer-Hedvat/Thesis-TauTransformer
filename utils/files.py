@@ -44,7 +44,7 @@ def create_work_dir(path, append_timestamp=False, on_exists='ask'):
     os.makedirs(resolved_path, exist_ok=True)
 
     if on_exists == 'ignore':
-        print(f"work_dir {resolved_path} already exists. Ignoring.")
+        # print(f"work_dir {resolved_path} already exists. Ignoring.")
         return resolved_path
     elif on_exists == 'abort':
         print(f"work_dir {resolved_path} already exists. Aborting.")
@@ -103,10 +103,11 @@ def save_json(data, workdir, filename, indent=2, _jsonify=True):
     :param _jsonify: whether to 'jsonify' (convert to json valid format) the input data
     :return: None.
     """
+    import os
     import json
+    import json5
     from functools import partial
     from pathlib import Path
-    import json5
 
     suffix = Path(filename).suffix
     assert suffix in ['.json', '.json5']
@@ -115,7 +116,7 @@ def save_json(data, workdir, filename, indent=2, _jsonify=True):
         data = jsonify(data)
 
     dump = partial(json5.dump, quote_keys=True, trailing_commas=False) if suffix == '.json5' else json.dump
-    with open(workdir, 'wt', newline='\n') as F:
+    with open(os.path.join(workdir, filename), 'wt', newline='\n') as F:
         dump(data, F, indent=indent)
 
 
