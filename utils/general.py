@@ -85,10 +85,6 @@ def lists_avg(lst):
     return sum(lst)/len(lst)
 
 
-def calc_k(features, prc):
-    return int(len(features) * prc)
-
-
 def arrange_data_features(train_set, val_set, feature, return_y=True):
     if return_y:
         return train_set[feature].copy(), train_set['label'].copy(), val_set[feature].copy(), val_set['label'].copy()
@@ -99,3 +95,21 @@ def arrange_data_features(train_set, val_set, feature, return_y=True):
 def ndarray_to_df_w_index_names(array, index_names):
     import pandas as pd
     return pd.DataFrame(array, index=index_names)
+
+
+def percentage_calculator(prc, array=None, num=None):
+    """
+    Calculates the percentage number out of an array length or a number
+    :param prc: the requested percentage
+    :return: a rounded percentage number
+    """
+    assert array is not None or num is not None
+    if array is not None:
+        num = len(array)
+    return int(num * prc)
+
+
+def merge_dicts(x, y):
+    z = x.copy()   # start with keys and values of x
+    z.update(y)    # modifies z with keys and values of y
+    return z

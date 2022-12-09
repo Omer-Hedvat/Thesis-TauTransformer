@@ -29,7 +29,7 @@ def min_max_scaler(arr1, features, arr2=None, return_as_df=False):
         arr1_norm = pd.DataFrame(arr1_norm, columns=features)
         arr1_norm['label'] = arr1['label']
     if arr2 is not None:
-        arr2_norm = scaler.transform(arr2)
+        arr2_norm = scaler.transform(arr2[features])
         if return_as_df:
             arr2_norm = pd.DataFrame(arr2_norm, columns=features)
         return arr1_norm, arr2_norm
@@ -205,18 +205,3 @@ def mrmr_predict(train_set, val_set, k, all_features, mrmr_acc_agg, mrmr_f1_agg)
     mrmr_acc_agg.append(mrmr_acc)
     mrmr_f1_agg.append(mrmr_f1)
     return mrmr_acc_agg, mrmr_f1_agg
-
-
-def return_best_features_by_kmeans(coordinates, k):
-    from sklearn.cluster import KMeans
-
-    features_rank = np.argsort(coordinates[0])
-    kmeans = KMeans(n_clusters=k, random_state=0)
-    labels = kmeans.fit(coordinates.T).labels_
-    best_features = []
-    selected_cetroids = []
-    for idx in features_rank:
-        if labels[idx] not in selected_cetroids:
-            selected_cetroids.append(labels[idx])
-            best_features.append(idx)
-    return best_features, labels, features_rank
