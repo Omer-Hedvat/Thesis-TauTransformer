@@ -62,22 +62,16 @@ Construct the NXN Gaussian kernel, normalize it and compute eigenvalues and eige
 '''
 
 
-def diffusion_mapping(data_list, alpha, eps_type, epsilon_factor, **kwargs):
+def diffusion_mapping(data_list, alpha, eps_type, epsilon_factor, dim):
     """
 
     :param data_list:
     :param alpha:
-    :param eps_type:
+    :param eps_type: 'mean' or 'maxmin'
     :param epsilon_factor:
-    :param t:
-    :param kwargs:
+    :param dim: the requested diffusion map dim
     :return:
     """
-    assert 'dim' in kwargs.keys()
-
-    # compute epsilon of (data_list) eps_type can be 'mean' or 'maxmin'
-    # dist is the L2 distances
-    # eps_type='maxmin'#mean' #or maxmin
 
     kernel, epsilon = kernel_calc(data_list, eps_type, epsilon_factor)
     v = np.sum(kernel, axis=0)
@@ -97,7 +91,7 @@ def diffusion_mapping(data_list, alpha, eps_type, epsilon_factor, **kwargs):
     singular_vectors, singular_values, _ = LA.svd(m, full_matrices=False)
 
     # Compute embedding coordinates
-    diffusion_coordinates = singular_vectors[:, 1:kwargs['dim'] + 1].T * (singular_values[1:kwargs['dim'] + 1][:, None])
+    diffusion_coordinates = singular_vectors[:, 1:dim + 1].T * (singular_values[1:dim + 1][:, None])
     ranking = singular_vectors[:, :1]
 
     return {'coordinates': diffusion_coordinates, 'ranking': ranking}

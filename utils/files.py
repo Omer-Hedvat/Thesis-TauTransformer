@@ -44,7 +44,7 @@ def create_work_dir(path, append_timestamp=False, on_exists='ask'):
     os.makedirs(resolved_path, exist_ok=True)
 
     if on_exists == 'ignore':
-        print(f"work_dir {resolved_path} already exists. Ignoring.")
+        # print(f"work_dir {resolved_path} already exists. Ignoring.")
         return resolved_path
     elif on_exists == 'abort':
         print(f"work_dir {resolved_path} already exists. Aborting.")
@@ -94,7 +94,7 @@ def load_json(filename):
     return data
 
 
-def save_json(data, filename, indent=2, _jsonify=True):
+def save_json(data, workdir, filename, indent=2, _jsonify=True):
     """
     Saves json data.
     :param data: a json-valid data object
@@ -103,10 +103,11 @@ def save_json(data, filename, indent=2, _jsonify=True):
     :param _jsonify: whether to 'jsonify' (convert to json valid format) the input data
     :return: None.
     """
+    import os
     import json
+    import json5
     from functools import partial
     from pathlib import Path
-    import json5
 
     suffix = Path(filename).suffix
     assert suffix in ['.json', '.json5']
@@ -115,7 +116,7 @@ def save_json(data, filename, indent=2, _jsonify=True):
         data = jsonify(data)
 
     dump = partial(json5.dump, quote_keys=True, trailing_commas=False) if suffix == '.json5' else json.dump
-    with open(filename, 'wt', newline='\n') as F:
+    with open(os.path.join(workdir, filename), 'wt', newline='\n') as F:
         dump(data, F, indent=indent)
 
 
@@ -160,9 +161,6 @@ def jsonify(data, fix_non_string_dict_keys=False, max_float_decimals=4):
     import datetime
     import json
     from collections import OrderedDict
-
-    import numpy as np
-    import pandas as pd
 
     if isinstance(data, dict):
         # Check for non-string keys
@@ -271,18 +269,17 @@ def print_separation_dots(message):
     logger.info('*' * 100)
 
 
-def return_ds_results_mask(filename, dataset, features_prc, dm_dim):
+def return_ds_results_mask(filename, dataset, features_prc):
     from datetime import datetime
     df = pd.read_csv(filename)
     today_date = datetime.now().strftime('%d-%m-%Y')
     ds_results_mask = (
-            (df.dataset == dataset) & (df.features_prc == features_prc) &
-            (df.dm_dim == dm_dim) & (df.date == today_date)
+            (df.dataset == dataset) & (df.features_prc == features_prc) & (df.date == today_date)
     )
     return df, ds_results_mask, today_date
 
 
-def store_results(dataset, features_prc, dm_dim, metric, acc, f1, classes, workdir, timer_list=None):
+def store_results(dataset, features_prc, metric, acc, f1, classes, workdir, timer_list=None):
     from datetime import datetime
     import os
     from utils.general import lists_avg
@@ -290,20 +287,20 @@ def store_results(dataset, features_prc, dm_dim, metric, acc, f1, classes, workd
 
     # General Results File
     filename = 'results/all_datasets_results.csv'
-    acc_results_df, ds_results_mask, today_date = return_ds_results_mask(filename, dataset, features_prc, dm_dim)
+    acc_results_df, ds_results_mask, today_date = return_ds_results_mask(filename, dataset, features_prc)
     if ds_results_mask.any():
         acc_results_df.loc[ds_results_mask, metric] = round(lists_avg(acc), 3)
     else:
         new_df = pd.DataFrame(columns=acc_results_df.columns)
-        new_df.loc[len(new_df), ['date', 'dataset', 'features_prc', 'dm_dim', metric]] = \
-            [today_date, dataset, features_prc, dm_dim, round(lists_avg(acc), 3)]
-        acc_results_df = pd.concat([acc_results_df, new_df]).sort_values(by=['dataset', 'features_prc', 'dm_dim'])
+        new_df.loc[len(new_df), ['date', 'dataset', 'features_prc', metric]] = \
+            [today_date, dataset, features_prc, round(lists_avg(acc), 3)]
+        acc_results_df = pd.concat([acc_results_df, new_df]).sort_values(by=['dataset', 'features_prc'])
     acc_results_df.to_csv('results/all_datasets_results.csv', index=False)
 
     # Dataset's F1 Results File
-    columns = ['features_prc', 'dm_dim', *[f'{metric}_{class_name}' for class_name in classes]]
+    columns = ['features_prc', *[f'{metric}_{class_name}' for class_name in classes]]
     class_avg_f1 = calc_f1_score(f1)
-    values = [features_prc, dm_dim, *class_avg_f1]
+    values = [features_prc, *class_avg_f1]
     data_dict = dict(zip(columns, values))
     f1_file = os.path.join(workdir, f'f1_scores.csv')
     new_data_df = pd.DataFrame([data_dict])
@@ -311,34 +308,34 @@ def store_results(dataset, features_prc, dm_dim, metric, acc, f1, classes, workd
         new_data_df.to_csv(f1_file, index=False)
     else:
         f1_results_df = pd.read_csv(f1_file)
-        all_ds_results_mask = ((f1_results_df.features_prc == features_prc) & (f1_results_df.dm_dim == dm_dim))
+        all_ds_results_mask = ((f1_results_df.features_prc == features_prc))
         if all_ds_results_mask.any():
             f1_results_df.loc[all_ds_results_mask, columns] = values
         else:
-            f1_results_df = pd.concat([f1_results_df, new_data_df]).sort_values(by=['features_prc', 'dm_dim'])
+            f1_results_df = pd.concat([f1_results_df, new_data_df]).sort_values(by=['features_prc'])
         f1_results_df.to_csv(f1_file, index=False)
 
     # Timer Results File
     filename = 'results/timer_results.csv'
     if timer_list:
         timer_avg = round(lists_avg([t.to_int() for t in timer_list]), 3)
-        timer_df, ds_results_mask, today_date = return_ds_results_mask(filename, dataset, features_prc, dm_dim)
+        timer_df, ds_results_mask, today_date = return_ds_results_mask(filename, dataset, features_prc)
         if ds_results_mask.any():
             timer_df.loc[ds_results_mask, metric] = timer_avg
         else:
             new_df = pd.DataFrame(columns=timer_df.columns)
-            new_df.loc[len(new_df), ['date', 'dataset', 'features_prc', 'dm_dim', metric]] = \
-                [today_date, dataset, features_prc, dm_dim, timer_avg]
-            timer_df = pd.concat([timer_df, new_df]).sort_values(by=['dataset', 'features_prc', 'dm_dim'])
+            new_df.loc[len(new_df), ['date', 'dataset', 'features_prc', metric]] = \
+                [today_date, dataset, features_prc, timer_avg]
+            timer_df = pd.concat([timer_df, new_df]).sort_values(by=['dataset', 'features_prc'])
         timer_df.to_csv('results/timer_results.csv', index=False)
 
 
 def all_results_colorful():
     data = pd.read_csv("results/all_datasets_results.csv")
-    dat = data['dataset'] + " " + data['features_prc'].apply(str) + " " + data['dm_dim'].apply(str) + " " + data['date'].apply(str)
+    dat = data['dataset'] + " " + data['features_prc'].apply(str) + " " + data['date'].apply(str)
     data['raw'] = dat
     data = data.set_index('raw')
-    data = data.drop(columns=['date', 'dataset', 'features_prc', 'dm_dim'])
+    data = data.drop(columns=['date', 'dataset', 'features_prc'])
     data.style.background_gradient(cmap='RdYlGn', axis=1).to_excel("results/all_results_colors.xlsx")
 
 
@@ -360,3 +357,21 @@ def generate_and_save_scatter_plots(dm_dict, workdir=None):
             path = create_work_dir(path, append_timestamp=True, on_exists='ignore')
             file_path = os.path.join(path, title)
             plt.savefig(f'{file_path}.png')
+
+
+def read_df_from_json(filename=None, json_data=None, attr=None):
+    """
+    takes a pandas dataframe as a string (from 'to_json()') back to a dataframe
+    :param filename: filename with path
+    :param json_data: json file
+    :param attr: the dictionary's attribute name
+    :return: a pd.DataFrame
+    """
+    import json
+
+    if filename:
+        with open(filename) as f_obj:
+            json_data = json.load(f_obj)
+
+    df = pd.read_json(json_data[attr]) if attr else pd.read_json(json_data)
+    return df
