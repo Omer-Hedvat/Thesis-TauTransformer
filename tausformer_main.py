@@ -112,11 +112,13 @@ def main(config=None, dm_params=None, datasets=None):
             ('adware_balanced', 'label'), ('ml_multiclass_classification_data', 'target'), ('digits', 'label'),
             ('isolet', 'label'), ('otto_balanced', 'target'), ('gene_data', 'label')
         ]
-        datasets = [('adware_balanced', 'label'), ('ml_multiclass_classification_data', 'target'), ('digits', 'label'),
-            ('isolet', 'label'), ('otto_balanced', 'target')]
+        datasets = [
+            ('adware_balanced', 'label'), ('ml_multiclass_classification_data', 'target'), ('digits', 'label'),
+            ('isolet', 'label'), ('otto_balanced', 'target')
+        ]
 
     for dataset, label in datasets:
-        config['dataset_name'] = datasets
+        config['dataset_name'] = dataset
         config['label_column'] = label
         run_experiments(config, dm_params)
 
