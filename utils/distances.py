@@ -29,24 +29,84 @@ def hellinger(p, q):
     return sosq / sqrt(2)
 
 
+def prepare_cls_vectors(X_arr, y_arr, feature_idx, cls_feature1, cls_feature2):
+    """
+    Prepares the classes arrays w.out null values
+    :param X_arr: features numpy ndarray
+    :param y_arr: label's ndarray
+    :param feature_idx: the index of the requested feature
+    :param cls_feature1: the value of the first class
+    :param cls_feature2: the value of the second class
+    :return: ready cls_1_array, cls_2_array
+    """
+    import numpy as np
+    cls_1_array = X_arr[y_arr == cls_feature1, feature_idx]
+    cls_2_array = X_arr[y_arr == cls_feature2, feature_idx]
+
+    cls_1_array = cls_1_array[~np.isnan(cls_1_array)]
+    cls_2_array = cls_2_array[~np.isnan(cls_2_array)]
+
+    return cls_1_array, cls_2_array
+
+
 def wasserstein_dist(X_arr, y_arr, feature_idx, cls_feature1, cls_feature2):
+    """
+    Calculates the Wasserstein distance between vectors
+    :param X_arr: features numpy ndarray
+    :param y_arr: label's ndarray
+    :param feature_idx: the index of the requested feature
+    :param cls_feature1: the value of the first class
+    :param cls_feature2: the value of the second class
+    :return: The probabilistic distance value between the vectors by Wasserstein distance
+    """
     from scipy.stats import wasserstein_distance
-    dist = wasserstein_distance(X_arr[y_arr == cls_feature1, feature_idx], X_arr[y_arr == cls_feature2, feature_idx])
+    cls_1_array, cls_2_array = prepare_cls_vectors(X_arr, y_arr, feature_idx, cls_feature1, cls_feature2)
+    dist = wasserstein_distance(cls_1_array, cls_2_array)
     return dist
 
 
 def bhattacharyya_dist(X_arr, y_arr, feature_idx, cls_feature1, cls_feature2):
-    dist = bhattacharyya_distance(X_arr[y_arr == cls_feature1, feature_idx], X_arr[y_arr == cls_feature2, feature_idx])
+    """
+    Calculates the Bhattacharyya distance between vectors
+    :param X_arr: features numpy ndarray
+    :param y_arr: label's ndarray
+    :param feature_idx: the index of the requested feature
+    :param cls_feature1: the value of the first class
+    :param cls_feature2: the value of the second class
+    :return: The probabilistic distance value between the vectors by Bhattacharyya distance
+    """
+    cls_1_array, cls_2_array = prepare_cls_vectors(X_arr, y_arr, feature_idx, cls_feature1, cls_feature2)
+    dist = bhattacharyya_distance(cls_1_array, cls_2_array)
     return dist
 
 
 def hellinger_dist(X_arr, y_arr, feature_idx, cls_feature1, cls_feature2):
-    dist = hellinger(X_arr[y_arr == cls_feature1, feature_idx], X_arr[y_arr == cls_feature2, feature_idx])
+    """
+    Calculates the Hellinger distance between vectors
+    :param X_arr: features numpy ndarray
+    :param y_arr: label's ndarray
+    :param feature_idx: the index of the requested feature
+    :param cls_feature1: the value of the first class
+    :param cls_feature2: the value of the second class
+    :return: The probabilistic distance value between the vectors by Hellinger distance
+    """
+    cls_1_array, cls_2_array = prepare_cls_vectors(X_arr, y_arr, feature_idx, cls_feature1, cls_feature2)
+    dist = hellinger(cls_1_array, cls_2_array)
     return dist
 
 
 def jm_dist(X_arr, y_arr, feature_idx, cls_feature1, cls_feature2):
-    dist = jm_distance(X_arr[y_arr == cls_feature1, feature_idx], X_arr[y_arr == cls_feature2, feature_idx])
+    """
+    Calculates the JM distance between vectors
+    :param X_arr: features numpy ndarray
+    :param y_arr: label's ndarray
+    :param feature_idx: the index of the requested feature
+    :param cls_feature1: the value of the first class
+    :param cls_feature2: the value of the second class
+    :return: The probabilistic distance value between the vectors by JM distance
+    """
+    cls_1_array, cls_2_array = prepare_cls_vectors(X_arr, y_arr, feature_idx, cls_feature1, cls_feature2)
+    dist = jm_distance(cls_1_array, cls_2_array)
     return dist
 
 
