@@ -98,6 +98,7 @@ def ndarray_to_df(array, names_list, axis=0):
         return pd.DataFrame(array, columns=names_list)
     return pd.DataFrame(array, index=names_list)
 
+
 def percentage_calculator(prc, array=None, num=None):
     """
     Calculates the percentage number out of an array length or a number
