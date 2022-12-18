@@ -76,9 +76,11 @@ def run_experiments(config, dm_params):
                     ]
                     important_class_attr = {k: v for k, v in tt.__dict__.items() if k in attrs_list}
                     final_dict = merge_dicts(tt.results_dict, important_class_attr)
-                    final_dict['distance_matrix'] = {k: v.to_json() for k, v in final_dict['distance_matrix'].items()}
-                    final_dict['dm1'] = {k: v.to_json() for k, v in final_dict['dm1'].items()}
-                    final_dict['dm2'] = final_dict['dm2'].to_json()
+                    final_dict['distance_matrix'] = {k: v.to_json() for k, v in final_dict['distance_matrix'].items()} \
+                        if 'distance_matrix' in final_dict.keys() else {}
+                    final_dict['dm1'] = {k: v.to_json() for k, v in final_dict['dm1'].items()} \
+                        if 'dm1' in final_dict.keys() else {}
+                    final_dict['dm2'] = final_dict['dm2'].to_json() if 'dm2' in final_dict.keys() else {}
                     save_json(final_dict, resolved_workdir_json, additional_workdir_string)
 
     t_test(config['dataset_name'])
@@ -90,7 +92,7 @@ def main(config=None, dm_params=None, datasets=None):
             'kfolds': 5,
             'features_percentage': [0.02, 0.05, 0.1, 0.2, 0.3, 0.5],
             'dist_functions': ['wasserstein', 'jm', 'hellinger'],
-            'nrows': 1000,
+            'nrows': 10000,
             'features_to_eliminate_prc': [0.0, 0.2, 0.35, 0.5],
             'verbose': False,
             'random_state': 0

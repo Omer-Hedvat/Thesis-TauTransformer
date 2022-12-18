@@ -92,9 +92,11 @@ def arrange_data_features(train_set, val_set, feature, return_y=True):
         return train_set[feature].copy(), val_set[feature].copy()
 
 
-def ndarray_to_df_w_index_names(array, index_names):
+def ndarray_to_df(array, names_list, axis=0):
     import pandas as pd
-    return pd.DataFrame(array, index=index_names)
+    if axis == 1:
+        return pd.DataFrame(array, columns=names_list)
+    return pd.DataFrame(array, index=names_list)
 
 
 def percentage_calculator(prc, array=None, num=None):
