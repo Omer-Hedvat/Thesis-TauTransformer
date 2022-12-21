@@ -91,7 +91,7 @@ def main(config=None, dm_params=None, datasets=None):
         config = {
             'kfolds': 5,
             'features_percentage': [0.02, 0.05, 0.1, 0.2, 0.3, 0.5],
-            'dist_functions': ['wasserstein', 'jm', 'hellinger'],
+            'dist_functions': ['hellinger'],
             'nrows': 10000,
             'features_to_eliminate_prc': [0.0, 0.2, 0.35, 0.5],
             'verbose': False,
@@ -105,7 +105,7 @@ def main(config=None, dm_params=None, datasets=None):
             'dim': 2,
             'alpha': 1,
             'eps_type': 'maxmin',
-            'epsilon_factor': [50, 50]
+            'epsilon_factor': [25, 50]
         }
 
     if datasets is None:
