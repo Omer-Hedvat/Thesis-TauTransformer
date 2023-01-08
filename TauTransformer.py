@@ -20,7 +20,7 @@ class TauTransformer:
         Initiates the class
         :param feature_percentage: Which percentage of the features do we want to return
         :param features_to_eliminate_prc: Which percentage of features do we want to eliminate using the elimination heuristic
-        :param dist_functions: a list that describes which distance functions we wish to use (Hellinger/JM/Wasserstein)
+        :param dist_functions: a list/string that describes which distance functions we wish to use (Hellinger/JM/Wasserstein)
         :param dm_params: a dictionary of diffusion maps parameters
         :param max_prc_null_values: a threshold of maximal value of how many null values per column
         :param random_state: Controls the randomness of the algorithm
@@ -32,7 +32,7 @@ class TauTransformer:
         self.init_eliminated_features = list()
         self.feature_percentage = feature_percentage
         self.features_to_eliminate_prc = features_to_eliminate_prc
-        self.dist_functions = dist_functions
+        self.dist_functions = dist_functions if dist_functions is list else [dist_functions]
         self.features_rank_indexes = list()
 
         self.dm1_params = dm_params.copy()
