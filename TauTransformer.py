@@ -32,7 +32,7 @@ class TauTransformer:
         self.init_eliminated_features = list()
         self.feature_percentage = feature_percentage
         self.features_to_eliminate_prc = features_to_eliminate_prc
-        self.dist_functions = dist_functions if dist_functions is list else [dist_functions]
+        self.dist_functions = dist_functions if type(dist_functions) is list else [dist_functions]
         self.features_rank_indexes = list()
 
         self.dm1_params = dm_params.copy()
