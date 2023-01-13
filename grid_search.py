@@ -2,17 +2,16 @@ import pandas as pd
 from TauTransformer import TauTransformer
 from utils.files import read_from_csv
 import itertools
-from utils.general import lists_avg, arrange_data_features
+from utils.general import lists_avg, arrange_data_features, percentage_calculator
 from utils.machine_learning import kfolds_split, min_max_scaler
 from utils.machine_learning import predict
 from utils.timer import Timer
 
 
-def main():
-    dataset, label = ('adware_balanced', 'label')
+def grid_serach(config):
 
     features_percentages = [0.02, 0.05, 0.1, 0.2, 0.3, 0.5]
-    config = {'kfolds': 5, 'nrows': 100, 'verbose': False, 'random_state': 0, 'dataset_name': dataset, 'label_column': label}
+
 
     dm_params = {
         'dim': 2,
@@ -26,8 +25,7 @@ def main():
     grid_search_dict = {
         'features_to_eliminate_prc': [0.0, 0.2, 0.35, 0.5],
         'epsilon_factor': [[25, 25], [100, 10], [50, 50], [10, 100]],
-        'dist_functions': [['wasserstein'], ['jm'], ['hellinger'], ['wasserstein', 'jm'], ['wasserstein', 'hellinger'], ['jm', 'hellinger'],
-                           ['wasserstein', 'jm', 'hellinger']],
+        'dist_functions': ['wasserstein', 'jm', 'hellinger', ['wasserstein', 'jm'], ['wasserstein', 'hellinger'], ['jm', 'hellinger'], ['wasserstein', 'jm', 'hellinger']]
     }
 
     keys, values = zip(*grid_search_dict.items())
@@ -42,11 +40,13 @@ def main():
     results_list = list()
     for feature_prc in features_percentages:
         print(f"{feature_prc=}")
+        k = percentage_calculator(feature_prc, array=all_features)
+        if k < 1 or k == len(all_features):
+            continue
         for idx, permutation in enumerate(permutations_list_of_dicts):
-            print(f"{idx=}")
+            print(f"{idx=}, {permutation=}")
             dm_params['epsilon_factor'] = permutation['epsilon_factor']
             for kfold_iter in range(1, config['kfolds'] + 1):
-                final_kf_iter = kfold_iter == config['kfolds']
                 train_set, val_set = kfolds_split(data_norm, kfold_iter, n_splits=config['kfolds'], random_state=0)
                 X_train, y_train, X_test, y_test = arrange_data_features(train_set, val_set, all_features)
 
@@ -69,6 +69,20 @@ def main():
     )
 
     results_df.to_csv(f'results/grid_search/{dataset}.csv', index=False)
+
+
+def main():
+    config = {'kfolds': 5, 'nrows': 10000, 'verbose': False, 'random_state': 0}
+
+    datasets = [
+        ('adware_balanced', 'label'), ('ml_multiclass_classification_data', 'target'), ('digits', 'label'),
+        ('isolet', 'label'), ('otto_balanced', 'target')
+    ]
+
+    for dataset, label in datasets:
+        config['dataset_name'] = dataset
+        config['label_column'] = label
+        grid_serach(config)
 
 
 if __name__ == '__main__':
