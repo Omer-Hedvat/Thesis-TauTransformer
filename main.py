@@ -129,7 +129,7 @@ def main():
         'dim': 2,
         'alpha': 1,
         'eps_type': 'maxmin',
-        'epsilon_factor': [25, 25]
+        'epsilon_factor': [10, 100]
     }
 
     # tuples of datasets names and target column name
@@ -137,8 +137,10 @@ def main():
         ('adware_balanced', 'label'), ('ml_multiclass_classification_data', 'target'), ('digits', 'label'),
         ('isolet', 'label'), ('otto_balanced', 'target'), ('gene_data', 'label')
     ]
-    datasets = [('adware_balanced', 'label'), ('ml_multiclass_classification_data', 'target'), ('digits', 'label'),
-                ('isolet', 'label'), ('otto_balanced', 'target')]
+    datasets = [
+        ('adware_balanced', 'label'), ('ml_multiclass_classification_data', 'target'), ('digits', 'label'),
+        ('isolet', 'label'), ('otto_balanced', 'target')
+    ]
     # config['features_percentage'] = [0.02, 0.05, 0.1, 0.2, 0.3]
     # config['features_to_eliminate_prc'] = [0.0, 0.2, 0.35, 0.5]
 

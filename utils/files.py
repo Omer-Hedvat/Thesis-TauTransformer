@@ -293,8 +293,8 @@ def store_results(dataset, features_prc, metric, acc, f1, classes, workdir, time
     else:
         new_df = pd.DataFrame(columns=acc_results_df.columns)
         new_df.loc[len(new_df), ['date', 'dataset', 'features_prc', metric]] = \
-            [today_date, dataset, features_prc, round(lists_avg(acc), 3)]
-        acc_results_df = pd.concat([acc_results_df, new_df]).sort_values(by=['dataset', 'features_prc'])
+            [today_date, dataset, features_prc, round(lists_avg(acc), 4)]
+        acc_results_df = pd.concat([acc_results_df, new_df]).sort_values(by=['data', 'dataset', 'features_prc'])
     acc_results_df.to_csv('results/all_datasets_results.csv', index=False)
 
     # Dataset's F1 Results File

@@ -31,7 +31,6 @@ def grid_search(config):
     data, config['dataset_name'] = read_from_csv(dataset_dir, config)
     all_features = data.columns.drop('label')
     data_norm = min_max_scaler(data, all_features, return_as_df=True)
-    kmeans_acc_agg,  timer_list = [], []
 
     results_list = list()
     for feature_prc in features_percentages:
@@ -43,6 +42,7 @@ def grid_search(config):
         for idx, permutation in enumerate(permutations_list_of_dicts):
             print(f"{idx=}, {permutation=}")
             dm_params['epsilon_factor'] = permutation['epsilon_factor']
+            kmeans_acc_agg, timer_list = [], []
 
             for kfold_iter in range(1, config['kfolds'] + 1):
                 train_set, val_set = kfolds_split(data_norm, kfold_iter, n_splits=config['kfolds'], random_state=0)
@@ -60,6 +60,7 @@ def grid_search(config):
             acc_result = round(lists_avg(kmeans_acc_agg), 6)
             timer_avg = round(lists_avg([t.to_int() for t in timer_list]), 6)
             results_list.append([feature_prc, *list(permutation.values()), acc_result, timer_avg])
+            print(f"{acc_result=}, {timer_avg=}")
 
     results_df = (
         pd.DataFrame(
