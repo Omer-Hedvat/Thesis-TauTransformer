@@ -20,7 +20,7 @@ def grid_search(config):
 
     grid_search_dict = {
         'features_to_eliminate_prc': [0.0, 0.2, 0.35, 0.5],
-        'epsilon_factor': [[25, 25], [100, 10], [50, 50], [10, 100]],
+        'epsilon_factor': [[25, 25], [100, 10], [50, 50], [10, 100], [25, 50], [50, 25]],
         'dist_functions': ['wasserstein', 'jm', 'hellinger', ['wasserstein', 'jm'], ['wasserstein', 'hellinger'], ['jm', 'hellinger'], ['wasserstein', 'jm', 'hellinger']]
     }
 
