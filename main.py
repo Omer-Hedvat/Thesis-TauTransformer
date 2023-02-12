@@ -118,7 +118,7 @@ def main():
     config = {
         'kfolds': 5,
         'features_percentage': [0.02, 0.05, 0.1, 0.2, 0.3, 0.5],
-        'dist_functions': ['wasserstein', 'jm', 'hellinger'],
+        'dist_functions': ['wasserstein'],
         'nrows': 10000,
         'features_to_eliminate_prc': [0.0, 0.2, 0.35, 0.5],
         'verbose': False,
@@ -129,7 +129,7 @@ def main():
         'dim': 2,
         'alpha': 1,
         'eps_type': 'maxmin',
-        'epsilon_factor': [10, 100]
+        'epsilon_factor': [50, 25]
     }
 
     # tuples of datasets names and target column name
