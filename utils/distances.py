@@ -1,14 +1,13 @@
-def jm_distance(p, q):
-    import numpy as np
+import numpy as np
 
+
+def jm_distance(p, q):
     b = bhattacharyya_distance(p, q)
     jm = 2 * (1 - np.exp(-b))
     return jm
 
 
 def bhattacharyya_distance(p, q):
-    import numpy as np
-
     mean_p, mean_q = p.mean(), q.mean()
     std_p = p.std() if p.std() != 0 else 0.00000000001
     std_q = q.std() if q.std() != 0 else 0.00000000001
@@ -39,7 +38,6 @@ def prepare_cls_vectors(X_arr, y_arr, feature_idx, cls_feature1, cls_feature2):
     :param cls_feature2: the value of the second class
     :return: ready cls_1_array, cls_2_array
     """
-    import numpy as np
     cls_1_array = X_arr[y_arr == cls_feature1, feature_idx]
     cls_2_array = X_arr[y_arr == cls_feature2, feature_idx]
 
@@ -139,7 +137,6 @@ def execute_distance_func(X_arr, y_arr, dist_func_name, feature_idx, cls_feature
 
 
 def calc_dist(X, y, all_features, dist_func_name):
-    import numpy as np
     from utils.general import flatten
     from utils.machine_learning import min_max_scaler
     """
@@ -172,3 +169,26 @@ def calc_dist(X, y, all_features, dist_func_name):
     dists_dict[dist_func_name] = dists_arr
     return dists_dict
 
+
+def solve_distance_equation(num):
+    from sympy.solvers import solve
+    from sympy import Symbol, sqrt
+
+    x = Symbol('x')
+    ans = solve((x^2 - x) -num, x)
+    return int(ans[0])
+
+
+def dist_vector_to_matrix(vec):
+    import math
+    length = int(math.sqrt(solve_distance_equation(len(vec)*2)))
+    mat = np.zeros((length, length))
+    idx = 0
+    for i in range(0, length+1):
+        for j in range(i+1, length):
+            mat[i, j] = vec[idx]
+            idx += 1
+    mat = mat.T + mat
+    for i in range(mat.shape[0]):
+        mat[i, i] = 1
+    return mat

@@ -138,8 +138,7 @@ def main():
         ('isolet', 'label'), ('otto_balanced', 'target'), ('gene_data', 'label')
     ]
     datasets = [
-        ('adware_balanced', 'label'), ('ml_multiclass_classification_data', 'target'), ('digits', 'label'),
-        ('isolet', 'label'), ('otto_balanced', 'target')
+        ('credit_score_balanced', 'credit_score')
     ]
     # config['features_percentage'] = [0.02, 0.05, 0.1, 0.2, 0.3]
     # config['features_to_eliminate_prc'] = [0.0, 0.2, 0.35, 0.5]
