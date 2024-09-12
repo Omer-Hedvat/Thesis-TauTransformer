@@ -15,7 +15,7 @@ from utils.timer import Timer
 logger = logging.getLogger(__name__)
 
 
-def run_experiments(config, dm_params, datasets):
+def run_experiments(config, dm_params, dataset):
     workdir = os.path.join(f'results', config['dataset_name'])
     create_work_dir(workdir, on_exists='ignore')
     setup_logger("config_files/logger_config.json", os.path.join(workdir, f"{config['dataset_name']}_log_{datetime.now().strftime('%d-%m-%Y')}.txt"))
@@ -109,7 +109,7 @@ def run_experiments(config, dm_params, datasets):
                 store_results(config['dataset_name'], feature_percentage, 'mrmr', mrmr_acc_agg, mrmr_f1_agg, classes, workdir, timer_mrmr)
 
     # TauTransformer Features
-    tausformer_main(config, dm_params, datasets)
+    tausformer_main(config, dm_params, [dataset])
 
     t_test(config['dataset_name'])
 
@@ -118,8 +118,8 @@ def main():
     config = {
         'kfolds': 5,
         'features_percentage': [0.02, 0.05, 0.1, 0.2, 0.3, 0.5],
-        'dist_functions': ['wasserstein', 'jm', 'hellinger'],
-        'nrows': 1000,
+        'dist_functions': ['wasserstein'],
+        'nrows': 10000,
         'features_to_eliminate_prc': [0.0, 0.2, 0.35, 0.5],
         'verbose': False,
         'random_state': 0,
@@ -129,7 +129,7 @@ def main():
         'dim': 2,
         'alpha': 1,
         'eps_type': 'maxmin',
-        'epsilon_factor': [50, 50]
+        'epsilon_factor': [50, 25]
     }
 
     # tuples of datasets names and target column name
@@ -137,14 +137,16 @@ def main():
         ('adware_balanced', 'label'), ('ml_multiclass_classification_data', 'target'), ('digits', 'label'),
         ('isolet', 'label'), ('otto_balanced', 'target'), ('gene_data', 'label')
     ]
-    datasets = [('digits', 'label')]
-    config['features_percentage'] = [0.02, 0.05, 0.1, 0.2, 0.3]
-    config['features_to_eliminate_prc'] = [0.0, 0.2, 0.35, 0.5]
+    datasets = [
+        ('credit_score_balanced', 'credit_score')
+    ]
+    # config['features_percentage'] = [0.02, 0.05, 0.1, 0.2, 0.3]
+    # config['features_to_eliminate_prc'] = [0.0, 0.2, 0.35, 0.5]
 
     for dataset, label in datasets:
         config['dataset_name'] = dataset
         config['label_column'] = label
-        run_experiments(config, dm_params, datasets)
+        run_experiments(config, dm_params, dataset=(dataset, label))
 
     all_results_colorful()
 

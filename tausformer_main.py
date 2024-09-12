@@ -4,8 +4,7 @@ import os
 
 from TauTransformer import TauTransformer
 from utils.files import (
-    create_work_dir, read_from_csv, print_separation_dots, store_results, all_results_colorful,
-    generate_and_save_scatter_plots, save_json
+    create_work_dir, read_from_csv, print_separation_dots, store_results, all_results_colorful, generate_and_save_scatter_plots, save_json
 )
 from utils.general import setup_logger, lists_avg, percentage_calculator, arrange_data_features, merge_dicts
 from utils.machine_learning import t_test, kfolds_split, min_max_scaler
@@ -37,7 +36,7 @@ def run_experiments(config, dm_params):
                     )
 
         for features_to_eliminate_prc in config['features_to_eliminate_prc']:
-            if feature_percentage + features_to_eliminate_prc >= 1:
+            if feature_percentage + features_to_eliminate_prc > 1:
                 continue
             print_separation_dots(f'features to eliminate heuristic of {int(features_to_eliminate_prc*100)}%')
 
@@ -60,7 +59,7 @@ def run_experiments(config, dm_params):
                 generate_and_save_scatter_plots(tt.dm_dict, workdir)
                 if final_kf_iter:
                     acc_result = round(lists_avg(kmeans_acc_agg) * 100, 2)
-                    logger.info(f"kmeans accuracy result w/ {int(features_to_eliminate_prc*100)}% huristic: {acc_result}%")
+                    logger.info(f"kmeans accuracy result w/ {int(features_to_eliminate_prc*100)}% heuristic: {acc_result}%")
                     store_results(
                         config['dataset_name'], feature_percentage, f'kmeans_{features_to_eliminate_prc}',
                         kmeans_acc_agg, kmeans_f1_agg, classes, workdir, timer_tau_trans
@@ -76,9 +75,11 @@ def run_experiments(config, dm_params):
                     ]
                     important_class_attr = {k: v for k, v in tt.__dict__.items() if k in attrs_list}
                     final_dict = merge_dicts(tt.results_dict, important_class_attr)
-                    final_dict['distance_matrix'] = {k: v.to_json() for k, v in final_dict['distance_matrix'].items()}
-                    final_dict['dm1'] = {k: v.to_json() for k, v in final_dict['dm1'].items()}
-                    final_dict['dm2'] = final_dict['dm2'].to_json()
+                    final_dict['distance_matrix'] = {k: v.to_json() for k, v in final_dict['distance_matrix'].items()} \
+                        if 'distance_matrix' in final_dict.keys() else {}
+                    final_dict['dm1'] = {k: v.to_json() for k, v in final_dict['dm1'].items()} \
+                        if 'dm1' in final_dict.keys() else {}
+                    final_dict['dm2'] = final_dict['dm2'].to_json() if 'dm2' in final_dict.keys() else {}
                     save_json(final_dict, resolved_workdir_json, additional_workdir_string)
 
     t_test(config['dataset_name'])
@@ -89,8 +90,8 @@ def main(config=None, dm_params=None, datasets=None):
         config = {
             'kfolds': 5,
             'features_percentage': [0.02, 0.05, 0.1, 0.2, 0.3, 0.5],
-            'dist_functions': ['wasserstein', 'jm', 'hellinger'],
-            'nrows': 1000,
+            'dist_functions': ['wasserstein'],
+            'nrows': 10000,
             'features_to_eliminate_prc': [0.0, 0.2, 0.35, 0.5],
             'verbose': False,
             'random_state': 0
@@ -98,13 +99,12 @@ def main(config=None, dm_params=None, datasets=None):
         # config['features_percentage'] = [0.02, 0.05, 0.1, 0.2, 0.3]
         # config['features_to_eliminate_prc'] = [0.0, 0.2, 0.35, 0.5]
 
-
     if dm_params is None:
         dm_params = {
             'dim': 2,
             'alpha': 1,
             'eps_type': 'maxmin',
-            'epsilon_factor': [50, 50]
+            'epsilon_factor': [50, 100]
         }
 
     if datasets is None:
@@ -113,14 +113,17 @@ def main(config=None, dm_params=None, datasets=None):
             ('adware_balanced', 'label'), ('ml_multiclass_classification_data', 'target'), ('digits', 'label'),
             ('isolet', 'label'), ('otto_balanced', 'target'), ('gene_data', 'label')
         ]
-        datasets = [('otto_balanced', 'target'), ('gene_data', 'label')]
+        datasets = [
+            ('digits', 'label'), ('adware_balanced', 'label'), ('ml_multiclass_classification_data', 'target'),
+            ('isolet', 'label'), ('otto_balanced', 'target')
+        ]
 
     for dataset, label in datasets:
         config['dataset_name'] = dataset
         config['label_column'] = label
         run_experiments(config, dm_params)
 
-    all_results_colorful()
+    # all_results_colorful()
 
 
 if __name__ == '__main__':
