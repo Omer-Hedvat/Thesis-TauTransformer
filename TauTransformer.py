@@ -12,7 +12,8 @@ logger = logging.getLogger(__name__)
 
 class TauTransformer:
     def __init__(
-        self, feature_percentage, features_to_eliminate_prc, dist_functions, dm_params, min_feature_std=0, random_state=0, verbose=False
+        self, feature_percentage: float, features_to_eliminate_prc: float, dist_functions, dm_params,
+            min_feature_std: int=0, random_state: int=0, verbose: bool=False
     ):
         self.X = None
         self.y = None
@@ -42,17 +43,24 @@ class TauTransformer:
         self.results_dict = dict()
 
     @staticmethod
-    def execute_distance_func(X_arr, y_arr, dist_func_name, feature_idx, cls_feature1, cls_feature2):
+    def execute_distance_func(
+            X_arr: np.ndarray, y_arr: np.ndarray, dist_func_name: str, feature_idx: int, cls_feature1, cls_feature2
+    ) -> float:
         """
-        Executes various distance functions by 'function_name' argument.
-        The function calculates the distance between 2 vectors (df column), the vectors are values from the same column but w. different label values.
-        by each function_name this function knows to call the right distance function
-        :param df: Pandas DataFrame
-        :param function_name: the name of the function
-        :param feature: the name of the feature/column we want to use the distance on
-        :param label1: value of label # 1
-        :param label2: value of label # 2
-        :return: distance value between the vectors
+        Executes various distance functions specified by the 'dist_func_name' argument.
+
+        The function calculates the distance between two vectors (columns from a DataFrame)
+        containing values with different label values.
+        The appropriate distance function is determined by the 'dist_func_name' parameter.
+
+        :param X_arr: Array-like object representing the features.
+        :param y_arr: Array-like object representing the labels.
+        :param dist_func_name: Name of the distance function to be executed.
+                                Options: 'wasserstein', 'bhattacharyya', 'jm', 'hellinger'.
+        :param feature_idx: Index of the feature/column on which the distance is to be calculated.
+        :param cls_feature1: Value of label #1.
+        :param cls_feature2: Value of label #2.
+        :return: Distance value between the vectors calculated using the specified distance function.
         """
         assert dist_func_name in ['wasserstein', 'bhattacharyya', 'jm', 'hellinger']
         return {
@@ -63,7 +71,7 @@ class TauTransformer:
         }[dist_func_name]()
 
     @staticmethod
-    def flatten(t):
+    def flatten(t: list) -> list:
         """
         given a matrix, returns a flatten list
         """
@@ -77,7 +85,7 @@ class TauTransformer:
         self.X = np.delete(self.X, low_std_feature_indexes, axis=1)
         self.results_dict['low_std_features'] = self.low_std_features
 
-    def calc_dist(self, dist_func_name):
+    def calc_dist(self, dist_func_name: str) -> dict:
         """
         Calculates distances of each feature w/ itself in different target classses
         for each DataFrame & distance functions
@@ -117,7 +125,7 @@ class TauTransformer:
         self.features_rank_indexes = np.argsort(consolidated_feature_ranks)
 
     @staticmethod
-    def rank_features_by_dist_mean(dist_arr):
+    def rank_features_by_dist_mean(dist_arr: np.ndarray) -> np.ndarray:
         """
         Calculates the mean value of every row
         :param dist_arr: distances array
@@ -127,7 +135,7 @@ class TauTransformer:
         sorted_indexes_by_mean_arr = np.argsort(arr_avg)[::-1]
         return sorted_indexes_by_mean_arr
 
-    def features_elimination(self):
+    def features_elimination(self) -> dict:
         """
         A heuristic function for feature elimination.
         the method relies on the self.consolidate_features_ranks() method rankings.
